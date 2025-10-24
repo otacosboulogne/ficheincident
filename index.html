@@ -368,7 +368,7 @@ loadFromLocal();
 
 /* === Envoi Google Script === */
 async function sendToServer(){
-  const WEBAPP_URL="https://script.google.com/macros/s/AKfycbxyAudXlH4qvqWM9Ny_rLjaonCzWavlQsBDalY_nLtPVQz3Fj1eT1yD4qOXEQHAyHS7/exec";
+  const WEBAPP_URL="https://script.google.com/macros/s/AKfycbxhHtBPNUVZaLph0WRDCYzXMZvilw8bN0OZ6sOWOZeRlX_KtXGcJjlDwLmK6TcfdL_x/exec";
   const data={};
   document.querySelectorAll("input,textarea").forEach(e=>{
     data[e.id]=e.type=="checkbox"?e.checked:e.value;
