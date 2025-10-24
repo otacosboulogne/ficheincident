@@ -292,7 +292,6 @@
 
   </div>
 </div>
-
 <script>
 /* === Affichage conditionnel des champs === */
 const boxes = ["abs_prev","abs_np","ret_prev","ret_np","autre"];
@@ -300,7 +299,7 @@ boxes.forEach(id=>{
   const box = document.getElementById(id);
   box.addEventListener("change",()=>{
     const sub = document.getElementById(id+"_fields");
-    sub.style.display = box.checked?"inline-flex":"none";
+    sub.style.display = box.checked ? "inline-flex" : "none";
     saveToLocal();
   });
 });
@@ -312,12 +311,27 @@ function setupCanvas(id){
   c.addEventListener("mousedown",e=>{d=true;x.beginPath();x.moveTo(e.offsetX,e.offsetY)});
   c.addEventListener("mousemove",e=>{if(!d)return;x.lineTo(e.offsetX,e.offsetY);x.stroke()});
   ["mouseup","mouseleave"].forEach(ev=>c.addEventListener(ev,()=>d=false));
-  c.addEventListener("touchstart",e=>{d=true;x.beginPath();x.moveTo(e.touches[0].clientX-c.getBoundingClientRect().left,e.touches[0].clientY-c.getBoundingClientRect().top)}, {passive:false});
-  c.addEventListener("touchmove",e=>{if(!d)return;x.lineTo(e.touches[0].clientX-c.getBoundingClientRect().left,e.touches[0].clientY-c.getBoundingClientRect().top);x.stroke()},{passive:false});
+  c.addEventListener("touchstart",e=>{
+    d=true;
+    const r=c.getBoundingClientRect();
+    x.beginPath();
+    x.moveTo(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top);
+  },{passive:false});
+  c.addEventListener("touchmove",e=>{
+    if(!d)return;
+    const r=c.getBoundingClientRect();
+    x.lineTo(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top);
+    x.stroke();
+  },{passive:false});
   c.addEventListener("touchend",()=>d=false);
 }
-function clearCanvas(id){const c=document.getElementById(id);c.getContext("2d").clearRect(0,0,c.width,c.height);saveToLocal();}
-setupCanvas("signRespCanvas");setupCanvas("signSalCanvas");
+function clearCanvas(id){
+  const c=document.getElementById(id);
+  c.getContext("2d").clearRect(0,0,c.width,c.height);
+  saveToLocal();
+}
+setupCanvas("signRespCanvas");
+setupCanvas("signSalCanvas");
 
 /* === Sauvegarde locale === */
 function saveToLocal(){
@@ -328,12 +342,26 @@ function saveToLocal(){
   localStorage.setItem("ficheIncident",JSON.stringify(d));
 }
 function loadFromLocal(){
-  const r=localStorage.getItem("ficheIncident");if(!r)return;const d=JSON.parse(r);
-  Object.keys(d).forEach(k=>{const e=document.getElementById(k);if(e){if(e.type=="checkbox")e.checked=d[k];else e.value=d[k];}});
-  restore("signRespCanvas",d.signResp);restore("signSalCanvas",d.signSal);
-  boxes.forEach(id=>{const sub=document.getElementById(id+"_fields");sub.style.display=document.getElementById(id).checked?"inline-flex":"none";});
+  const r=localStorage.getItem("ficheIncident");
+  if(!r)return;
+  const d=JSON.parse(r);
+  Object.keys(d).forEach(k=>{
+    const e=document.getElementById(k);
+    if(e){if(e.type=="checkbox")e.checked=d[k];else e.value=d[k];}
+  });
+  restore("signRespCanvas",d.signResp);
+  restore("signSalCanvas",d.signSal);
+  boxes.forEach(id=>{
+    const sub=document.getElementById(id+"_fields");
+    sub.style.display=document.getElementById(id).checked?"inline-flex":"none";
+  });
 }
-function restore(id,img){if(!img)return;const c=document.getElementById(id),x=c.getContext("2d"),i=new Image();i.onload=()=>x.drawImage(i,0,0,c.width,c.height);i.src=img;}
+function restore(id,img){
+  if(!img)return;
+  const c=document.getElementById(id),x=c.getContext("2d"),i=new Image();
+  i.onload=()=>x.drawImage(i,0,0,c.width,c.height);
+  i.src=img;
+}
 window.addEventListener("input",saveToLocal);
 window.addEventListener("change",saveToLocal);
 loadFromLocal();
@@ -342,22 +370,30 @@ loadFromLocal();
 async function sendToServer(){
   const WEBAPP_URL="https://script.google.com/macros/s/AKfycbxyAudXlH4qvqWM9Ny_rLjaonCzWavlQsBDalY_nLtPVQz3Fj1eT1yD4qOXEQHAyHS7/exec";
   const data={};
-  document.querySelectorAll("input,textarea").forEach(e=>data[e.id]=e.type=="checkbox"?e.checked:e.value);
+  document.querySelectorAll("input,textarea").forEach(e=>{
+    data[e.id]=e.type=="checkbox"?e.checked:e.value;
+  });
   data.signature_responsable_png=document.getElementById("signRespCanvas").toDataURL();
   data.signature_salarie_png=document.getElementById("signSalCanvas").toDataURL();
   data.generatedFileName=`Fiche_Incident_${data.salarie||"SansNom"}_${data.date_fiche||"SansDate"}.pdf`;
   data.html=document.getElementById("pageContent").outerHTML;
 
-  // Désactivation temporaire du bouton
-  const btns = document.querySelectorAll(".action-btn");
-  btns.forEach(b => b.disabled = true);
+  const btns=document.querySelectorAll(".action-btn");
+  btns.forEach(b=>b.disabled=true);
 
-    const responsable = data.responsable || "le responsable";
+  try {
+    const res = await fetch(WEBAPP_URL, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(data)
+    });
+    const responsable=data.responsable||"le responsable";
     alert(`✅ Merci ${responsable},\n\nLa fiche d’incident sera imprimée et envoyée par mail dans quelques instants.`);
   } catch (err) {
+    console.error(err);
     alert("⚠️ Une erreur est survenue lors de l'envoi. Vérifiez votre connexion Internet.");
   } finally {
-    btns.forEach(b => b.disabled = false);
+    btns.forEach(b=>b.disabled=false);
   }
 }
 </script>
