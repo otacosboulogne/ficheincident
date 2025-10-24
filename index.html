@@ -340,7 +340,7 @@ loadFromLocal();
 
 /* === Envoi Google Script === */
 async function sendToServer(){
-  const WEBAPP_URL="https://script.google.com/macros/s/AKfycbyLst8918PQDEgLPpy2-p0ee6_GK5XH6LLAlJ_BGfbyS_Kn8qqSKfE2kAa743KQOEAbAQ/exec";
+  const WEBAPP_URL="https://script.google.com/macros/s/AKfycbyM8JSN7S763lzxbpG_rK6Kj9uk-zA7femiLsDkK5qV2fqVH5QyhGy41ke0x3yLKW1C/exec";
   const data={};
   document.querySelectorAll("input,textarea").forEach(e=>data[e.id]=e.type=="checkbox"?e.checked:e.value);
   data.signature_responsable_png=document.getElementById("signRespCanvas").toDataURL();
