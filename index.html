@@ -340,7 +340,7 @@ loadFromLocal();
 
 /* === Envoi Google Script === */
 async function sendToServer(){
-  const WEBAPP_URL="https://script.google.com/macros/s/AKfycbwbDPLZPDUVIctUMcocVectKinKfcXeOpSFahJnNAaiKCuyXYvtPvkXtrR_I5rnvGMdNw/exec";
+  const WEBAPP_URL="https://script.google.com/macros/s/AKfycbxyAudXlH4qvqWM9Ny_rLjaonCzWavlQsBDalY_nLtPVQz3Fj1eT1yD4qOXEQHAyHS7/exec";
   const data={};
   document.querySelectorAll("input,textarea").forEach(e=>data[e.id]=e.type=="checkbox"?e.checked:e.value);
   data.signature_responsable_png=document.getElementById("signRespCanvas").toDataURL();
@@ -351,14 +351,6 @@ async function sendToServer(){
   // Désactivation temporaire du bouton
   const btns = document.querySelectorAll(".action-btn");
   btns.forEach(b => b.disabled = true);
-
-  try {
-    await fetch(WEBAPP_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(data),
-      mode:"no-cors"
-    });
 
     const responsable = data.responsable || "le responsable";
     alert(`✅ Merci ${responsable},\n\nLa fiche d’incident sera imprimée et envoyée par mail dans quelques instants.`);
