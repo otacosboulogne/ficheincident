@@ -4,6 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>FICHE INCIDENTS - HITS BOULOGNE</title>
+
+<!-- Librairie pour générer le PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
 <style>
   html, body {
     margin: 0;
@@ -36,12 +40,12 @@
   }
 
   .header img {
-    width: 40px;
+    width: 50px;
   }
 
   .header-text strong {
     display: block;
-    font-size: 14px;
+    font-size: 15px;
   }
 
   .fiche-title {
@@ -59,6 +63,7 @@
     border-collapse: collapse;
     font-size: 13px;
   }
+
   .info-table td {
     padding: 4px;
     vertical-align: middle;
@@ -201,8 +206,8 @@
   }
 </style>
 </head>
-<body>
 
+<body>
 <div class="top-buttons">
   <button class="action-btn" onclick="window.print()">📄 PDF / Imprimer</button>
   <button class="action-btn" onclick="sendToServer()">📨 Envoyer</button>
@@ -292,109 +297,64 @@
 
   </div>
 </div>
+
 <script>
-/* === Affichage conditionnel des champs === */
-const boxes = ["abs_prev","abs_np","ret_prev","ret_np","autre"];
+/* === Gestion des sous-champs conditionnels === */
+const boxes=["abs_prev","abs_np","ret_prev","ret_np","autre"];
 boxes.forEach(id=>{
-  const box = document.getElementById(id);
+  const box=document.getElementById(id);
   box.addEventListener("change",()=>{
-    const sub = document.getElementById(id+"_fields");
-    sub.style.display = box.checked ? "inline-flex" : "none";
-    saveToLocal();
+    const sub=document.getElementById(id+"_fields");
+    sub.style.display=box.checked?"inline-flex":"none";
   });
 });
 
-/* === Signatures === */
+/* === Gestion des signatures === */
 function setupCanvas(id){
-  const c=document.getElementById(id),x=c.getContext("2d");
-  let d=false;
+  const c=document.getElementById(id),x=c.getContext("2d");let d=false;
   c.addEventListener("mousedown",e=>{d=true;x.beginPath();x.moveTo(e.offsetX,e.offsetY)});
   c.addEventListener("mousemove",e=>{if(!d)return;x.lineTo(e.offsetX,e.offsetY);x.stroke()});
   ["mouseup","mouseleave"].forEach(ev=>c.addEventListener(ev,()=>d=false));
-  c.addEventListener("touchstart",e=>{
-    d=true;
-    const r=c.getBoundingClientRect();
-    x.beginPath();
-    x.moveTo(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top);
-  },{passive:false});
-  c.addEventListener("touchmove",e=>{
-    if(!d)return;
-    const r=c.getBoundingClientRect();
-    x.lineTo(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top);
-    x.stroke();
-  },{passive:false});
+  c.addEventListener("touchstart",e=>{d=true;const r=c.getBoundingClientRect();x.beginPath();x.moveTo(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top)},{passive:false});
+  c.addEventListener("touchmove",e=>{if(!d)return;const r=c.getBoundingClientRect();x.lineTo(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top);x.stroke()},{passive:false});
   c.addEventListener("touchend",()=>d=false);
 }
-function clearCanvas(id){
-  const c=document.getElementById(id);
-  c.getContext("2d").clearRect(0,0,c.width,c.height);
-  saveToLocal();
-}
+function clearCanvas(id){const c=document.getElementById(id);c.getContext("2d").clearRect(0,0,c.width,c.height);}
 setupCanvas("signRespCanvas");
 setupCanvas("signSalCanvas");
 
-/* === Sauvegarde locale === */
-function saveToLocal(){
-  const d={};
-  document.querySelectorAll("input,textarea").forEach(e=>d[e.id]=e.type=="checkbox"?e.checked:e.value);
-  d.signResp=document.getElementById("signRespCanvas").toDataURL();
-  d.signSal=document.getElementById("signSalCanvas").toDataURL();
-  localStorage.setItem("ficheIncident",JSON.stringify(d));
-}
-function loadFromLocal(){
-  const r=localStorage.getItem("ficheIncident");
-  if(!r)return;
-  const d=JSON.parse(r);
-  Object.keys(d).forEach(k=>{
-    const e=document.getElementById(k);
-    if(e){if(e.type=="checkbox")e.checked=d[k];else e.value=d[k];}
-  });
-  restore("signRespCanvas",d.signResp);
-  restore("signSalCanvas",d.signSal);
-  boxes.forEach(id=>{
-    const sub=document.getElementById(id+"_fields");
-    sub.style.display=document.getElementById(id).checked?"inline-flex":"none";
-  });
-}
-function restore(id,img){
-  if(!img)return;
-  const c=document.getElementById(id),x=c.getContext("2d"),i=new Image();
-  i.onload=()=>x.drawImage(i,0,0,c.width,c.height);
-  i.src=img;
-}
-window.addEventListener("input",saveToLocal);
-window.addEventListener("change",saveToLocal);
-loadFromLocal();
-
-/* === Envoi Google Script === */
+/* === ENVOI DU PDF === */
 async function sendToServer(){
   const WEBAPP_URL="https://otacos-proxy.contact-otacosbsm.workers.dev/";
-  const data={};
-  document.querySelectorAll("input,textarea").forEach(e=>{
-    data[e.id]=e.type=="checkbox"?e.checked:e.value;
-  });
-  data.signature_responsable_png=document.getElementById("signRespCanvas").toDataURL();
-  data.signature_salarie_png=document.getElementById("signSalCanvas").toDataURL();
-  data.generatedFileName=`Fiche_Incident_${data.salarie||"SansNom"}_${data.date_fiche||"SansDate"}.pdf`;
-  data.html=document.getElementById("pageContent").outerHTML;
 
-  const btns=document.querySelectorAll(".action-btn");
-  btns.forEach(b=>b.disabled=true);
+  const meta={
+    salarie:document.getElementById("salarie").value||"Inconnu",
+    responsable:document.getElementById("responsable").value||"N/A",
+    date_fiche:document.getElementById("date_fiche").value||new Date().toISOString().split("T")[0]
+  };
 
-  try {
-    const res = await fetch(WEBAPP_URL, {
+  // Génération du PDF base64
+  const element=document.getElementById("pageContent");
+  const pdfBlob=await html2pdf().from(element).outputPdf("blob");
+  const buffer=await pdfBlob.arrayBuffer();
+  const b64=btoa(String.fromCharCode(...new Uint8Array(buffer)));
+
+  const payload={meta,b64};
+
+  try{
+    const res=await fetch(WEBAPP_URL,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(data),
-      mode: "no-cors"
+      body:JSON.stringify(payload)
     });
-    const responsable=data.responsable||"le responsable";
-    alert(`✅ Merci ${responsable},\n\nLa fiche d’incident sera imprimée et envoyée par mail dans quelques instants.`);
-  } catch (err) {
-    console.error(err);
-    alert("⚠️ Une erreur est survenue lors de l'envoi. Vérifiez votre connexion Internet.");
-  } finally {
-    btns.forEach(b=>b.disabled=false);
+    const json=await res.json();
+    if(json.status==="ok"){
+      alert(`✅ Merci ${meta.responsable},\n\nLa fiche d’incident a été envoyée, imprimée et enregistrée avec succès !`);
+    }else{
+      alert("⚠️ Erreur : "+json.message);
+    }
+  }catch(err){
+    alert("⚠️ Erreur d'envoi : "+err.message);
   }
 }
 </script>
