@@ -367,6 +367,7 @@ setupCanvas("signSalCanvas");
 async function sendToServer() {
   const WEBAPP_URL = "https://otacos-proxy.contact-otacosbsm.workers.dev/";
 
+  // 🧾 Métadonnées
   const meta = {
     salarie: document.getElementById("salarie").value || "Inconnu",
     responsable: document.getElementById("responsable").value || "N/A",
@@ -375,31 +376,52 @@ async function sendToServer() {
       new Date().toISOString().split("T")[0],
   };
 
-  // ✅ Clone du contenu sans les éléments interactifs
-  const original = document.getElementById("pageContent");
-  const clone = original.cloneNode(true);
+  // ✅ Capture des signatures (remplacées par images)
+  const respCanvas = document.getElementById("signRespCanvas");
+  const salCanvas = document.getElementById("signSalCanvas");
+  const respImg = document.createElement("img");
+  const salImg = document.createElement("img");
+  respImg.src = respCanvas.toDataURL("image/png");
+  salImg.src = salCanvas.toDataURL("image/png");
+  respImg.style.width = salImg.style.width = "100%";
+  respImg.style.height = salImg.style.height = "auto";
+  respCanvas.replaceWith(respImg);
+  salCanvas.replaceWith(salImg);
 
-  // Supprimer les canvases et recréer des images statiques
-  clone.querySelectorAll("canvas").forEach((canvas) => {
-    const img = document.createElement("img");
-    img.src = canvas.toDataURL("image/png");
-    img.style.width = "100%";
-    img.style.height = "auto";
-    canvas.replaceWith(img);
-  });
+  // ✅ Clonage HTML "propre" (en texte, pas en nœuds DOM)
+  const html = document.getElementById("pageContent").outerHTML;
 
-  // Supprimer les boutons inutiles du clone
-  clone.querySelectorAll("button").forEach((b) => b.remove());
+  // ✅ Restaure les canvases d’origine pour ton interface
+  document
+    .querySelector(".signature-box:nth-child(1) .signature-wrapper")
+    .replaceChildren(respCanvas);
+  document
+    .querySelector(".signature-box:nth-child(2) .signature-wrapper")
+    .replaceChildren(salCanvas);
 
-  // Ajouter le clone à un conteneur invisible pour html2pdf
-  const tempContainer = document.createElement("div");
-  tempContainer.style.position = "fixed";
-  tempContainer.style.left = "-9999px";
-  document.body.appendChild(tempContainer);
-  tempContainer.appendChild(clone);
+  // ✅ Création d’un conteneur invisible
+  const frame = document.createElement("iframe");
+  frame.style.position = "fixed";
+  frame.style.left = "-9999px";
+  frame.width = "210mm";
+  frame.height = "297mm";
+  document.body.appendChild(frame);
+
+  // ✅ Injection du HTML (isolation complète)
+  const doc = frame.contentDocument || frame.contentWindow.document;
+  doc.open();
+  doc.write("<!DOCTYPE html><html><head><meta charset='UTF-8'>");
+  doc.write(
+    "<style>body{font-family:Arial, sans-serif; margin:0; padding:15mm;} .page{width:210mm; min-height:297mm;}</style>"
+  );
+  doc.write("</head><body>" + html + "</body></html>");
+  doc.close();
+
+  // Petite pause pour chargement des images
+  await new Promise((r) => setTimeout(r, 500));
 
   try {
-    // ✅ Génération PDF propre
+    // ✅ Génération PDF depuis l’iframe (aucun lien vers la page principale)
     const opt = {
       margin: [10, 10],
       filename: `Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
@@ -407,12 +429,15 @@ async function sendToServer() {
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     };
 
-    const pdfBlob = await html2pdf().set(opt).from(clone).outputPdf("blob");
+    const pdfBlob = await html2pdf()
+      .set(opt)
+      .from(frame.contentDocument.body)
+      .outputPdf("blob");
+
     const buffer = await pdfBlob.arrayBuffer();
     const b64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
 
-    // ✅ Nettoyage du clone
-    tempContainer.remove();
+    frame.remove(); // Nettoyage iframe
 
     // ✅ Envoi au proxy
     const payload = { meta, b64 };
@@ -424,17 +449,13 @@ async function sendToServer() {
 
     const json = await res.json();
     if (json.status === "ok") {
-      alert(
-        `✅ Merci ${meta.responsable},\n\nLa fiche d’incident a bien été enregistrée et envoyée.`
-      );
+      alert(`✅ Merci ${meta.responsable},\n\nLa fiche a bien été envoyée.`);
     } else {
-      alert("⚠️ Erreur : " + json.message);
+      alert("⚠️ Erreur serveur : " + json.message);
     }
   } catch (err) {
-    alert("⚠️ Erreur de génération : " + err.message);
-  } finally {
-    // Toujours supprimer le clone, même en cas d’erreur
-    if (document.body.contains(tempContainer)) tempContainer.remove();
+    alert("⚠️ Erreur PDF : " + err.message);
+    frame.remove();
   }
 }
 </script>
