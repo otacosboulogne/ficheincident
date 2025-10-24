@@ -364,39 +364,43 @@ setupCanvas("signRespCanvas");
 setupCanvas("signSalCanvas");
 
 /* === ENVOI DU PDF === */
-async function sendToServer() {
+  async function sendToServer() {
   const WEBAPP_URL = "https://otacos-proxy.contact-otacosbsm.workers.dev/";
 
+  // Petite pause pour s’assurer que tout le DOM est bien chargé
+  await new Promise(r => setTimeout(r, 200));
+
   const meta = {
-    salarie: document.getElementById("salarie").value || "Inconnu",
-    responsable: document.getElementById("responsable").value || "N/A",
+    salarie: document.getElementById("salarie")?.value || "Inconnu",
+    responsable: document.getElementById("responsable")?.value || "N/A",
     date_fiche:
-      document.getElementById("date_fiche").value ||
+      document.getElementById("date_fiche")?.value ||
       new Date().toISOString().split("T")[0],
   };
 
-  // ✅ Vérifie la présence des canvases
+  // 🔍 Recherche des canvases
   const respCanvas = document.getElementById("signRespCanvas");
   const salCanvas = document.getElementById("signSalCanvas");
 
+  // ✅ Vérification
   if (!respCanvas || !salCanvas) {
-    alert("⚠️ Les zones de signature ne sont pas trouvées dans la page !");
+    alert("⚠️ Les zones de signature ne sont pas détectées dans la page.");
+    console.error("Canvas introuvable :", { respCanvas, salCanvas });
     return;
   }
 
-  // ✅ Conversion des canvases en images
+  // ✅ Conversion des signatures en images
   const respImg = document.createElement("img");
   const salImg = document.createElement("img");
   respImg.src = respCanvas.toDataURL("image/png");
   salImg.src = salCanvas.toDataURL("image/png");
   respImg.style.width = salImg.style.width = "100%";
-  respImg.style.height = salImg.style.height = "auto";
 
-  // Remplacement temporaire
+  // Remplace temporairement les canvases
   respCanvas.parentNode.replaceChild(respImg, respCanvas);
   salCanvas.parentNode.replaceChild(salImg, salCanvas);
 
-  // ✅ Clone HTML pour PDF
+  // ✅ Clone de la page
   const html = document.getElementById("pageContent").outerHTML;
 
   // ✅ Iframe isolée
@@ -412,10 +416,9 @@ async function sendToServer() {
   doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>${html}</body></html>`);
   doc.close();
 
-  await new Promise(r => setTimeout(r, 400)); // pause de stabilité
+  await new Promise(r => setTimeout(r, 400));
 
   try {
-    // ✅ Génération PDF propre sans boucle
     const opt = {
       margin: [10, 10],
       filename: `Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
@@ -435,7 +438,6 @@ async function sendToServer() {
 
     frame.remove();
 
-    // ✅ Envoi vers Cloudflare proxy
     const payload = { meta, b64 };
     const res = await fetch(WEBAPP_URL, {
       method: "POST",
@@ -445,17 +447,19 @@ async function sendToServer() {
 
     const json = await res.json();
     if (json.status === "ok") {
-      alert(`✅ Merci ${meta.responsable},\n\nFiche envoyée et imprimée avec succès.`);
+      alert(`✅ Merci ${meta.responsable},\n\nLa fiche d’incident a été envoyée avec succès.`);
     } else {
       alert("⚠️ Erreur : " + json.message);
     }
   } catch (err) {
     alert("⚠️ Erreur PDF : " + err.message);
   } finally {
+    // ✅ Restauration des canvases
+    const respParent = respImg.parentNode;
+    const salParent = salImg.parentNode;
+    if (respParent) respParent.replaceChild(respCanvas, respImg);
+    if (salParent) salParent.replaceChild(salCanvas, salImg);
     if (document.body.contains(frame)) frame.remove();
-    // ✅ Restaure les canvases
-    respImg.parentNode.replaceChild(respCanvas, respImg);
-    salImg.parentNode.replaceChild(salCanvas, salImg);
   }
 }
 </script>
