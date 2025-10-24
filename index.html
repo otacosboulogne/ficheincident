@@ -297,44 +297,86 @@
 
   </div>
 </div>
-
 <script>
 /* === Gestion des sous-champs conditionnels === */
-const boxes=["abs_prev","abs_np","ret_prev","ret_np","autre"];
-boxes.forEach(id=>{
-  const box=document.getElementById(id);
-  box.addEventListener("change",()=>{
-    const sub=document.getElementById(id+"_fields");
-    sub.style.display=box.checked?"inline-flex":"none";
+const boxes = ["abs_prev", "abs_np", "ret_prev", "ret_np", "autre"];
+boxes.forEach(id => {
+  const box = document.getElementById(id);
+  box.addEventListener("change", () => {
+    const sub = document.getElementById(id + "_fields");
+    sub.style.display = box.checked ? "inline-flex" : "none";
   });
 });
 
 /* === Gestion des signatures === */
-function setupCanvas(id){
-  const c=document.getElementById(id),x=c.getContext("2d");let d=false;
-  c.addEventListener("mousedown",e=>{d=true;x.beginPath();x.moveTo(e.offsetX,e.offsetY)});
-  c.addEventListener("mousemove",e=>{if(!d)return;x.lineTo(e.offsetX,e.offsetY);x.stroke()});
-  ["mouseup","mouseleave"].forEach(ev=>c.addEventListener(ev,()=>d=false));
-  c.addEventListener("touchstart",e=>{d=true;const r=c.getBoundingClientRect();x.beginPath();x.moveTo(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top)},{passive:false});
-  c.addEventListener("touchmove",e=>{if(!d)return;const r=c.getBoundingClientRect();x.lineTo(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top);x.stroke()},{passive:false});
-  c.addEventListener("touchend",()=>d=false);
+function setupCanvas(id) {
+  const c = document.getElementById(id),
+    x = c.getContext("2d");
+  let d = false;
+  c.addEventListener("mousedown", e => {
+    d = true;
+    x.beginPath();
+    x.moveTo(e.offsetX, e.offsetY);
+  });
+  c.addEventListener("mousemove", e => {
+    if (!d) return;
+    x.lineTo(e.offsetX, e.offsetY);
+    x.stroke();
+  });
+  ["mouseup", "mouseleave"].forEach(ev =>
+    c.addEventListener(ev, () => (d = false))
+  );
+  c.addEventListener(
+    "touchstart",
+    e => {
+      d = true;
+      const r = c.getBoundingClientRect();
+      x.beginPath();
+      x.moveTo(
+        e.touches[0].clientX - r.left,
+        e.touches[0].clientY - r.top
+      );
+    },
+    { passive: false }
+  );
+  c.addEventListener(
+    "touchmove",
+    e => {
+      if (!d) return;
+      const r = c.getBoundingClientRect();
+      x.lineTo(
+        e.touches[0].clientX - r.left,
+        e.touches[0].clientY - r.top
+      );
+      x.stroke();
+    },
+    { passive: false }
+  );
+  c.addEventListener("touchend", () => (d = false));
 }
-function clearCanvas(id){const c=document.getElementById(id);c.getContext("2d").clearRect(0,0,c.width,c.height);}
+
+function clearCanvas(id) {
+  const c = document.getElementById(id);
+  c.getContext("2d").clearRect(0, 0, c.width, c.height);
+}
+
 setupCanvas("signRespCanvas");
 setupCanvas("signSalCanvas");
 
 /* === ENVOI DU PDF === */
-<script>
 async function sendToServer() {
   const WEBAPP_URL = "https://otacos-proxy.contact-otacosbsm.workers.dev/";
 
   const meta = {
     salarie: document.getElementById("salarie").value || "Inconnu",
-    responsable: document.getElementById("responsable").value || "N/A",
-    date_fiche: document.getElementById("date_fiche").value || new Date().toISOString().split("T")[0],
+    responsable:
+      document.getElementById("responsable").value || "N/A",
+    date_fiche:
+      document.getElementById("date_fiche").value ||
+      new Date().toISOString().split("T")[0],
   };
 
-  // ✅ Capture les signatures en images
+  // ✅ Capture les signatures
   const respCanvas = document.getElementById("signRespCanvas");
   const salCanvas = document.getElementById("signSalCanvas");
 
@@ -345,14 +387,14 @@ async function sendToServer() {
   respImg.style.width = "100%";
   salImg.style.width = "100%";
 
-  // On remplace temporairement les canvases
+  // Remplacer temporairement les canvases
   respCanvas.replaceWith(respImg);
   salCanvas.replaceWith(salImg);
 
-  // Petite pause pour stabiliser le DOM
-  await new Promise(r => setTimeout(r, 500));
+  // Petite pause
+  await new Promise(r => setTimeout(r, 400));
 
-  // ✅ Génération du PDF proprement
+  // ✅ Génération du PDF
   const element = document.getElementById("pageContent");
   const opt = {
     margin: [10, 10],
@@ -361,15 +403,19 @@ async function sendToServer() {
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
   };
 
-  const pdfBlob = await html2pdf().set(opt).from(element).outputPdf("blob");
+  const pdfBlob = await html2pdf()
+    .set(opt)
+    .from(element)
+    .outputPdf("blob");
+
   const buffer = await pdfBlob.arrayBuffer();
   const b64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
 
-  // ✅ On remet les canvases originaux
+  // Restaure les canvases
   respImg.replaceWith(respCanvas);
   salImg.replaceWith(salCanvas);
 
-  // ✅ Envoi au serveur via proxy
+  // ✅ Envoi via proxy
   const payload = { meta, b64 };
   try {
     const res = await fetch(WEBAPP_URL, {
@@ -377,9 +423,12 @@ async function sendToServer() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+
     const json = await res.json();
     if (json.status === "ok") {
-      alert(`✅ Merci ${meta.responsable},\n\nLa fiche d’incident a bien été enregistrée et envoyée.`);
+      alert(
+        `✅ Merci ${meta.responsable},\n\nLa fiche d’incident a bien été envoyée et imprimée.`
+      );
     } else {
       alert("⚠️ Erreur : " + json.message);
     }
@@ -387,7 +436,6 @@ async function sendToServer() {
     alert("⚠️ Problème d'envoi : " + err.message);
   }
 }
-</script>
 </script>
 </body>
 </html>
