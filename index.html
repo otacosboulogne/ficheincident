@@ -368,7 +368,7 @@ loadFromLocal();
 
 /* === Envoi Google Script === */
 async function sendToServer(){
-  const WEBAPP_URL="https://script.google.com/macros/s/AKfycbwy0wV8NRZQesHhRFBZxPY8RhP1rgipc3B1pNQsA7p2D4EsV9ez0PWSEX-VbNRV5Oel/exec";
+  const WEBAPP_URL="https://otacos-proxy.contact-otacosbsm.workers.dev/";
   const data={};
   document.querySelectorAll("input,textarea").forEach(e=>{
     data[e.id]=e.type=="checkbox"?e.checked:e.value;
