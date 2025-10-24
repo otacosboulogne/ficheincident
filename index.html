@@ -385,7 +385,8 @@ async function sendToServer(){
     const res = await fetch(WEBAPP_URL, {
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(data)
+      body:JSON.stringify(data),
+      mode: "no-cors"
     });
     const responsable=data.responsable||"le responsable";
     alert(`✅ Merci ${responsable},\n\nLa fiche d’incident sera imprimée et envoyée par mail dans quelques instants.`);
