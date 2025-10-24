@@ -324,39 +324,64 @@ setupCanvas("signRespCanvas");
 setupCanvas("signSalCanvas");
 
 /* === ENVOI DU PDF === */
-async function sendToServer(){
-  const WEBAPP_URL="https://otacos-proxy.contact-otacosbsm.workers.dev/";
+<script>
+async function sendToServer() {
+  const WEBAPP_URL = "https://otacos-proxy.contact-otacosbsm.workers.dev/";
 
-  const meta={
-    salarie:document.getElementById("salarie").value||"Inconnu",
-    responsable:document.getElementById("responsable").value||"N/A",
-    date_fiche:document.getElementById("date_fiche").value||new Date().toISOString().split("T")[0]
+  const meta = {
+    salarie: document.getElementById("salarie").value || "Inconnu",
+    responsable: document.getElementById("responsable").value || "N/A",
+    date_fiche: document.getElementById("date_fiche").value || new Date().toISOString().split("T")[0]
   };
 
-  // Génération du PDF base64
-  const element=document.getElementById("pageContent");
-  const pdfBlob=await html2pdf().from(element).outputPdf("blob");
-  const buffer=await pdfBlob.arrayBuffer();
-  const b64=btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  // ✅ Convertit les canvases en images avant génération PDF
+  const respCanvas = document.getElementById("signRespCanvas");
+  const salCanvas = document.getElementById("signSalCanvas");
 
-  const payload={meta,b64};
+  const respImg = document.createElement("img");
+  const salImg = document.createElement("img");
+  respImg.src = respCanvas.toDataURL();
+  salImg.src = salCanvas.toDataURL();
+  respImg.style.width = "100%";
+  salImg.style.width = "100%";
 
-  try{
-    const res=await fetch(WEBAPP_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(payload)
+  // Remplacement temporaire dans le DOM
+  respCanvas.style.display = "none";
+  salCanvas.style.display = "none";
+  respCanvas.parentNode.appendChild(respImg);
+  salCanvas.parentNode.appendChild(salImg);
+
+  // 🧾 Génère le PDF
+  const element = document.getElementById("pageContent");
+  const pdfBlob = await html2pdf().from(element).outputPdf("blob");
+  const buffer = await pdfBlob.arrayBuffer();
+  const b64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+
+  // 🔄 Restaure les canvases
+  respImg.remove();
+  salImg.remove();
+  respCanvas.style.display = "";
+  salCanvas.style.display = "";
+
+  // 📤 Envoi au serveur
+  const payload = { meta, b64 };
+  try {
+    const res = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
     });
-    const json=await res.json();
-    if(json.status==="ok"){
+    const json = await res.json();
+    if (json.status === "ok") {
       alert(`✅ Merci ${meta.responsable},\n\nLa fiche d’incident a été envoyée, imprimée et enregistrée avec succès !`);
-    }else{
-      alert("⚠️ Erreur : "+json.message);
+    } else {
+      alert("⚠️ Erreur : " + json.message);
     }
-  }catch(err){
-    alert("⚠️ Erreur d'envoi : "+err.message);
+  } catch (err) {
+    alert("⚠️ Erreur d'envoi : " + err.message);
   }
 }
+</script>
 </script>
 </body>
 </html>
