@@ -369,55 +369,53 @@ async function sendToServer() {
 
   const meta = {
     salarie: document.getElementById("salarie").value || "Inconnu",
-    responsable:
-      document.getElementById("responsable").value || "N/A",
+    responsable: document.getElementById("responsable").value || "N/A",
     date_fiche:
       document.getElementById("date_fiche").value ||
       new Date().toISOString().split("T")[0],
   };
 
-  // ✅ Capture les signatures
-  const respCanvas = document.getElementById("signRespCanvas");
-  const salCanvas = document.getElementById("signSalCanvas");
+  // ✅ Clone du contenu sans les éléments interactifs
+  const original = document.getElementById("pageContent");
+  const clone = original.cloneNode(true);
 
-  const respImg = new Image();
-  const salImg = new Image();
-  respImg.src = respCanvas.toDataURL();
-  salImg.src = salCanvas.toDataURL();
-  respImg.style.width = "100%";
-  salImg.style.width = "100%";
+  // Supprimer les canvases et recréer des images statiques
+  clone.querySelectorAll("canvas").forEach((canvas) => {
+    const img = document.createElement("img");
+    img.src = canvas.toDataURL("image/png");
+    img.style.width = "100%";
+    img.style.height = "auto";
+    canvas.replaceWith(img);
+  });
 
-  // Remplacer temporairement les canvases
-  respCanvas.replaceWith(respImg);
-  salCanvas.replaceWith(salImg);
+  // Supprimer les boutons inutiles du clone
+  clone.querySelectorAll("button").forEach((b) => b.remove());
 
-  // Petite pause
-  await new Promise(r => setTimeout(r, 400));
+  // Ajouter le clone à un conteneur invisible pour html2pdf
+  const tempContainer = document.createElement("div");
+  tempContainer.style.position = "fixed";
+  tempContainer.style.left = "-9999px";
+  document.body.appendChild(tempContainer);
+  tempContainer.appendChild(clone);
 
-  // ✅ Génération du PDF
-  const element = document.getElementById("pageContent");
-  const opt = {
-    margin: [10, 10],
-    filename: `Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
-    html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-  };
-
-  const pdfBlob = await html2pdf()
-    .set(opt)
-    .from(element)
-    .outputPdf("blob");
-
-  const buffer = await pdfBlob.arrayBuffer();
-  const b64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
-
-  // Restaure les canvases
-  respImg.replaceWith(respCanvas);
-  salImg.replaceWith(salCanvas);
-
-  // ✅ Envoi via proxy
-  const payload = { meta, b64 };
   try {
+    // ✅ Génération PDF propre
+    const opt = {
+      margin: [10, 10],
+      filename: `Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
+      html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    };
+
+    const pdfBlob = await html2pdf().set(opt).from(clone).outputPdf("blob");
+    const buffer = await pdfBlob.arrayBuffer();
+    const b64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+
+    // ✅ Nettoyage du clone
+    tempContainer.remove();
+
+    // ✅ Envoi au proxy
+    const payload = { meta, b64 };
     const res = await fetch(WEBAPP_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -427,13 +425,16 @@ async function sendToServer() {
     const json = await res.json();
     if (json.status === "ok") {
       alert(
-        `✅ Merci ${meta.responsable},\n\nLa fiche d’incident a bien été envoyée et imprimée.`
+        `✅ Merci ${meta.responsable},\n\nLa fiche d’incident a bien été enregistrée et envoyée.`
       );
     } else {
       alert("⚠️ Erreur : " + json.message);
     }
   } catch (err) {
-    alert("⚠️ Problème d'envoi : " + err.message);
+    alert("⚠️ Erreur de génération : " + err.message);
+  } finally {
+    // Toujours supprimer le clone, même en cas d’erreur
+    if (document.body.contains(tempContainer)) tempContainer.remove();
   }
 }
 </script>
