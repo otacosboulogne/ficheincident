@@ -375,21 +375,31 @@ async function sendToServer() {
       new Date().toISOString().split("T")[0],
   };
 
-  // ✅ Conversion des canvases en images
+  // ✅ Vérifie la présence des canvases
   const respCanvas = document.getElementById("signRespCanvas");
   const salCanvas = document.getElementById("signSalCanvas");
+
+  if (!respCanvas || !salCanvas) {
+    alert("⚠️ Les zones de signature ne sont pas trouvées dans la page !");
+    return;
+  }
+
+  // ✅ Conversion des canvases en images
   const respImg = document.createElement("img");
   const salImg = document.createElement("img");
   respImg.src = respCanvas.toDataURL("image/png");
   salImg.src = salCanvas.toDataURL("image/png");
   respImg.style.width = salImg.style.width = "100%";
-  respCanvas.replaceWith(respImg);
-  salCanvas.replaceWith(salImg);
+  respImg.style.height = salImg.style.height = "auto";
 
-  // ✅ Prépare un clone HTML
+  // Remplacement temporaire
+  respCanvas.parentNode.replaceChild(respImg, respCanvas);
+  salCanvas.parentNode.replaceChild(salImg, salCanvas);
+
+  // ✅ Clone HTML pour PDF
   const html = document.getElementById("pageContent").outerHTML;
 
-  // ✅ Iframe isolée (pas de boucle)
+  // ✅ Iframe isolée
   const frame = document.createElement("iframe");
   frame.style.position = "fixed";
   frame.style.left = "-9999px";
@@ -402,11 +412,10 @@ async function sendToServer() {
   doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>${html}</body></html>`);
   doc.close();
 
-  // Petite pause pour que tout se charge
-  await new Promise(r => setTimeout(r, 500));
+  await new Promise(r => setTimeout(r, 400)); // pause de stabilité
 
   try {
-    // ✅ Capture du PDF sans outputPdf()
+    // ✅ Génération PDF propre sans boucle
     const opt = {
       margin: [10, 10],
       filename: `Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
@@ -426,7 +435,7 @@ async function sendToServer() {
 
     frame.remove();
 
-    // ✅ Envoi via proxy Cloudflare
+    // ✅ Envoi vers Cloudflare proxy
     const payload = { meta, b64 };
     const res = await fetch(WEBAPP_URL, {
       method: "POST",
@@ -444,6 +453,9 @@ async function sendToServer() {
     alert("⚠️ Erreur PDF : " + err.message);
   } finally {
     if (document.body.contains(frame)) frame.remove();
+    // ✅ Restaure les canvases
+    respImg.parentNode.replaceChild(respCanvas, respImg);
+    salImg.parentNode.replaceChild(salCanvas, salImg);
   }
 }
 </script>
