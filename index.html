@@ -325,62 +325,70 @@ setupCanvas("signSalCanvas");
 
 /* === ENVOI DU PDF === */
 <script>
+<script>
 async function sendToServer() {
   const WEBAPP_URL = "https://otacos-proxy.contact-otacosbsm.workers.dev/";
 
   const meta = {
     salarie: document.getElementById("salarie").value || "Inconnu",
     responsable: document.getElementById("responsable").value || "N/A",
-    date_fiche: document.getElementById("date_fiche").value || new Date().toISOString().split("T")[0]
+    date_fiche: document.getElementById("date_fiche").value || new Date().toISOString().split("T")[0],
   };
 
-  // ✅ Convertit les canvases en images avant génération PDF
+  // ✅ Capture les signatures en images
   const respCanvas = document.getElementById("signRespCanvas");
   const salCanvas = document.getElementById("signSalCanvas");
 
-  const respImg = document.createElement("img");
-  const salImg = document.createElement("img");
+  const respImg = new Image();
+  const salImg = new Image();
   respImg.src = respCanvas.toDataURL();
   salImg.src = salCanvas.toDataURL();
   respImg.style.width = "100%";
   salImg.style.width = "100%";
 
-  // Remplacement temporaire dans le DOM
-  respCanvas.style.display = "none";
-  salCanvas.style.display = "none";
-  respCanvas.parentNode.appendChild(respImg);
-  salCanvas.parentNode.appendChild(salImg);
+  // On remplace temporairement les canvases
+  respCanvas.replaceWith(respImg);
+  salCanvas.replaceWith(salImg);
 
-  // 🧾 Génère le PDF
+  // Petite pause pour stabiliser le DOM
+  await new Promise(r => setTimeout(r, 500));
+
+  // ✅ Génération du PDF proprement
   const element = document.getElementById("pageContent");
-  const pdfBlob = await html2pdf().from(element).outputPdf("blob");
+  const opt = {
+    margin: [10, 10],
+    filename: `Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
+    html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+  };
+
+  const pdfBlob = await html2pdf().set(opt).from(element).outputPdf("blob");
   const buffer = await pdfBlob.arrayBuffer();
   const b64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
 
-  // 🔄 Restaure les canvases
-  respImg.remove();
-  salImg.remove();
-  respCanvas.style.display = "";
-  salCanvas.style.display = "";
+  // ✅ On remet les canvases originaux
+  respImg.replaceWith(respCanvas);
+  salImg.replaceWith(salCanvas);
 
-  // 📤 Envoi au serveur
+  // ✅ Envoi au serveur via proxy
   const payload = { meta, b64 };
   try {
     const res = await fetch(WEBAPP_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
     const json = await res.json();
     if (json.status === "ok") {
-      alert(`✅ Merci ${meta.responsable},\n\nLa fiche d’incident a été envoyée, imprimée et enregistrée avec succès !`);
+      alert(`✅ Merci ${meta.responsable},\n\nLa fiche d’incident a bien été enregistrée et envoyée.`);
     } else {
       alert("⚠️ Erreur : " + json.message);
     }
   } catch (err) {
-    alert("⚠️ Erreur d'envoi : " + err.message);
+    alert("⚠️ Problème d'envoi : " + err.message);
   }
 }
+</script>
 </script>
 </script>
 </body>
