@@ -364,61 +364,46 @@ setupCanvas("signRespCanvas");
 setupCanvas("signSalCanvas");
 
 /* === ENVOI DU PDF === */
-  async function sendToServer() {
+  <script>
+async function sendToServer() {
   const WEBAPP_URL = "https://otacos-proxy.contact-otacosbsm.workers.dev/";
 
-  // Petite pause pour s’assurer que tout le DOM est bien chargé
-  await new Promise(r => setTimeout(r, 200));
-
-  const meta = {
-    salarie: document.getElementById("salarie")?.value || "Inconnu",
-    responsable: document.getElementById("responsable")?.value || "N/A",
-    date_fiche:
-      document.getElementById("date_fiche")?.value ||
-      new Date().toISOString().split("T")[0],
-  };
-
-  // 🔍 Recherche des canvases
-  const respCanvas = document.getElementById("signRespCanvas");
-  const salCanvas = document.getElementById("signSalCanvas");
-
-  // ✅ Vérification
-  if (!respCanvas || !salCanvas) {
-    alert("⚠️ Les zones de signature ne sont pas détectées dans la page.");
-    console.error("Canvas introuvable :", { respCanvas, salCanvas });
-    return;
-  }
-
-  // ✅ Conversion des signatures en images
-  const respImg = document.createElement("img");
-  const salImg = document.createElement("img");
-  respImg.src = respCanvas.toDataURL("image/png");
-  salImg.src = salCanvas.toDataURL("image/png");
-  respImg.style.width = salImg.style.width = "100%";
-
-  // Remplace temporairement les canvases
-  respCanvas.parentNode.replaceChild(respImg, respCanvas);
-  salCanvas.parentNode.replaceChild(salImg, salCanvas);
-
-  // ✅ Clone de la page
-  const html = document.getElementById("pageContent").outerHTML;
-
-  // ✅ Iframe isolée
-  const frame = document.createElement("iframe");
-  frame.style.position = "fixed";
-  frame.style.left = "-9999px";
-  frame.width = "210mm";
-  frame.height = "297mm";
-  document.body.appendChild(frame);
-
-  const doc = frame.contentDocument || frame.contentWindow.document;
-  doc.open();
-  doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>${html}</body></html>`);
-  doc.close();
-
-  await new Promise(r => setTimeout(r, 400));
-
   try {
+    // ✅ On récupère les canvases
+    const respCanvas = document.getElementById("signRespCanvas");
+    const salCanvas = document.getElementById("signSalCanvas");
+
+    if (!respCanvas || !salCanvas) {
+      alert("❌ Erreur : les zones de signature ne sont pas disponibles.");
+      return;
+    }
+
+    // ✅ Métadonnées de la fiche
+    const meta = {
+      salarie: document.getElementById("salarie").value || "Inconnu",
+      responsable: document.getElementById("responsable").value || "N/A",
+      date_fiche:
+        document.getElementById("date_fiche").value ||
+        new Date().toISOString().split("T")[0],
+    };
+
+    // ✅ Capture des signatures
+    const respImg = new Image();
+    const salImg = new Image();
+    respImg.src = respCanvas.toDataURL("image/png");
+    salImg.src = salCanvas.toDataURL("image/png");
+    respImg.style.width = "100%";
+    salImg.style.width = "100%";
+
+    // On remplace temporairement les canvases par les images
+    respCanvas.replaceWith(respImg);
+    salCanvas.replaceWith(salImg);
+
+    // Pause courte pour que le DOM se mette à jour
+    await new Promise((r) => setTimeout(r, 300));
+
+    // ✅ Génération du PDF
+    const element = document.getElementById("pageContent");
     const opt = {
       margin: [10, 10],
       filename: `Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
@@ -426,18 +411,15 @@ setupCanvas("signSalCanvas");
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     };
 
-    const pdf = await html2pdf()
-      .set(opt)
-      .from(frame.contentDocument.body)
-      .toPdf()
-      .get("pdf");
-
-    const pdfBlob = pdf.output("blob");
+    const pdfBlob = await html2pdf().set(opt).from(element).outputPdf("blob");
     const buffer = await pdfBlob.arrayBuffer();
     const b64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
 
-    frame.remove();
+    // ✅ On remet les canvases à la place des images
+    respImg.replaceWith(respCanvas);
+    salImg.replaceWith(salCanvas);
 
+    // ✅ Envoi au serveur
     const payload = { meta, b64 };
     const res = await fetch(WEBAPP_URL, {
       method: "POST",
@@ -447,21 +429,16 @@ setupCanvas("signSalCanvas");
 
     const json = await res.json();
     if (json.status === "ok") {
-      alert(`✅ Merci ${meta.responsable},\n\nLa fiche d’incident a été envoyée avec succès.`);
+      alert(`✅ Merci ${meta.responsable},\n\nLa fiche a bien été enregistrée et envoyée.`);
     } else {
-      alert("⚠️ Erreur : " + json.message);
+      alert("⚠️ Erreur lors de l’envoi : " + json.message);
     }
   } catch (err) {
-    alert("⚠️ Erreur PDF : " + err.message);
-  } finally {
-    // ✅ Restauration des canvases
-    const respParent = respImg.parentNode;
-    const salParent = salImg.parentNode;
-    if (respParent) respParent.replaceChild(respCanvas, respImg);
-    if (salParent) salParent.replaceChild(salCanvas, salImg);
-    if (document.body.contains(frame)) frame.remove();
+    console.error(err);
+    alert("❌ Erreur inattendue : " + err.message);
   }
 }
+</script>
 </script>
 </body>
 </html>
