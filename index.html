@@ -27,10 +27,8 @@
     flex-direction: column;
     gap: 12px;
     position: relative;
-    color: #000;
   }
 
-  /* HEADER (logo + texte) */
   .header {
     display: flex;
     align-items: flex-start;
@@ -38,19 +36,14 @@
   }
 
   .header img {
-    width: 40px;        /* logo petit comme Word */
-    height: auto;
+    width: 40px;
   }
 
-  .header-text {
-    line-height: 1.2;
-  }
   .header-text strong {
     display: block;
     font-size: 14px;
   }
 
-  /* TITRE PRINCIPAL */
   .fiche-title {
     border: 1px solid #000;
     font-weight: bold;
@@ -61,7 +54,6 @@
     font-size: 15px;
   }
 
-  /* TABLE INFOS HAUT */
   .info-table {
     width: 100%;
     border-collapse: collapse;
@@ -85,12 +77,6 @@
     max-width: 100%;
   }
 
-  input[disabled], textarea[disabled] {
-    background: #f0f0f0;
-    color: #666;
-  }
-
-  /* SECTIONS CADRÉES (bleu foncé + corps) */
   .section-header {
     background: #1a2d4a;
     color: #fff;
@@ -124,7 +110,6 @@
     resize: vertical;
   }
 
-  /* SIGNATURES */
   .signatures {
     display: flex;
     justify-content: space-between;
@@ -155,9 +140,6 @@
     height: 120px;
     position: relative;
     background: #fff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
   }
 
   canvas.signature-canvas {
@@ -183,7 +165,6 @@
     font-size: 12px;
   }
 
-  /* BARRE BOUTONS FIXE EN HAUT DROITE */
   .top-buttons {
     position: fixed;
     top: 16px;
@@ -203,11 +184,9 @@
     font-weight: bold;
     cursor: pointer;
     font-size: 14px;
-    line-height: 1.2;
     box-shadow: 0 2px 6px rgba(0,0,0,0.3);
   }
 
-  /* Impression */
   @media print {
     body { background: #fff; }
     .page-wrapper { padding: 0; }
@@ -220,13 +199,10 @@
     }
     .top-buttons { display: none !important; }
   }
-
-  /* mobile: on laisse l'A4, l'utilisateur pinch-zoom s'il veut écrire */
 </style>
 </head>
 <body>
 
-<!-- Boutons action -->
 <div class="top-buttons">
   <button class="action-btn" onclick="window.print()">📄 PDF / Imprimer</button>
   <button class="action-btn" onclick="sendToServer()">📨 Envoyer</button>
@@ -235,7 +211,6 @@
 <div class="page-wrapper">
   <div class="page" id="pageContent">
 
-    <!-- ENTÊTE -->
     <div class="header">
       <img src="logo_otacos.png" alt="O'Tacos Logo" />
       <div class="header-text">
@@ -244,109 +219,74 @@
       </div>
     </div>
 
-    <!-- TITRE -->
     <div class="fiche-title">FICHE INCIDENTS</div>
 
-    <!-- INFOS GÉNÉRALES -->
     <table class="info-table">
       <tr>
         <td class="label">Date :</td>
-        <td>
-          <input type="date" id="date_fiche" />
-        </td>
+        <td><input type="date" id="date_fiche" /></td>
         <td class="label" style="text-align:right;">Fiche ouverte pour le salarié :</td>
-        <td>
-          <input type="text" id="salarie" placeholder="Nom du salarié" />
-        </td>
+        <td><input type="text" id="salarie" placeholder="Nom du salarié" /></td>
       </tr>
-
       <tr>
         <td class="label">Responsable :</td>
-        <td colspan="3">
-          <input type="text" id="responsable" placeholder="Responsable" style="width:60%;" />
-        </td>
+        <td colspan="3"><input type="text" id="responsable" placeholder="Responsable" style="width:60%;" /></td>
       </tr>
     </table>
 
-    <!-- DESCRIPTIF -->
     <div class="section-header">DESCRIPTIF DE L’INCIDENT</div>
-    <div class="section-body" id="descriptif_block">
-
-      <div class="incident-line">
-        <input type="checkbox" id="abs_prev" />
-        <label for="abs_prev"><strong>Absence prévue le :</strong></label>
-        <input type="date" id="abs_prev_date" disabled />
-        <span>Shift prévu à :</span>
-        <input type="text" id="abs_prev_shift" placeholder="ex: 18h" disabled style="width:70px;" />
+    <div class="section-body">
+      <div class="incident-line"><input type="checkbox" id="abs_prev" /><label for="abs_prev"><strong>Absence prévue le :</strong></label>
+        <div class="sub-fields" id="abs_prev_fields" style="display:none;">
+          <input type="date" id="abs_prev_date" /> Shift prévu à : <input type="text" id="abs_prev_shift" placeholder="ex: 18h" style="width:70px;" />
+        </div>
       </div>
 
-      <div class="incident-line">
-        <input type="checkbox" id="abs_np" />
-        <label for="abs_np"><strong>Absence non prévue le :</strong></label>
-        <input type="date" id="abs_np_date" disabled />
-        <span>Shift prévu à :</span>
-        <input type="text" id="abs_np_shift" placeholder="ex: 18h" disabled style="width:70px;" />
+      <div class="incident-line"><input type="checkbox" id="abs_np" /><label for="abs_np"><strong>Absence non prévue le :</strong></label>
+        <div class="sub-fields" id="abs_np_fields" style="display:none;">
+          <input type="date" id="abs_np_date" /> Shift prévu à : <input type="text" id="abs_np_shift" placeholder="ex: 18h" style="width:70px;" />
+        </div>
       </div>
 
-      <div class="incident-line">
-        <input type="checkbox" id="ret_prev" />
-        <label for="ret_prev"><strong>Retard prévu de :</strong></label>
-        <input type="text" id="ret_prev_duree" placeholder="ex: 30 min" disabled style="width:90px;" />
+      <div class="incident-line"><input type="checkbox" id="ret_prev" /><label for="ret_prev"><strong>Retard prévu de :</strong></label>
+        <div class="sub-fields" id="ret_prev_fields" style="display:none;">
+          <input type="text" id="ret_prev_duree" placeholder="ex: 30 min" style="width:90px;" />
+        </div>
       </div>
 
-      <div class="incident-line">
-        <input type="checkbox" id="ret_np" />
-        <label for="ret_np"><strong>Retard non prévu de :</strong></label>
-        <input type="text" id="ret_np_duree" placeholder="ex: 20 min" disabled style="width:90px;" />
+      <div class="incident-line"><input type="checkbox" id="ret_np" /><label for="ret_np"><strong>Retard non prévu de :</strong></label>
+        <div class="sub-fields" id="ret_np_fields" style="display:none;">
+          <input type="text" id="ret_np_duree" placeholder="ex: 20 min" style="width:90px;" />
+        </div>
       </div>
 
-      <div class="incident-line">
-        <input type="checkbox" id="autre" />
-        <label for="autre"><strong>Autre :</strong></label>
-        <input type="text" id="autre_detail" placeholder="Préciser..." disabled style="flex:1; min-width:200px;" />
+      <div class="incident-line"><input type="checkbox" id="autre" /><label for="autre"><strong>Autre :</strong></label>
+        <div class="sub-fields" id="autre_fields" style="display:none;">
+          <input type="text" id="autre_detail" placeholder="Préciser..." style="flex:1; min-width:200px;" />
+        </div>
       </div>
-
     </div>
 
-    <!-- ORIGINE -->
     <div class="section-header">ORIGINE DE L’INCIDENT</div>
-    <div class="section-body">
-      <textarea class="big-textarea" id="origine" placeholder="Décrire l'origine de l'incident..."></textarea>
-    </div>
+    <div class="section-body"><textarea class="big-textarea" id="origine" placeholder="Décrire l'origine..."></textarea></div>
 
-    <!-- ACTION -->
     <div class="section-header">ACTION CURATIVE</div>
-    <div class="section-body">
-      <textarea class="big-textarea" id="action" placeholder="Décrire l'action corrective prise..."></textarea>
-    </div>
+    <div class="section-body"><textarea class="big-textarea" id="action" placeholder="Décrire l'action corrective..."></textarea></div>
 
-    <!-- FAIT LE -->
     <div style="margin-top:10px; font-size:14px;">
-      <strong>Fait le :</strong>
-      <input type="date" id="fait_le" style="font-size:13px;" />
-      , à Boulogne-sur-Mer
+      <strong>Fait le :</strong> <input type="date" id="fait_le" style="font-size:13px;" />, à Boulogne-sur-Mer
     </div>
 
-    <!-- SIGNATURES -->
     <div class="signatures">
       <div class="signature-box">
         <label for="signRespCanvas">Signature Responsable</label>
-        <div class="signature-wrapper">
-          <canvas id="signRespCanvas" class="signature-canvas" width="400" height="120"></canvas>
-        </div>
-        <div class="signature-actions">
-          <button type="button" onclick="clearCanvas('signRespCanvas')">Effacer</button>
-        </div>
+        <div class="signature-wrapper"><canvas id="signRespCanvas" class="signature-canvas" width="400" height="120"></canvas></div>
+        <div class="signature-actions"><button type="button" onclick="clearCanvas('signRespCanvas')">Effacer</button></div>
       </div>
-
       <div class="signature-box">
         <label for="signSalCanvas">Signature Salarié</label>
-        <div class="signature-wrapper">
-          <canvas id="signSalCanvas" class="signature-canvas" width="400" height="120"></canvas>
-        </div>
-        <div class="signature-actions">
-          <button type="button" onclick="clearCanvas('signSalCanvas')">Effacer</button>
-        </div>
+        <div class="signature-wrapper"><canvas id="signSalCanvas" class="signature-canvas" width="400" height="120"></canvas></div>
+        <div class="signature-actions"><button type="button" onclick="clearCanvas('signSalCanvas')">Effacer</button></div>
       </div>
     </div>
 
@@ -354,205 +294,80 @@
 </div>
 
 <script>
-/* ============== 1. Gestion activation / désactivation des champs incident ============= */
-const toggles = [
-  { box: "abs_prev", fields: ["abs_prev_date", "abs_prev_shift"] },
-  { box: "abs_np",   fields: ["abs_np_date", "abs_np_shift"] },
-  { box: "ret_prev", fields: ["ret_prev_duree"] },
-  { box: "ret_np",   fields: ["ret_np_duree"] },
-  { box: "autre",    fields: ["autre_detail"] },
-];
-
-function updateToggleStates() {
-  toggles.forEach(cfg => {
-    const isChecked = document.getElementById(cfg.box).checked;
-    cfg.fields.forEach(fid => {
-      const el = document.getElementById(fid);
-      el.disabled = !isChecked;
-      el.style.background = isChecked ? "#fff" : "#f0f0f0";
-      if (!isChecked) el.value = el.value; // pas de reset auto ici
-    });
-  });
-}
-toggles.forEach(cfg => {
-  document.getElementById(cfg.box).addEventListener("change", () => {
-    updateToggleStates();
+/* === Affichage conditionnel des champs === */
+const boxes = ["abs_prev","abs_np","ret_prev","ret_np","autre"];
+boxes.forEach(id=>{
+  const box = document.getElementById(id);
+  box.addEventListener("change",()=>{
+    const sub = document.getElementById(id+"_fields");
+    sub.style.display = box.checked?"inline-flex":"none";
     saveToLocal();
   });
 });
 
-/* ============== 2. Signature dessinable (responsable / salarié) ============= */
-function setupSignatureCanvas(canvasId) {
-  const canvas = document.getElementById(canvasId);
-  const ctx = canvas.getContext("2d");
-  let drawing = false;
-
-  function pos(e) {
-    const rect = canvas.getBoundingClientRect();
-    if (e.touches && e.touches[0]) {
-      return {
-        x: e.touches[0].clientX - rect.left,
-        y: e.touches[0].clientY - rect.top
-      };
-    } else {
-      return {
-        x: e.offsetX,
-        y: e.offsetY
-      };
-    }
-  }
-
-  function startDraw(e) {
-    e.preventDefault();
-    drawing = true;
-    ctx.beginPath();
-    const p = pos(e);
-    ctx.moveTo(p.x, p.y);
-  }
-  function draw(e) {
-    if (!drawing) return;
-    e.preventDefault();
-    const p = pos(e);
-    ctx.lineWidth = 1.5;
-    ctx.lineCap = "round";
-    ctx.strokeStyle = "#000";
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
-    saveToLocal(); // autosave signature as you draw
-  }
-  function stopDraw(e) {
-    if (!drawing) return;
-    drawing = false;
-    saveToLocal();
-  }
-
-  canvas.addEventListener("mousedown", startDraw);
-  canvas.addEventListener("mousemove", draw);
-  canvas.addEventListener("mouseup", stopDraw);
-  canvas.addEventListener("mouseleave", stopDraw);
-
-  canvas.addEventListener("touchstart", startDraw, {passive:false});
-  canvas.addEventListener("touchmove", draw, {passive:false});
-  canvas.addEventListener("touchend", stopDraw);
+/* === Signatures === */
+function setupCanvas(id){
+  const c=document.getElementById(id),x=c.getContext("2d");
+  let d=false;
+  c.addEventListener("mousedown",e=>{d=true;x.beginPath();x.moveTo(e.offsetX,e.offsetY)});
+  c.addEventListener("mousemove",e=>{if(!d)return;x.lineTo(e.offsetX,e.offsetY);x.stroke()});
+  ["mouseup","mouseleave"].forEach(ev=>c.addEventListener(ev,()=>d=false));
+  c.addEventListener("touchstart",e=>{d=true;x.beginPath();x.moveTo(e.touches[0].clientX-c.getBoundingClientRect().left,e.touches[0].clientY-c.getBoundingClientRect().top)}, {passive:false});
+  c.addEventListener("touchmove",e=>{if(!d)return;x.lineTo(e.touches[0].clientX-c.getBoundingClientRect().left,e.touches[0].clientY-c.getBoundingClientRect().top);x.stroke()},{passive:false});
+  c.addEventListener("touchend",()=>d=false);
 }
+function clearCanvas(id){const c=document.getElementById(id);c.getContext("2d").clearRect(0,0,c.width,c.height);saveToLocal();}
+setupCanvas("signRespCanvas");setupCanvas("signSalCanvas");
 
-function clearCanvas(id) {
-  const c = document.getElementById(id);
-  const ctx = c.getContext("2d");
-  ctx.clearRect(0, 0, c.width, c.height);
-  saveToLocal();
+/* === Sauvegarde locale === */
+function saveToLocal(){
+  const d={};
+  document.querySelectorAll("input,textarea").forEach(e=>d[e.id]=e.type=="checkbox"?e.checked:e.value);
+  d.signResp=document.getElementById("signRespCanvas").toDataURL();
+  d.signSal=document.getElementById("signSalCanvas").toDataURL();
+  localStorage.setItem("ficheIncident",JSON.stringify(d));
 }
-
-/* ============== 3. Sauvegarde locale (localStorage) ============= */
-function gatherDataForSave() {
-  const data = {};
-
-  // 3.1 Inputs texte / date / checkbox / textarea
-  const fields = document.querySelectorAll("input[type='text'], input[type='date'], input[type='checkbox'], textarea");
-  fields.forEach(f => {
-    if (f.type === "checkbox") {
-      data[f.id] = f.checked;
-    } else {
-      data[f.id] = f.value;
-    }
-  });
-
-  // 3.2 Signatures (canvas -> base64)
-  const respCanvas = document.getElementById("signRespCanvas");
-  const salCanvas  = document.getElementById("signSalCanvas");
-  data["signature_responsable_png"] = respCanvas.toDataURL("image/png");
-  data["signature_salarie_png"]     = salCanvas.toDataURL("image/png");
-
-  return data;
+function loadFromLocal(){
+  const r=localStorage.getItem("ficheIncident");if(!r)return;const d=JSON.parse(r);
+  Object.keys(d).forEach(k=>{const e=document.getElementById(k);if(e){if(e.type=="checkbox")e.checked=d[k];else e.value=d[k];}});
+  restore("signRespCanvas",d.signResp);restore("signSalCanvas",d.signSal);
+  boxes.forEach(id=>{const sub=document.getElementById(id+"_fields");sub.style.display=document.getElementById(id).checked?"inline-flex":"none";});
 }
+function restore(id,img){if(!img)return;const c=document.getElementById(id),x=c.getContext("2d"),i=new Image();i.onload=()=>x.drawImage(i,0,0,c.width,c.height);i.src=img;}
+window.addEventListener("input",saveToLocal);
+window.addEventListener("change",saveToLocal);
+loadFromLocal();
 
-function saveToLocal() {
-  const data = gatherDataForSave();
-  localStorage.setItem("ficheIncidentData", JSON.stringify(data));
-}
+/* === Envoi Google Script === */
+async function sendToServer(){
+  const WEBAPP_URL="https://script.google.com/macros/s/AKfycbyTdTehZ4_cXzi5lcH-l83bNiwB7p4Aht88kSXUzCJtuZUvSMkjn4D0WSEd8oHkC0JOEw/exec";
+  const data={};
+  document.querySelectorAll("input,textarea").forEach(e=>data[e.id]=e.type=="checkbox"?e.checked:e.value);
+  data.signature_responsable_png=document.getElementById("signRespCanvas").toDataURL();
+  data.signature_salarie_png=document.getElementById("signSalCanvas").toDataURL();
+  data.generatedFileName=`Fiche_Incident_${data.salarie||"SansNom"}_${data.date_fiche||"SansDate"}.pdf`;
+  data.html=document.getElementById("pageContent").outerHTML;
 
-function loadFromLocal() {
-  const raw = localStorage.getItem("ficheIncidentData");
-  if (!raw) return;
-  const data = JSON.parse(raw);
+  // Désactivation temporaire du bouton
+  const btns = document.querySelectorAll(".action-btn");
+  btns.forEach(b => b.disabled = true);
 
-  // 1. Remettre valeurs dans champs
-  Object.keys(data).forEach(k => {
-    const el = document.getElementById(k);
-    if (!el) return;
-    // si checkbox
-    if (el.type === "checkbox") {
-      el.checked = !!data[k];
-    } else if (el.tagName === "TEXTAREA" || el.tagName === "INPUT") {
-      if (el.type !== "checkbox") el.value = data[k];
-    }
-  });
-
-  // 2. Restaurer signatures
-  if (data.signature_responsable_png) {
-    restoreCanvasFromDataURL("signRespCanvas", data.signature_responsable_png);
-  }
-  if (data.signature_salarie_png) {
-    restoreCanvasFromDataURL("signSalCanvas", data.signature_salarie_png);
-  }
-
-  // 3. Réactiver/désactiver les champs d'incident selon les cases
-  updateToggleStates();
-}
-
-// Dessiner une image base64 dans un canvas
-function restoreCanvasFromDataURL(canvasId, dataURL) {
-  const canvas = document.getElementById(canvasId);
-  const ctx = canvas.getContext("2d");
-  const img = new Image();
-  img.onload = () => {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  };
-  img.src = dataURL;
-}
-
-/* ============== 4. Envoi au serveur (Google Apps Script) ============= */
-async function sendToServer() {
-  // URL du déploiement Web App de ton script Apps Script
-  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyTdTehZ4_cXzi5lcH-l83bNiwB7p4Aht88kSXUzCJtuZUvSMkjn4D0WSEd8oHkC0JOEw/exec";
-
-  const payload = gatherDataForSave(); // récupère toutes les valeurs + signatures
-
-  // Astuce : on ajoute aussi un nom de fichier proposé
-  payload.generatedFileName = `Fiche_Incident_${payload.salarie || "SansNom"}_${payload.date_fiche || "SansDate"}.pdf`;
-
-  // Envoi
   try {
-    // on n'attend pas forcément la réponse (CORS), mais on tente proprement
-    await fetch(WEBAPP_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      mode: "no-cors"
+    await fetch(WEBAPP_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(data),
+      mode:"no-cors"
     });
-    alert("✅ Fiche envoyée (Drive + email).");
-  } catch (e) {
-    console.error(e);
-    alert("⚠️ Erreur d'envoi. Mais rien n'est perdu, c'est sauvegardé dans ce navigateur.");
+
+    const responsable = data.responsable || "le responsable";
+    alert(`✅ Merci ${responsable},\n\nLa fiche d’incident sera imprimée et envoyée par mail dans quelques instants.`);
+  } catch (err) {
+    alert("⚠️ Une erreur est survenue lors de l'envoi. Vérifiez votre connexion Internet.");
+  } finally {
+    btns.forEach(b => b.disabled = false);
   }
 }
-
-/* ============== INIT ============= */
-setupSignatureCanvas("signRespCanvas");
-setupSignatureCanvas("signSalCanvas");
-loadFromLocal(); // recharge contenu si dispo
-
-// autosave sur changement de champ texte/date/textarea
-const autosaveFields = document.querySelectorAll("input[type='text'], input[type='date'], input[type='checkbox'], textarea");
-autosaveFields.forEach(f => {
-  f.addEventListener("input", saveToLocal);
-  f.addEventListener("change", saveToLocal);
-});
-
-// initialise l'état des champs descriptif
-updateToggleStates();
 </script>
-
 </body>
 </html>
