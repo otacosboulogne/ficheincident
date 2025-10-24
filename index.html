@@ -367,7 +367,6 @@ setupCanvas("signSalCanvas");
 async function sendToServer() {
   const WEBAPP_URL = "https://otacos-proxy.contact-otacosbsm.workers.dev/";
 
-  // 🧾 Métadonnées
   const meta = {
     salarie: document.getElementById("salarie").value || "Inconnu",
     responsable: document.getElementById("responsable").value || "N/A",
@@ -376,7 +375,7 @@ async function sendToServer() {
       new Date().toISOString().split("T")[0],
   };
 
-  // ✅ Capture des signatures (remplacées par images)
+  // ✅ Conversion des canvases en images
   const respCanvas = document.getElementById("signRespCanvas");
   const salCanvas = document.getElementById("signSalCanvas");
   const respImg = document.createElement("img");
@@ -384,22 +383,13 @@ async function sendToServer() {
   respImg.src = respCanvas.toDataURL("image/png");
   salImg.src = salCanvas.toDataURL("image/png");
   respImg.style.width = salImg.style.width = "100%";
-  respImg.style.height = salImg.style.height = "auto";
   respCanvas.replaceWith(respImg);
   salCanvas.replaceWith(salImg);
 
-  // ✅ Clonage HTML "propre" (en texte, pas en nœuds DOM)
+  // ✅ Prépare un clone HTML
   const html = document.getElementById("pageContent").outerHTML;
 
-  // ✅ Restaure les canvases d’origine pour ton interface
-  document
-    .querySelector(".signature-box:nth-child(1) .signature-wrapper")
-    .replaceChildren(respCanvas);
-  document
-    .querySelector(".signature-box:nth-child(2) .signature-wrapper")
-    .replaceChildren(salCanvas);
-
-  // ✅ Création d’un conteneur invisible
+  // ✅ Iframe isolée (pas de boucle)
   const frame = document.createElement("iframe");
   frame.style.position = "fixed";
   frame.style.left = "-9999px";
@@ -407,21 +397,16 @@ async function sendToServer() {
   frame.height = "297mm";
   document.body.appendChild(frame);
 
-  // ✅ Injection du HTML (isolation complète)
   const doc = frame.contentDocument || frame.contentWindow.document;
   doc.open();
-  doc.write("<!DOCTYPE html><html><head><meta charset='UTF-8'>");
-  doc.write(
-    "<style>body{font-family:Arial, sans-serif; margin:0; padding:15mm;} .page{width:210mm; min-height:297mm;}</style>"
-  );
-  doc.write("</head><body>" + html + "</body></html>");
+  doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>${html}</body></html>`);
   doc.close();
 
-  // Petite pause pour chargement des images
-  await new Promise((r) => setTimeout(r, 500));
+  // Petite pause pour que tout se charge
+  await new Promise(r => setTimeout(r, 500));
 
   try {
-    // ✅ Génération PDF depuis l’iframe (aucun lien vers la page principale)
+    // ✅ Capture du PDF sans outputPdf()
     const opt = {
       margin: [10, 10],
       filename: `Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
@@ -429,17 +414,19 @@ async function sendToServer() {
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     };
 
-    const pdfBlob = await html2pdf()
+    const pdf = await html2pdf()
       .set(opt)
       .from(frame.contentDocument.body)
-      .outputPdf("blob");
+      .toPdf()
+      .get("pdf");
 
+    const pdfBlob = pdf.output("blob");
     const buffer = await pdfBlob.arrayBuffer();
     const b64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
 
-    frame.remove(); // Nettoyage iframe
+    frame.remove();
 
-    // ✅ Envoi au proxy
+    // ✅ Envoi via proxy Cloudflare
     const payload = { meta, b64 };
     const res = await fetch(WEBAPP_URL, {
       method: "POST",
@@ -449,13 +436,14 @@ async function sendToServer() {
 
     const json = await res.json();
     if (json.status === "ok") {
-      alert(`✅ Merci ${meta.responsable},\n\nLa fiche a bien été envoyée.`);
+      alert(`✅ Merci ${meta.responsable},\n\nFiche envoyée et imprimée avec succès.`);
     } else {
-      alert("⚠️ Erreur serveur : " + json.message);
+      alert("⚠️ Erreur : " + json.message);
     }
   } catch (err) {
     alert("⚠️ Erreur PDF : " + err.message);
-    frame.remove();
+  } finally {
+    if (document.body.contains(frame)) frame.remove();
   }
 }
 </script>
