@@ -126,6 +126,26 @@
     .page-wrapper { padding: 8px 8px calc(64px + env(safe-area-inset-bottom)); }
     .page { width: min(100vw - 16px, var(--page-w)); padding: 10mm; box-shadow: none; }
 
+    /* Empilement souple sur mobile */
+    .grid tr { display:block; }
+    .grid td { display:block; width:100%; padding:8px 0; }
+    .grid .label { margin-bottom:6px; }
+
+    .row { align-items:flex-start; gap:12px; }
+    .sub { display:inline-flex; flex-wrap:wrap; }
+
+    textarea { min-height:110px; }
+
+    .sig-wrap { height:140px; }
+    canvas.signature { height:140px; }
+
+    input[type="text"], input[type="date"], textarea { min-height:44px; width:100%; }
+    input[type="checkbox"] { width:20px; height:20px; }
+  }
+
+    .page-wrapper { padding: 8px 8px calc(64px + env(safe-area-inset-bottom)); }
+    .page { width: min(100vw - 16px, var(--page-w)); padding: 10mm; box-shadow: none; }
+
     /* Empiler par défaut */
     .grid tr { display:block; }
     .grid td { display:block; width:100%; padding:8px 0; }
@@ -230,7 +250,7 @@
           <td style="width:230px; vertical-align:middle;">
             <div class="date-actions">
               <input type="date" id="date_fiche" autocomplete="off" />
-              <button class="btn-mini" type="button" onclick="setToday('date_fiche')">Aujourd'hui</button>
+              
             </div>
           </td>
           <td class="label" style="text-align:right; white-space:nowrap; width:1%;">Fiche ouverte pour le salarié :</td>
@@ -249,7 +269,7 @@
           <div class="sub" id="abs_prev_fields">
             <div class="date-actions">
               <input type="date" id="abs_prev_date" />
-              <button class="btn-mini" type="button" onclick="setToday('abs_prev_date')">Aujourd'hui</button>
+              
             </div>
             <span>Shift prévu à :</span>
             <input type="text" id="abs_prev_shift" placeholder="ex: 18h" inputmode="numeric" pattern="[0-2]?[0-9]h" style="width:90px;" />
@@ -261,7 +281,7 @@
           <div class="sub" id="abs_np_fields">
             <div class="date-actions">
               <input type="date" id="abs_np_date" />
-              <button class="btn-mini" type="button" onclick="setToday('abs_np_date')">Aujourd'hui</button>
+              
             </div>
             <span>Shift prévu à :</span>
             <input type="text" id="abs_np_shift" placeholder="ex: 18h" inputmode="numeric" pattern="[0-2]?[0-9]h" style="width:90px;" />
@@ -304,7 +324,7 @@
         <strong>Fait le :</strong>
         <div class="date-actions">
           <input type="date" id="fait_le" style="font-size:14px;" />
-          <button class="btn-mini" type="button" onclick="setToday('fait_le')">Aujourd'hui</button>
+          
         </div>
         <span>, à Boulogne-sur-Mer</span>
       </div>
@@ -583,35 +603,23 @@ function bindAutoSaveEvents(){
 })();
 
 /* ====== Forcer le PDF à tenir sur 1 seule page A4 ====== */
-function fitCloneToOneA4Page(clone){
-  // active le mode compact
-  clone.classList.add('compact');
-
-  // A4 en px à 96 DPI (html2canvas travaille en px CSS)
-  const A4_W = 210 / 25.4 * 96; // ≈ 794 px
-  const A4_H = 297 / 25.4 * 96; // ≈ 1123 px
-
-  // marge html2pdf => 10mm de chaque côté => ~38px
-  const MARGIN_PX = 10 / 25.4 * 96; // ~37.8
-  const targetH = A4_H - 2*MARGIN_PX;
-
-  // force largeur A4 (avant mesure)
-  clone.style.width = "210mm";
-  clone.style.minHeight = "0";
-
-  // mini-ajustements de densité
-  clone.querySelectorAll('.section-b textarea').forEach(t=>{ t.style.minHeight = '60px'; });
-  clone.querySelectorAll('.sig-wrap, canvas.signature').forEach(s=>{ s.style.height = '80px'; });
-
-  // mesuré après insertion dans le DOM
-  let h = clone.scrollHeight;
-  if (h > targetH) {
-    const scale = targetH / h; // < 1 => on réduit
-    clone.style.transformOrigin = "top left";
-    clone.style.transform = `scale(${scale})`;
-    // élargit la largeur pour que le rendu final (après scale) fasse bien 210mm
-    clone.style.width = `calc(210mm / ${scale})`;
-  }
+function prepareCloneForPdf(clone){
+  // Ajoute une classe PDF et un style dédié INSIDE le clone (n'affecte pas l'écran)
+  clone.classList.add('pdf-a4');
+  const style = document.createElement('style');
+  style.textContent = `
+    .pdf-a4{ width:210mm !important; min-height:297mm !important; padding:10mm !important; box-shadow:none !important; border-radius:0 !important; }
+    .pdf-a4 .title{ font-size:12.5px; padding:2px 4px; }
+    .pdf-a4 .grid{ font-size:11.5px; }
+    .pdf-a4 input, .pdf-a4 textarea{ padding:6px 8px; font-size:11.5px; }
+    .pdf-a4 textarea{ min-height:60px !important; }
+    .pdf-a4 .section-h{ padding:4px 6px; font-size:11.5px; }
+    .pdf-a4 .section-b{ padding:6px; font-size:11.5px; }
+    .pdf-a4 .row{ gap:6px; margin-bottom:4px; }
+    .pdf-a4 .sig-wrap{ height:80px !important; }
+    .pdf-a4 .signature, .pdf-a4 img.signature-img{ height:80px !important; width:100% !important; object-fit:contain; background:#fff; }
+  `;
+  clone.prepend(style);
 }
 
 /* ============== PDF + Envoi via proxy ============== */
@@ -643,11 +651,8 @@ async function sendToServer(){
     // Nettoie les éléments d'UI qui ne doivent pas apparaître autrement
     clone.querySelectorAll('.sig-hint').forEach(h=>h.remove());
 
-    // Forcer A4 pour le clone (même en mode mobile)
-    clone.style.width = "210mm";
-    clone.style.minHeight = "297mm";
-    clone.style.borderRadius = '0';
-    clone.style.boxShadow = 'none';
+    // Forcer A4 via style dédié PDF uniquement
+    prepareCloneForPdf(clone);
 
     // Remplace canvases signature par images JPEG fond blanc
     const respCanvas=$("#signRespCanvas");
@@ -655,20 +660,8 @@ async function sendToServer(){
 
     const imgResp=document.createElement("img");
     imgResp.src=canvasToSmallDataURL(respCanvas,500,"image/jpeg",0.9);
-    imgResp.style.width="100%";
-    imgResp.style.height="80px";
-    imgResp.style.objectFit="contain";
-    imgResp.style.background="#fff";
-
-    const imgSal=document.createElement("img");
-    imgSal.src=canvasToSmallDataURL(salCanvas,500,"image/jpeg",0.9);
-    imgSal.style.width="100%";
-    imgSal.style.height="80px";
-    imgSal.style.objectFit="contain";
-    imgSal.style.background="#fff";
-
+    imgResp.className='signature-img';
     const cloneResp=clone.querySelector("#signRespCanvas");
-    const cloneSal =clone.querySelector("#signSalCanvas");
     if(cloneResp) cloneResp.replaceWith(imgResp);
     if(cloneSal)  cloneSal.replaceWith(imgSal);
 
@@ -730,4 +723,3 @@ La fiche a bien été enregistrée et envoyée (1 page A4).`); }
 </script>
 </body>
 </html>
-
