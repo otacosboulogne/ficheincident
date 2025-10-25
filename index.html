@@ -10,7 +10,6 @@
 <!-- PDF.js pour convertir un PDF joint en image (1re page) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script>
-  // PDF.js worker (obligatoire)
   if (window['pdfjsLib']) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
   }
@@ -88,7 +87,7 @@
   /* Toast */
   #toast{ position:fixed; left:50%; bottom:calc(var(--toolbar-h) + 16px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:#111; color:#fff; padding:12px 16px; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.25); display:none; z-index:10001; font-weight:700; white-space:pre-line; }
 
-  /* Mobile harmonisé (titre “Fiche ouverte pour” + champ plus petits) */
+  /* Mobile harmonisé */
   @media (max-width:768px){
     .grid tr{ display:block; }
     .grid td{ display:block; width:100%; padding:6px 4px; }
@@ -112,7 +111,6 @@
     <div class="toolbar-inner">
       <button id="btnPrint" class="btn btn-print" onclick="window.print()">🖨️ Imprimer manuellement ordi</button>
       <button id="sendBtn" class="btn" onclick="sendToServer()">📨 Envoyer</button>
-      <!-- autosave ON (aucun bouton visible) -->
       <button id="autoSaveBtn" class="btn link" style="display:none">💾 Sauvegarde auto : ON</button>
       <button class="btn link" onclick="clearAll()">🧹 Effacer tout</button>
     </div>
@@ -222,12 +220,14 @@
       </div>
 
       <!-- Pièce jointe -->
-      <div class="section-h no-break">PIÈCE JOINTE (photo ou PDF)</div>
-      <div class="attach-box no-break">
-        <input id="attachment" type="file" accept="image/*,.pdf" capture="environment" />
-        <div class="attach-previews" id="attachPreviews"></div>
-        <div style="font-size:12px;color:#6b7280;margin-top:6px">
-          • Sur mobile, vous pouvez prendre une photo. • Si vous joignez un PDF, seule la 1ʳᵉ page sera ajoutée au PDF final.
+      <div id="attachSection" class="no-break">
+        <div class="section-h">PIÈCE JOINTE (photo ou PDF)</div>
+        <div class="attach-box">
+          <input id="attachment" type="file" accept="image/*,.pdf" capture="environment" />
+          <div class="attach-previews" id="attachPreviews"></div>
+          <div style="font-size:12px;color:#6b7280;margin-top:6px">
+            • Sur mobile, vous pouvez prendre une photo. • Si vous joignez un PDF, seule la 1ʳᵉ page sera ajoutée au PDF final.
+          </div>
         </div>
       </div>
     </div>
@@ -368,7 +368,7 @@ async function refreshAttachPreview(){
 }
 
 /* Convertit la 1re page d'un PDF en dataURL JPEG */
-async function pdfFirstPageToDataURL(file, scale=1.5){
+async function pdfFirstPageToDataURL(file, scale=1.8){
   if(!window['pdfjsLib']) return null;
   const ab = await file.arrayBuffer();
   const doc = await pdfjsLib.getDocument({data:ab}).promise;
@@ -379,10 +379,10 @@ async function pdfFirstPageToDataURL(file, scale=1.5){
   canvas.width = viewport.width;
   canvas.height = viewport.height;
   await page.render({ canvasContext: ctx, viewport }).promise;
-  return canvas.toDataURL('image/jpeg', 0.92);
+  return canvas.toDataURL('image/jpeg', 0.95);
 }
 
-/* Récupère la liste des images à ajouter (photo directe ou 1re page PDF) */
+/* Récupère la/les images de pièce jointe (photo(s) ou 1re page PDF) */
 async function getAttachmentImages(){
   const images = [];
   const files = attachInput.files || [];
@@ -466,9 +466,19 @@ async function sendToServer(){
       date_fiche:$("#date_fiche").value||todayStr(),
     };
 
-    // Préparer clone pour PDF A4 page 1
+    // Images de pièces jointes (photo(s) ou 1re page PDF)
+    const attachImgs = await getAttachmentImages();
+
+    // Préparer clone pour PDF A4 (page 1)
     const original=$("#pageContent");
     const clone = original.cloneNode(true);
+
+    // Si AUCUNE pièce jointe -> retirer la section "PIÈCE JOINTE" du clone (ne pas l'imprimer)
+    if(attachImgs.length === 0){
+      const sec = clone.querySelector('#attachSection');
+      if(sec) sec.remove();
+    }
+
     prepareCloneForPdf(clone);
     renderTextareasForPdf(clone);
     replaceCanvasWithImg(clone,"signRespCanvas",80);
@@ -479,7 +489,7 @@ async function sendToServer(){
     off.appendChild(clone); document.body.appendChild(off);
     fitCloneToOneA4Page(clone);
 
-    // Générer jsPDF et récupérer l'instance pour ajouter des pages
+    // Générer jsPDF et récupérer l'instance
     const opt={
       margin:[10,10],
       filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
@@ -490,22 +500,23 @@ async function sendToServer(){
     const worker=html2pdf().set(opt).from(clone).toPdf();
     const pdf = await worker.get('pdf'); // instance jsPDF
 
-    // Pages "pièce jointe" (photos et/ou 1re page PDF)
-    const attachImgs = await getAttachmentImages();
-    const a4w=210, a4h=297, margin=10, innerW=a4w-2*margin, innerH=a4h-2*margin;
-    for(const durl of attachImgs){
-      // dimensionner l'image au mieux dans la page
-      const dims = await getImageSize(durl);
-      let wmm=innerW, hmm=innerH;
-      const ratio = dims.w/dims.h;
-      if(wmm/hmm > ratio){ wmm = hmm*ratio; } else { hmm = wmm/ratio; }
-      const x = (a4w - wmm)/2, y = (a4h - hmm)/2;
-      pdf.addPage('a4','p');
-      const fmt = durl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-      pdf.addImage(durl, fmt, x, y, wmm, hmm);
+    // Ajouter les pièces jointes très grandes (quasi pleine page) à partir de la page 2
+    if(attachImgs.length){
+      const a4w=210, a4h=297, margin=5; // marge réduite pour photo très grande
+      const innerW=a4w-2*margin, innerH=a4h-2*margin;
+
+      for(const durl of attachImgs){
+        const dims = await getImageSize(durl);
+        let wmm=innerW, hmm=innerH;
+        const ratio = dims.w/dims.h;
+        if(wmm/hmm > ratio){ wmm = hmm*ratio; } else { hmm = wmm/ratio; }
+        const x = (a4w - wmm)/2, y = (a4h - hmm)/2;
+        pdf.addPage('a4','p');
+        const fmt = durl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+        pdf.addImage(durl, fmt, x, y, wmm, hmm);
+      }
     }
 
-    // Sortie du PDF final
     const pdfBlob = pdf.output('blob');
     off.remove();
 
@@ -513,8 +524,7 @@ async function sendToServer(){
     const payload={ meta, b64 };
     await fetch(WEBAPP_URL,{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(payload) });
 
-    // Message custom (avec info pièce jointe si présente)
-    const pjMsg = attachImgs.length ? " La pièce jointe a été intégrée." : "";
+    const pjMsg = attachImgs.length ? " La pièce jointe a été intégrée en pleine page." : "";
     showToast(`✅ Merci ${meta.responsable}, la fiche incident est imprimée et scannée.${pjMsg}`);
     saveToLocal();
   }catch(e){
@@ -530,7 +540,6 @@ function clearCanvas(id){ const c=document.getElementById(id), x=c.getContext("2
 function getImageSize(dataUrl){
   return new Promise(res=>{ const img=new Image(); img.onload=()=>res({w:img.naturalWidth||img.width, h:img.naturalHeight||img.height}); img.src=dataUrl; });
 }
-
 </script>
 </body>
 </html>
