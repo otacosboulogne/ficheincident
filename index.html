@@ -368,43 +368,64 @@ async function sendToServer() {
   const WEBAPP_URL = "https://otacos-proxy.contact-otacosbsm.workers.dev/";
 
   try {
-    const page = document.getElementById("pageContent");
+    // --- Vérifie la présence des canvases ---
+    const respCanvas = document.getElementById("signRespCanvas");
+    const salCanvas  = document.getElementById("signSalCanvas");
+    if (!respCanvas || !salCanvas) {
+      alert("❌ Erreur : les zones de signature ne sont pas disponibles.");
+      return;
+    }
+
+    // --- Données de base ---
     const meta = {
       salarie: document.getElementById("salarie").value || "Inconnu",
       responsable: document.getElementById("responsable").value || "N/A",
       date_fiche: document.getElementById("date_fiche").value || new Date().toISOString().split("T")[0],
     };
 
-    // ✅ On clone la page pour travailler sur une copie légère
-    const clone = page.cloneNode(true);
+    // --- Crée une COPIE du contenu à exporter ---
+    const original = document.getElementById("pageContent");
+    const clone = original.cloneNode(true);
 
-    // On supprime tous les écouteurs/canvas vivants dans la copie
-    clone.querySelectorAll("canvas").forEach((canvas) => {
-      const img = document.createElement("img");
-      img.src = canvas.toDataURL("image/png");
-      img.style.width = "100%";
-      img.style.height = "auto";
-      canvas.replaceWith(img);
-    });
+    // --- Remplace les canvases par des images dans la copie ---
+    const cloneResp = clone.querySelector("#signRespCanvas");
+    const cloneSal  = clone.querySelector("#signSalCanvas");
 
-    // ✅ Création d’un conteneur invisible
+    if (cloneResp && respCanvas) {
+      const img1 = document.createElement("img");
+      img1.src = respCanvas.toDataURL("image/png");
+      img1.style.width = "100%";
+      img1.style.height = "auto";
+      cloneResp.replaceWith(img1);
+    }
+
+    if (cloneSal && salCanvas) {
+      const img2 = document.createElement("img");
+      img2.src = salCanvas.toDataURL("image/png");
+      img2.style.width = "100%";
+      img2.style.height = "auto";
+      cloneSal.replaceWith(img2);
+    }
+
+    // --- Conteneur temporaire invisible ---
     const tempDiv = document.createElement("div");
     tempDiv.style.position = "fixed";
     tempDiv.style.top = "-9999px";
     tempDiv.appendChild(clone);
     document.body.appendChild(tempDiv);
 
-    // ✅ Génération du PDF à partir du clone uniquement
-    const opt = {
-      margin: [10, 10],
-      filename: `Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
-      html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    };
-
+    // --- Génération du PDF à partir du CLONE ---
     let pdfBlob;
     try {
-      pdfBlob = await html2pdf().set(opt).from(clone).outputPdf("blob");
+      pdfBlob = await html2pdf()
+        .set({
+          margin: [10, 10],
+          filename: `Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
+          html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        })
+        .from(clone)
+        .outputPdf("blob");
     } catch (err) {
       alert("⚠️ Erreur PDF : " + err.message);
       console.error("Erreur PDF :", err);
@@ -412,14 +433,13 @@ async function sendToServer() {
       return;
     }
 
-    // ✅ Nettoyage du DOM temporaire
     tempDiv.remove();
 
-    // ✅ Conversion en base64
+    // --- Convertit en Base64 ---
     const buffer = await pdfBlob.arrayBuffer();
     const b64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
 
-    // ✅ Envoi via le proxy
+    // --- Envoie au serveur ---
     const payload = { meta, b64 };
     const res = await fetch(WEBAPP_URL, {
       method: "POST",
@@ -433,8 +453,9 @@ async function sendToServer() {
     } else {
       alert("⚠️ Erreur : " + json.message);
     }
+
   } catch (err) {
-    console.error("Erreur inattendue :", err);
+    console.error(err);
     alert("❌ Erreur inattendue : " + err.message);
   }
 }
