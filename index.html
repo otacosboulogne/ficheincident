@@ -5,74 +5,52 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>FICHE INCIDENTS - HITS BOULOGNE</title>
 
-<!-- Librairie PDF -->
+<!-- html2pdf -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <style>
-  html, body { margin: 0; background: #dcdcdc; font-family: Arial, sans-serif; }
-
-  .page-wrapper { display: flex; justify-content: center; padding: 16px; }
-
-  .page {
-    width: 210mm; min-height: 297mm; background: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.25);
-    padding: 15mm; display: flex; flex-direction: column; gap: 12px; position: relative;
-  }
-
-  .header { display: flex; align-items: flex-start; gap: 10px; }
-  .header img { width: 50px; }
-  .header-text strong { display: block; font-size: 15px; }
-
-  .fiche-title {
-    border: 1px solid #000; font-weight: bold; text-align: center; padding: 4px;
-    text-transform: uppercase; margin-top: 8px; font-size: 15px;
-  }
-
-  .info-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .info-table td { padding: 4px; vertical-align: middle; }
-  .label { font-weight: bold; white-space: nowrap; }
-  input, textarea { border: 1px solid #999; border-radius: 3px; padding: 4px; font-size: 13px; max-width: 100%; }
-
-  .section-header {
-    background: #1a2d4a; color: #fff; font-weight: bold; text-align: center; padding: 4px;
-    text-transform: uppercase; font-size: 13px; border: 1px solid #000; border-bottom: none;
-  }
-  .section-body { border: 1px solid #000; border-top: none; padding: 8px; font-size: 13px; }
-
-  .incident-line { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; align-items: center; }
-  .big-textarea { width: 100%; min-height: 70px; resize: vertical; }
-
-  .signatures { display: flex; justify-content: space-between; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-  .signature-box { flex: 1; min-width: 45%; display: flex; flex-direction: column; align-items: center; }
-  .signature-box label { font-weight: bold; margin-bottom: 4px; font-size: 13px; align-self: flex-start; }
-  .signature-wrapper { width: 100%; border: 1px dashed #666; border-radius: 4px; height: 120px; position: relative; background: #fff; }
-  .signature-wrapper::after{content:"Signez ici"; position:absolute; color:#999; font-size:12px; top:6px; right:8px;}
-  canvas.signature-canvas { width: 100%; height: 120px; touch-action: none; }
-  .signature-actions { display: flex; justify-content: flex-end; margin-top: 4px; width: 100%; }
-  .signature-actions button { border: none; background: #444; color: white; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-size: 12px; }
-
-  .top-buttons { position: fixed; top: 16px; right: 16px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
-  .action-btn { background: #000; color: #fff; border: none; border-radius: 6px; padding: 10px 14px; font-weight: bold; cursor: pointer; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
-
-  /* Loader */
-  #loader { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.35); z-index: 9999; color: #fff; font: 600 16px/1.2 Arial, sans-serif; }
-  #loader .box { background: #111; padding: 16px 20px; border-radius: 10px; box-shadow: 0 6px 18px rgba(0,0,0,.4); }
-
-  @media print {
-    body { background: #fff; }
-    .page-wrapper { padding: 0; }
-    .page { box-shadow: none; margin: 0; width: 210mm; min-height: 297mm; padding: 15mm; }
-    .top-buttons { display: none !important; }
+  html,body{margin:0;background:#dcdcdc;font-family:Arial,Helvetica,sans-serif}
+  .page-wrapper{display:flex;justify-content:center;padding:16px}
+  .page{width:210mm;min-height:297mm;background:#fff;box-shadow:0 0 10px rgba(0,0,0,.25);padding:14mm;display:flex;flex-direction:column;gap:10px;position:relative}
+  .header{display:flex;align-items:flex-start;gap:10px}
+  .header img{width:46px}
+  .header-text strong{display:block;font-size:15px}
+  .fiche-title{border:1px solid #000;font-weight:700;text-align:center;padding:4px;text-transform:uppercase;font-size:14px}
+  .info-table{width:100%;border-collapse:collapse;font-size:13px}
+  .info-table td{padding:3px 4px;vertical-align:middle}
+  .label{font-weight:700;white-space:nowrap}
+  input,textarea{border:1px solid #999;border-radius:3px;padding:4px;font-size:13px;max-width:100%}
+  .section-header{background:#1a2d4a;color:#fff;font-weight:700;text-align:center;padding:4px;text-transform:uppercase;font-size:12.5px;border:1px solid #000;border-bottom:none}
+  .section-body{border:1px solid #000;border-top:none;padding:8px;font-size:13px}
+  .incident-line{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;align-items:center}
+  .big-textarea{width:100%;min-height:70px;resize:vertical}
+  .signatures{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+  .signature-box{flex:1;min-width:46%;display:flex;flex-direction:column}
+  .signature-box label{font-weight:700;margin-bottom:4px;font-size:12.5px}
+  .signature-wrapper{width:100%;border:1px solid #000;border-radius:4px;height:120px;position:relative;background:#fff}
+  canvas.signature-canvas{width:100%;height:120px;touch-action:none}
+  .signature-actions{display:flex;justify-content:flex-end;margin-top:4px;width:100%}
+  .signature-actions button{border:none;background:#444;color:#fff;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:12px}
+  .top-buttons{position:fixed;top:16px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px}
+  .action-btn{background:#000;color:#fff;border:none;border-radius:6px;padding:10px 14px;font-weight:700;cursor:pointer;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+  .hint{position:absolute;right:6px;bottom:6px;color:#9aa;pointer-events:none;font-size:11px}
+  #loader{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35);z-index:9999;color:#fff;font:600 16px/1.2 Arial}
+  #loader .box{background:#111;padding:16px 20px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+  @media print{
+    body{background:#fff}
+    .page-wrapper{padding:0}
+    .page{box-shadow:none;margin:0;width:210mm;min-height:297mm;padding:14mm}
+    .top-buttons{display:none!important}
   }
 </style>
 </head>
-
 <body>
+
 <div class="top-buttons">
   <button class="action-btn" onclick="window.print()">📄 PDF / Imprimer</button>
   <button id="sendBtn" class="action-btn" onclick="sendToServer()">📨 Envoyer</button>
 </div>
 
-<!-- Loader -->
 <div id="loader"><div class="box">⏳ génération & envoi en cours…</div></div>
 
 <div class="page-wrapper">
@@ -104,37 +82,46 @@
     <div class="section-header">DESCRIPTIF DE L’INCIDENT</div>
     <div class="section-body">
       <div class="incident-line">
-        <input type="checkbox" id="abs_prev" /><label for="abs_prev"><strong>Absence prévue le :</strong></label>
+        <input type="checkbox" id="abs_prev" />
+        <label for="abs_prev"><strong>Absence prévue le :</strong></label>
         <div class="sub-fields" id="abs_prev_fields" style="display:none;">
-          <input type="date" id="abs_prev_date" /> Shift prévu à : <input type="text" id="abs_prev_shift" placeholder="ex: 18h" style="width:70px;" />
+          <input type="date" id="abs_prev_date" />
+          Shift prévu à :
+          <input type="text" id="abs_prev_shift" placeholder="ex: 18h" style="width:70px" />
         </div>
       </div>
 
       <div class="incident-line">
-        <input type="checkbox" id="abs_np" /><label for="abs_np"><strong>Absence non prévue le :</strong></label>
+        <input type="checkbox" id="abs_np" />
+        <label for="abs_np"><strong>Absence non prévue le :</strong></label>
         <div class="sub-fields" id="abs_np_fields" style="display:none;">
-          <input type="date" id="abs_np_date" /> Shift prévu à : <input type="text" id="abs_np_shift" placeholder="ex: 18h" style="width:70px;" />
+          <input type="date" id="abs_np_date" />
+          Shift prévu à :
+          <input type="text" id="abs_np_shift" placeholder="ex: 18h" style="width:70px" />
         </div>
       </div>
 
       <div class="incident-line">
-        <input type="checkbox" id="ret_prev" /><label for="ret_prev"><strong>Retard prévu de :</strong></label>
+        <input type="checkbox" id="ret_prev" />
+        <label for="ret_prev"><strong>Retard prévu de :</strong></label>
         <div class="sub-fields" id="ret_prev_fields" style="display:none;">
-          <input type="text" id="ret_prev_duree" placeholder="ex: 30 min" style="width:90px;" />
+          <input type="text" id="ret_prev_duree" placeholder="ex: 30 min" style="width:90px" />
         </div>
       </div>
 
       <div class="incident-line">
-        <input type="checkbox" id="ret_np" /><label for="ret_np"><strong>Retard non prévu de :</strong></label>
+        <input type="checkbox" id="ret_np" />
+        <label for="ret_np"><strong>Retard non prévu de :</strong></label>
         <div class="sub-fields" id="ret_np_fields" style="display:none;">
-          <input type="text" id="ret_np_duree" placeholder="ex: 20 min" style="width:90px;" />
+          <input type="text" id="ret_np_duree" placeholder="ex: 20 min" style="width:90px" />
         </div>
       </div>
 
       <div class="incident-line">
-        <input type="checkbox" id="autre" /><label for="autre"><strong>Autre :</strong></label>
+        <input type="checkbox" id="autre" />
+        <label for="autre"><strong>Autre :</strong></label>
         <div class="sub-fields" id="autre_fields" style="display:none;">
-          <input type="text" id="autre_detail" placeholder="Préciser..." style="flex:1; min-width:200px;" />
+          <input type="text" id="autre_detail" placeholder="Préciser..." style="flex:1;min-width:200px" />
         </div>
       </div>
     </div>
@@ -145,20 +132,33 @@
     <div class="section-header">ACTION CURATIVE</div>
     <div class="section-body"><textarea class="big-textarea" id="action" placeholder="Décrire l'action corrective..."></textarea></div>
 
-    <div style="margin-top:10px; font-size:14px;">
-      <strong>Fait le :</strong> <input type="date" id="fait_le" style="font-size:13px;" />, à Boulogne-sur-Mer
+    <div style="margin-top:10px;font-size:14px">
+      <strong>Fait le :</strong>
+      <input type="date" id="fait_le" style="font-size:13px" />,
+      à Boulogne-sur-Mer
     </div>
 
     <div class="signatures">
       <div class="signature-box">
         <label for="signRespCanvas">Signature Responsable</label>
-        <div class="signature-wrapper"><canvas id="signRespCanvas" class="signature-canvas" width="400" height="120"></canvas></div>
-        <div class="signature-actions"><button type="button" onclick="clearCanvas('signRespCanvas')">Effacer</button></div>
+        <div class="signature-wrapper">
+          <canvas id="signRespCanvas" class="signature-canvas" width="400" height="120"></canvas>
+          <span class="hint">Signez ici</span>
+        </div>
+        <div class="signature-actions">
+          <button type="button" onclick="clearCanvas('signRespCanvas')">Effacer</button>
+        </div>
       </div>
+
       <div class="signature-box">
         <label for="signSalCanvas">Signature Salarié</label>
-        <div class="signature-wrapper"><canvas id="signSalCanvas" class="signature-canvas" width="400" height="120"></canvas></div>
-        <div class="signature-actions"><button type="button" onclick="clearCanvas('signSalCanvas')">Effacer</button></div>
+        <div class="signature-wrapper">
+          <canvas id="signSalCanvas" class="signature-canvas" width="400" height="120"></canvas>
+          <span class="hint">Signez ici</span>
+        </div>
+        <div class="signature-actions">
+          <button type="button" onclick="clearCanvas('signSalCanvas')">Effacer</button>
+        </div>
       </div>
     </div>
 
@@ -166,188 +166,202 @@
 </div>
 
 <script>
-/* ===== Petites aides UI ===== */
-const $ = sel => document.querySelector(sel);
-const loader = $("#loader");
-const sendBtn = $("#sendBtn");
-const showLoader = (s=true)=>{ loader.style.display = s ? "flex":"none"; };
-const disableSend = (s=true)=>{ sendBtn.disabled = s; sendBtn.style.opacity = s ? .6 : 1; };
+/* ============ helpers UI ============ */
+function todayISO(){
+  const d=new Date();
+  const m=('0'+(d.getMonth()+1)).slice(-2);
+  const day=('0'+d.getDate()).slice(-2);
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+(function initDates(){
+  const df=document.getElementById('date_fiche');
+  const fl=document.getElementById('fait_le');
+  if(df && !df.value) df.value=todayISO();
+  if(fl && !fl.value) fl.value=todayISO();
+})();
 
-/* ===== Champs conditionnels ===== */
-["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
-  const box = document.getElementById(id);
-  if (!box) return;
-  box.addEventListener("change",()=>{
-    const sub = document.getElementById(id+"_fields");
-    if (sub) sub.style.display = box.checked ? "inline-flex" : "none";
-  });
+const boxes=['abs_prev','abs_np','ret_prev','ret_np','autre'];
+boxes.forEach(id=>{
+  const box=document.getElementById(id);
+  const sub=document.getElementById(id+'_fields');
+  if(!box||!sub) return;
+  const sync=()=>{sub.style.display=box.checked?'inline-flex':'none';};
+  box.addEventListener('change',sync);
+  sync();
 });
 
-/* ===== Signatures (dessin simplifié) ===== */
-const drawn = new Map(); // id -> bool  (pour savoir si une signature a été tracée)
+/* signatures (simple) */
 function setupCanvas(id){
-  const c = document.getElementById(id);
-  const x = c.getContext("2d", { willReadFrequently: true });
-  x.lineWidth = 2;
-  x.lineCap = "round";
-  let d = false;
-
-  const start = (px,py)=>{ d=true; x.beginPath(); x.moveTo(px,py); };
-  const move  = (px,py)=>{ if(!d) return; x.lineTo(px,py); x.stroke(); drawn.set(id,true); };
-  const stop  = ()=>{ d=false; };
-
-  c.addEventListener("mousedown",e=>start(e.offsetX,e.offsetY));
-  c.addEventListener("mousemove",e=>move(e.offsetX,e.offsetY));
-  c.addEventListener("mouseup", stop);
-  c.addEventListener("mouseleave", stop);
-
-  c.addEventListener("touchstart",e=>{
-    const r=c.getBoundingClientRect();
-    start(e.touches[0].clientX-r.left, e.touches[0].clientY-r.top);
-  },{passive:false});
-  c.addEventListener("touchmove",e=>{
-    const r=c.getBoundingClientRect();
-    move(e.touches[0].clientX-r.left, e.touches[0].clientY-r.top);
-  },{passive:false});
-  c.addEventListener("touchend", stop);
+  const c=document.getElementById(id),x=c.getContext('2d');let d=false;
+  c.addEventListener('mousedown',e=>{d=true;x.beginPath();x.moveTo(e.offsetX,e.offsetY);});
+  c.addEventListener('mousemove',e=>{if(!d)return;x.lineTo(e.offsetX,e.offsetY);x.stroke();});
+  ['mouseup','mouseleave'].forEach(ev=>c.addEventListener(ev,()=>d=false));
+  c.addEventListener('touchstart',e=>{d=true;const r=c.getBoundingClientRect();x.beginPath();x.moveTo(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top);},{passive:false});
+  c.addEventListener('touchmove',e=>{if(!d)return;const r=c.getBoundingClientRect();x.lineTo(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top);x.stroke();},{passive:false});
+  c.addEventListener('touchend',()=>d=false);
 }
-function clearCanvas(id){
-  const c=document.getElementById(id);
-  c.getContext("2d").clearRect(0,0,c.width,c.height);
-  drawn.set(id,false);
-}
-setupCanvas("signRespCanvas");
-setupCanvas("signSalCanvas");
+function clearCanvas(id){const c=document.getElementById(id);if(c)c.getContext('2d').clearRect(0,0,c.width,c.height);}
+setupCanvas('signRespCanvas'); setupCanvas('signSalCanvas');
 
-/* ===== utilitaire : downscale + dataURL compact ===== */
-function canvasToSmallDataURL(srcCanvas, maxW = 320, mime = 'image/jpeg', quality = 0.8) {
-  const w = srcCanvas.width, h = srcCanvas.height;
-  const ratio = Math.min(1, maxW / w);
-  const dstW = Math.round(w * ratio), dstH = Math.round(h * ratio);
-  const off = document.createElement('canvas'); off.width = dstW; off.height = dstH;
-  const ctx = off.getContext('2d'); ctx.drawImage(srcCanvas, 0, 0, dstW, dstH);
-  return off.toDataURL(mime, quality);
+/* ====== export helpers ====== */
+function canvasToSmallDataURL(srcCanvas,maxW=340,mime='image/jpeg',quality=.9){
+  const w=srcCanvas.width,h=srcCanvas.height,ratio=Math.min(1,maxW/w);
+  const off=document.createElement('canvas'); off.width=Math.round(w*ratio); off.height=Math.round(h*ratio);
+  off.getContext('2d').drawImage(srcCanvas,0,0,off.width,off.height);
+  return off.toDataURL(mime,quality);
+}
+function textFromInput(el){
+  if(!el) return '';
+  if(el.type==='date' && el.value){
+    const [Y,M,D]=el.value.split('-'); return `${D}/${M}/${Y}`;
+  }
+  return el.value||'';
+}
+function checkboxRowToText(box,labelEl,extraText){
+  const mark = box && box.checked ? '☑' : '☐';
+  const label = labelEl ? labelEl.textContent.trim() : '';
+  const extra = (extraText||'').trim();
+  return `${mark} ${label}${extra?(' '+extra):''}`;
 }
 
-/* ===== conversion base64 sûre (FileReader) ===== */
-function blobToBase64(blob){
-  return new Promise((resolve,reject)=>{
-    const r = new FileReader();
-    r.onload  = ()=>resolve(String(r.result).split(',')[1] || '');
-    r.onerror = ()=>reject(r.error || new Error('FileReader error'));
-    r.readAsDataURL(blob);
-  });
-}
-
-/* ===== ENVOI DU PDF (robuste) ===== */
+/* ============ ENVOI PDF ============ */
 async function sendToServer(){
-  const WEBAPP_URL = "https://otacos-proxy.contact-otacosbsm.workers.dev/";
-  disableSend(true); showLoader(true);
+  const WEBAPP_URL="https://otacos-proxy.contact-otacosbsm.workers.dev/";
+  const loader=document.getElementById('loader'); loader.style.display='flex';
 
   try{
-    const respCanvas = $("#signRespCanvas");
-    const salCanvas  = $("#signSalCanvas");
-    if (!respCanvas || !salCanvas){
-      alert("❌ Erreur : les zones de signature ne sont pas disponibles.");
-      return;
-    }
+    const respCanvas=document.getElementById('signRespCanvas');
+    const salCanvas=document.getElementById('signSalCanvas');
 
-    // Meta
-    const meta = {
-      salarie:      ($("#salarie").value || "Inconnu").trim(),
-      responsable:  ($("#responsable").value || "N/A").trim(),
-      date_fiche:   $("#date_fiche").value || new Date().toISOString().split("T")[0],
+    const meta={
+      salarie:document.getElementById('salarie').value||'Inconnu',
+      responsable:document.getElementById('responsable').value||'N/A',
+      date_fiche:document.getElementById('date_fiche').value||todayISO(),
     };
 
-    // Clone propre
-    const original = $("#pageContent");
-    const clone = original.cloneNode(true);
+    /* clone propre */
+    const original=document.getElementById('pageContent');
+    const clone=original.cloneNode(true);
 
-    // Signatures → images (si non signées, petite mention)
-    const cloneResp = clone.querySelector("#signRespCanvas");
-    const cloneSal  = clone.querySelector("#signSalCanvas");
+    /* 1) inputs/textarea -> texte épuré */
+    clone.querySelectorAll('input, textarea').forEach(el=>{
+      if(el.type==='checkbox'){ /* géré plus bas (cases) */ return; }
+      const span=document.createElement('div');
+      span.style.minHeight='18px';
+      span.style.padding='2px 0';
+      span.textContent=textFromInput(el);
+      el.replaceWith(span);
+    });
 
-    const placeImg = (node, src, label)=>{
-      if (!node) return;
-      const wrap = document.createElement("div");
-      wrap.style.width="100%"; wrap.style.height="120px"; wrap.style.display="flex"; wrap.style.alignItems="center";
-      if (src){
-        const img=new Image(); img.src=src; img.style.maxWidth="100%"; img.style.maxHeight="120px";
-        wrap.appendChild(img);
-      }else{
-        const p=document.createElement("div");
-        p.textContent = "(pas de signature)";
-        p.style.color="#777"; p.style.fontSize="12px"; p.style.marginLeft="8px";
-        wrap.appendChild(p);
+    /* 2) cases à cocher -> ☑/☐ + libellé + valeurs */
+    const map=[
+      ['abs_prev','abs_prev_fields',['abs_prev_date','abs_prev_shift']],
+      ['abs_np','abs_np_fields',['abs_np_date','abs_np_shift']],
+      ['ret_prev','ret_prev_fields',['ret_prev_duree']],
+      ['ret_np','ret_np_fields',['ret_np_duree']],
+      ['autre','autre_fields',['autre_detail']],
+    ];
+    map.forEach(([id,fields,extraIds])=>{
+      const box=original.querySelector('#'+id);
+      const cloneRow=clone.querySelector('#'+id)?.closest('.incident-line');
+      if(!cloneRow) return;
+      const labelEl=cloneRow.querySelector('label[for="'+id+'"]');
+
+      let extraText='';
+      if(extraIds && extraIds.length){
+        extraIds.forEach(eid=>{
+          const src=original.querySelector('#'+eid);
+          if(src && src.value){
+            if(src.type==='date'){
+              const [Y,M,D]=src.value.split('-'); extraText+=` ${D}/${M}/${Y}`;
+            }else{
+              extraText+=` ${src.value}`;
+            }
+          }
+        });
       }
-      node.replaceWith(wrap);
+      const lineText=checkboxRowToText(box,labelEl,extraText);
+      const p=document.createElement('div'); p.textContent=lineText; p.style.padding='2px 0';
+      cloneRow.replaceWith(p);
+    });
+
+    /* 3) textes libres (origine, action) */
+    ['origine','action'].forEach(id=>{
+      const src=original.querySelector('#'+id);
+      const dst=clone.querySelector('#'+id);
+      if(src && dst){
+        const dv=document.createElement('div');
+        dv.style.minHeight='60px';
+        dv.style.whiteSpace='pre-wrap';
+        dv.textContent=src.value||'';
+        dst.replaceWith(dv);
+      }
+    });
+
+    /* 4) signatures -> images + légende */
+    const respSmall=canvasToSmallDataURL(respCanvas,360,'image/jpeg',0.92);
+    const salSmall =canvasToSmallDataURL(salCanvas ,360,'image/jpeg',0.92);
+
+    const replaceSign=(canvasId,smallSrc,legend)=>{
+      const c=clone.querySelector('#'+canvasId);
+      if(!c) return;
+      const wrap=c.parentElement; // .signature-wrapper
+      const img=document.createElement('img');
+      img.src=smallSrc; img.style.width='100%'; img.style.height='auto';
+      const cap=document.createElement('div');
+      cap.textContent=legend; cap.style.fontSize='11px'; cap.style.marginTop='4px'; cap.style.color='#333';
+      wrap.replaceWith((()=>{const box=document.createElement('div'); box.appendChild(img); box.appendChild(cap); return box;})());
     };
+    replaceSign('signRespCanvas',respSmall,'Signé : Responsable');
+    replaceSign('signSalCanvas' ,salSmall ,'Signé : Salarié');
 
-    const respSrc = drawn.get("signRespCanvas") ? canvasToSmallDataURL(respCanvas, 320, 'image/jpeg', 0.85) : "";
-    const salSrc  = drawn.get("signSalCanvas")  ? canvasToSmallDataURL(salCanvas,  320, 'image/jpeg', 0.85) : "";
-    placeImg(cloneResp, respSrc, "Responsable");
-    placeImg(cloneSal,  salSrc,  "Salarié");
+    /* 5) retirer tous les boutons “Effacer” dans le clone */
+    clone.querySelectorAll('.signature-actions').forEach(e=>e.remove());
 
-    // Hors écran pour html2pdf
-    const temp = document.createElement("div");
-    temp.style.position="fixed"; temp.style.top="-10000px"; temp.appendChild(clone);
-    document.body.appendChild(temp);
+    /* 6) conteneur offscreen pour html2pdf */
+    const temp=document.createElement('div');
+    temp.style.position='fixed'; temp.style.top='-10000px';
+    temp.appendChild(clone); document.body.appendChild(temp);
 
-    // PDF
-    let pdfBlob;
-    try{
-      pdfBlob = await html2pdf()
-        .set({
-          margin:[10,10],
-          filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
-          html2canvas:{ scale:2, useCORS:true, scrollY:0, willReadFrequently:true },
-          jsPDF:{ unit:"mm", format:"a4", orientation:"portrait" },
-        })
-        .from(clone)
-        .outputPdf('blob');
-    }catch(e){
-      console.error("Erreur PDF:", e);
-      alert("⚠️ Erreur PDF : " + (e?.message || e));
-      return;
-    }finally{
-      temp.remove();
-    }
+    /* 7) génération pdf */
+    const pdfBlob=await html2pdf()
+      .set({
+        margin:[10,10],
+        filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
+        html2canvas:{scale:2,useCORS:true,scrollY:0,willReadFrequently:true},
+        jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+      })
+      .from(clone)
+      .outputPdf('blob');
 
-    // Base64 (sans overflow)
-    const b64 = await blobToBase64(pdfBlob);
+    temp.remove();
 
-    // Envoi
-    const payload = { meta, b64 };
-    let ok=false, msg='';
-    try{
-      const res = await fetch(WEBAPP_URL,{
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify(payload),
-      });
-      const ct = res.headers.get('content-type') || '';
-      if (ct.includes('application/json')){
-        const j = await res.json(); ok = j.status === 'ok'; msg = j.message || (ok?'OK':'Erreur serveur');
-      }else{
-        const txt = await res.text(); ok = res.ok; msg = ok ? 'OK (non-JSON)' : `HTTP ${res.status} - ${txt.slice(0,200)}`;
-      }
-    }catch(netErr){
-      console.error("Envoi échoué:", netErr);
-      alert("⚠️ Problème réseau lors de l'envoi : " + (netErr?.message || netErr));
-      return;
-    }
+    /* 8) blob -> base64 */
+    const buf=await pdfBlob.arrayBuffer();
+    const b64=btoa(String.fromCharCode(...new Uint8Array(buf)));
 
-    if (ok){
-      alert(`✅ Merci ${meta.responsable},\n\nLa fiche a bien été enregistrée et envoyée.`);
+    /* 9) envoi */
+    const payload={meta,b64};
+    const res=await fetch(WEBAPP_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+
+    const ct=res.headers.get('content-type')||'';
+    let ok=false,msg='';
+    if(ct.includes('application/json')){
+      const j=await res.json(); ok=j.status==='ok'; msg=j.message||'';
     }else{
-      alert("⚠️ Erreur côté serveur : " + msg);
+      ok=res.ok; msg=res.ok?'OK (non-JSON)':`HTTP ${res.status}`;
     }
 
+    alert(ok?`✅ Merci ${meta.responsable},\n\nLa fiche a bien été enregistrée et envoyée.`:`⚠️ Erreur côté serveur : ${msg}`);
   }catch(err){
     console.error(err);
-    alert("❌ Erreur inattendue : " + (err?.message || err));
+    alert('❌ Erreur inattendue : '+(err?.message||err));
   }finally{
-    showLoader(false); disableSend(false);
+    loader.style.display='none';
   }
 }
 </script>
