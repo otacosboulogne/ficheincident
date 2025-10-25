@@ -3,426 +3,365 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>FICHE INCIDENTS — HITS BOULOGNE</title>
+<title>FICHE INCIDENTS - HITS BOULOGNE</title>
 
-<!-- html2pdf (pas d'attribut integrity pour éviter le blocage SRI) -->
+<!-- Génération PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <style>
-  :root{
-    --blue:#1a2d4a;
-    --border:#000;
-    --muted:#666;
+  /* ==== bases et calibrage A4 ==== */
+  *{ box-sizing:border-box }
+  html,body{ margin:0; background:#dcdcdc; font-family:Arial, sans-serif; }
+  .page-wrapper{ display:flex; justify-content:center; padding:16px; }
+  .page{
+    width:210mm;             /* A4 */
+    min-height:297mm;        /* A4 */
+    background:#fff;
+    box-shadow:0 0 10px rgba(0,0,0,.25);
+    padding:13mm 14mm;       /* un peu moins pour éviter un débord */
+    display:flex; flex-direction:column; gap:12px; position:relative;
   }
-  html,body{margin:0;font-family:Arial, Helvetica, sans-serif;background:#eee;color:#111}
-  .container{max-width:960px;margin:auto;padding:16px}
-  .toolbar{
-    position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid #ddd;
-    padding:10px 12px;display:flex;gap:8px;flex-wrap:wrap
-  }
-  .btn{
-    background:#111;color:#fff;border:0;border-radius:8px;padding:10px 14px;font-weight:600;cursor:pointer
-  }
-  .btn.secondary{background:#3b3b3b}
-  .btn.warn{background:#a40}
-  .card{background:#fff;border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,.08);padding:14px}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-  .row-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
-  label{font-weight:700;margin:8px 0 4px;display:block}
-  input[type="text"],input[type="date"],textarea{
-    width:100%;padding:10px;border:1px solid #bbb;border-radius:6px;font-size:16px
-  }
-  textarea{min-height:80px;resize:vertical}
-  .section-title{
-    background:var(--blue);color:#fff;padding:8px 10px;border-radius:6px;margin:14px 0 8px;
-    font-weight:700;text-transform:uppercase
-  }
-  .inline{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-  .sig-wrap{border:1px dashed #999;border-radius:8px;height:140px;position:relative;background:#fff}
-  canvas.signature{width:100%;height:140px;touch-action:none}
-  .sig-hint{position:absolute;right:10px;top:6px;font-size:12px;color:#888}
-  .sig-actions{text-align:right;margin-top:6px}
 
-  /* === Gabarit A4 pour le PDF === */
-  #sheetA4{
-    position:fixed;left:-10000px;top:0; /* visible hors écran (pas display:none) */
-    width:210mm;height:297mm;background:#fff;color:#111;
-    box-sizing:border-box;padding:15mm; /* marges internes */
-    overflow:hidden; /* empêche la 2e page si tout tient */
-  }
-  .a4-header{display:flex;gap:10px;align-items:flex-start}
-  .a4-header img{width:42px;height:auto}
-  .a4-title{border:1px solid var(--border);font-weight:700;text-align:center;margin:8px 0 10px;padding:4px}
-  .a4-grid{width:100%;border-collapse:collapse;font-size:12pt}
-  .a4-grid td{padding:4px 6px;vertical-align:top}
-  .a4-label{font-weight:700;white-space:nowrap}
-  .bar{background:var(--blue);color:#fff;font-weight:700;text-align:center;padding:4px;text-transform:uppercase;margin:8px 0;border:1px solid #000}
-  .box{border:1px solid #000;padding:8px;min-height:24mm}
-  .sig-row{display:flex;gap:10mm;margin-top:8mm}
-  .sig-box{flex:1}
-  .sig-box .sig-slot{border:1px dashed #999;height:30mm}
-  .sig-box img{width:100%;height:30mm;object-fit:contain}
-  .small{font-size:10pt;color:#333}
+  .header{ display:flex; align-items:flex-start; gap:10px; }
+  .header img{ width:50px }
+  .header-text strong{ display:block; font-size:15px }
 
-  @media (max-width:720px){
-    .row,.row-3,.row-4{grid-template-columns:1fr}
-    .toolbar{position:sticky}
+  .fiche-title{
+    border:1px solid #000; font-weight:bold; text-align:center; padding:4px;
+    text-transform:uppercase; margin-top:8px; font-size:15px;
+  }
+
+  .info-table{ width:100%; border-collapse:collapse; font-size:13px }
+  .info-table td{ padding:4px; vertical-align:middle }
+  .label{ font-weight:bold; white-space:nowrap }
+  input,textarea{ border:1px solid #999; border-radius:3px; padding:4px; font-size:13px; max-width:100% }
+
+  .section-header{
+    background:#1a2d4a; color:#fff; font-weight:bold; text-align:center; padding:4px;
+    text-transform:uppercase; font-size:13px; border:1px solid #000; border-bottom:none;
+  }
+  .section-body{ border:1px solid #000; border-top:none; padding:8px; font-size:13px }
+
+  .incident-line{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; align-items:center }
+  .big-textarea{ width:100%; min-height:70px; resize:vertical }
+
+  /* ==== signatures ==== */
+  .signatures{ display:flex; justify-content:space-between; gap:10px; margin-top:15px; flex-wrap:wrap }
+  .signature-box{ flex:1; min-width:45%; display:flex; flex-direction:column; align-items:center }
+  .signature-box label{ font-weight:bold; margin-bottom:4px; font-size:13px; align-self:flex-start }
+  .signature-wrapper{
+    width:100%; height:120px; position:relative; background:#fff;
+    border:1px dashed #666; border-radius:4px;
+  }
+  .signature-wrapper::after{ content:"Signez ici"; position:absolute; color:#999; font-size:12px; top:6px; right:8px }
+  canvas.signature-canvas{ width:100%; height:120px; touch-action:none; background:transparent }
+  .signature-actions{ display:flex; justify-content:flex-end; margin-top:4px; width:100% }
+  .signature-actions button{ border:none; background:#444; color:#fff; border-radius:4px; padding:5px 10px; cursor:pointer; font-size:12px }
+
+  /* boutons fixes */
+  .top-buttons{ position:fixed; top:16px; right:16px; z-index:999; display:flex; flex-direction:column; gap:8px }
+  .action-btn{ background:#000; color:#fff; border:none; border-radius:6px; padding:10px 14px; font-weight:bold; cursor:pointer; font-size:14px; box-shadow:0 2px 6px rgba(0,0,0,.3) }
+
+  /* Loader */
+  #loader{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35); z-index:9999; color:#fff; font:600 16px/1.2 Arial,sans-serif }
+  #loader .box{ background:#111; padding:16px 20px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,.4) }
+
+  /* Indications HTML2PDF pour éviter les coupures / pages vides */
+  #pageContent{ page-break-inside:avoid }
+  .section-body,.signatures,.info-table,.fiche-title{ break-inside:avoid; page-break-inside:avoid }
+
+  /* Impression locale */
+  @media print{
+    body{ background:#fff }
+    .page-wrapper{ padding:0 }
+    .page{ box-shadow:none; margin:0; width:210mm; min-height:297mm; padding:13mm 14mm }
+    .top-buttons{ display:none!important }
   }
 </style>
 </head>
+
 <body>
-
-<div class="toolbar">
-  <button class="btn" onclick="makePdf()">📄 PDF / Imprimer</button>
-  <button class="btn secondary" onclick="sendToServer()">📨 Envoyer</button>
-  <button class="btn warn" onclick="clearAll()">🧹 Effacer tout</button>
-  <span id="autosaveState" style="margin-left:auto;color:#333;font-weight:600">Sauvegarde auto : ON</span>
+<div class="top-buttons">
+  <button class="action-btn" onclick="window.print()">📄 PDF / Imprimer</button>
+  <button id="sendBtn" class="action-btn" onclick="sendToServer()">📨 Envoyer</button>
 </div>
 
-<div class="container">
-  <div class="card">
+<!-- Loader -->
+<div id="loader"><div class="box">⏳ génération & envoi en cours…</div></div>
 
-    <div class="section-title">Fiche incidents</div>
+<div class="page-wrapper">
+  <div class="page" id="pageContent">
 
-    <div class="row-3">
-      <div>
-        <label for="date_fiche">Date</label>
-        <input type="date" id="date_fiche">
-      </div>
-      <div>
-        <label for="salarie">Fiche ouverte pour le salarié</label>
-        <input type="text" id="salarie" placeholder="Nom du salarié">
-      </div>
-      <div>
-        <label for="responsable">Responsable</label>
-        <input type="text" id="responsable" placeholder="Responsable">
+    <div class="header">
+      <img src="logo_otacos.png" alt="O'Tacos Logo" />
+      <div class="header-text">
+        <strong>HITS BOULOGNE</strong>
+        O’tacos Boulogne-sur-Mer
       </div>
     </div>
 
-    <div class="section-title">Descriptif de l’incident</div>
+    <div class="fiche-title">FICHE INCIDENTS</div>
 
-    <div class="row">
-      <div>
-        <div class="inline">
-          <input type="checkbox" id="abs_prev">
-          <label for="abs_prev" style="margin:0">Absence prévue le :</label>
-        </div>
-        <div class="inline" style="margin-top:6px">
-          <input type="date" id="abs_prev_date" style="max-width:210px">
-          <span class="a4-label">Shift prévu à :</span>
-          <input type="text" id="abs_prev_shift" placeholder="ex : 18h" style="max-width:120px">
+    <table class="info-table">
+      <tr>
+        <td class="label">Date :</td>
+        <td><input type="date" id="date_fiche" /></td>
+        <td class="label" style="text-align:right;">Fiche ouverte pour le salarié :</td>
+        <td><input type="text" id="salarie" placeholder="Nom du salarié" /></td>
+      </tr>
+      <tr>
+        <td class="label">Responsable :</td>
+        <td colspan="3"><input type="text" id="responsable" placeholder="Responsable" style="width:60%;" /></td>
+      </tr>
+    </table>
+
+    <div class="section-header">DESCRIPTIF DE L’INCIDENT</div>
+    <div class="section-body">
+      <div class="incident-line">
+        <input type="checkbox" id="abs_prev" /><label for="abs_prev"><strong>Absence prévue le :</strong></label>
+        <div class="sub-fields" id="abs_prev_fields" style="display:none;">
+          <input type="date" id="abs_prev_date" /> Shift prévu à :
+          <input type="text" id="abs_prev_shift" placeholder="ex: 18h" style="width:70px" />
         </div>
       </div>
-      <div>
-        <div class="inline">
-          <input type="checkbox" id="abs_np">
-          <label for="abs_np" style="margin:0">Absence non prévue le :</label>
+
+      <div class="incident-line">
+        <input type="checkbox" id="abs_np" /><label for="abs_np"><strong>Absence non prévue le :</strong></label>
+        <div class="sub-fields" id="abs_np_fields" style="display:none;">
+          <input type="date" id="abs_np_date" /> Shift prévu à :
+          <input type="text" id="abs_np_shift" placeholder="ex: 18h" style="width:70px" />
         </div>
-        <div style="margin-top:6px">
-          <input type="date" id="abs_np_date" style="max-width:210px">
+      </div>
+
+      <div class="incident-line">
+        <input type="checkbox" id="ret_prev" /><label for="ret_prev"><strong>Retard prévu de :</strong></label>
+        <div class="sub-fields" id="ret_prev_fields" style="display:none;">
+          <input type="text" id="ret_prev_duree" placeholder="ex: 30 min" style="width:90px" />
+        </div>
+      </div>
+
+      <div class="incident-line">
+        <input type="checkbox" id="ret_np" /><label for="ret_np"><strong>Retard non prévu de :</strong></label>
+        <div class="sub-fields" id="ret_np_fields" style="display:none;">
+          <input type="text" id="ret_np_duree" placeholder="ex: 20 min" style="width:90px" />
+        </div>
+      </div>
+
+      <div class="incident-line">
+        <input type="checkbox" id="autre" /><label for="autre"><strong>Autre :</strong></label>
+        <div class="sub-fields" id="autre_fields" style="display:none;">
+          <input type="text" id="autre_detail" placeholder="Préciser..." style="flex:1; min-width:200px" />
         </div>
       </div>
     </div>
 
-    <div class="row">
-      <div>
-        <div class="inline">
-          <input type="checkbox" id="ret_prev">
-          <label for="ret_prev" style="margin:0">Retard prévu de :</label>
-        </div>
-        <div style="margin-top:6px">
-          <input type="text" id="ret_prev_duree" placeholder="ex : 30 min" style="max-width:210px">
-        </div>
-      </div>
-      <div>
-        <div class="inline">
-          <input type="checkbox" id="ret_np">
-          <label for="ret_np" style="margin:0">Retard non prévu de :</label>
-        </div>
-        <div style="margin-top:6px">
-          <input type="text" id="ret_np_duree" placeholder="ex : 20 min" style="max-width:210px">
-        </div>
-      </div>
+    <div class="section-header">ORIGINE DE L’INCIDENT</div>
+    <div class="section-body">
+      <textarea class="big-textarea" id="origine" placeholder="Décrire l'origine..."></textarea>
     </div>
 
-    <div class="inline" style="margin-top:8px">
-      <input type="checkbox" id="autre">
-      <label for="autre" style="margin:0">Autre :</label>
-      <input type="text" id="autre_detail" placeholder="Préciser..." style="flex:1;min-width:240px">
+    <div class="section-header">ACTION CURATIVE</div>
+    <div class="section-body">
+      <textarea class="big-textarea" id="action" placeholder="Décrire l'action corrective..."></textarea>
     </div>
 
-    <div class="section-title">Origine de l’incident</div>
-    <textarea id="origine" placeholder="Décrire l'origine..."></textarea>
-
-    <div class="section-title">Action curative</div>
-    <textarea id="action" placeholder="Décrire l'action corrective..."></textarea>
-
-    <div class="row-3" style="margin-top:8px">
-      <div>
-        <label for="fait_le">Fait le</label>
-        <input type="date" id="fait_le">
-      </div>
-      <div style="align-self:end"><span class="a4-label small">à Boulogne-sur-Mer</span></div>
+    <div style="margin-top:10px; font-size:14px;">
+      <strong>Fait le :</strong> <input type="date" id="fait_le" style="font-size:13px" />, à Boulogne-sur-Mer
     </div>
 
-    <div class="row" style="margin-top:10px">
-      <div>
-        <label>Signature Responsable</label>
-        <div class="sig-wrap">
-          <span class="sig-hint">Signez ici</span>
-          <canvas id="signResp" class="signature" width="600" height="280"></canvas>
+    <div class="signatures">
+      <div class="signature-box">
+        <label for="signRespCanvas">Signature Responsable</label>
+        <div class="signature-wrapper">
+          <canvas id="signRespCanvas" class="signature-canvas" width="400" height="120"></canvas>
         </div>
-        <div class="sig-actions">
-          <button class="btn secondary" onclick="clearCanvas('signResp')">Effacer</button>
-        </div>
+        <div class="signature-actions"><button type="button" onclick="clearCanvas('signRespCanvas')">Effacer</button></div>
       </div>
-      <div>
-        <label>Signature Salarié</label>
-        <div class="sig-wrap">
-          <span class="sig-hint">Signez ici</span>
-          <canvas id="signSal" class="signature" width="600" height="280"></canvas>
+
+      <div class="signature-box">
+        <label for="signSalCanvas">Signature Salarié</label>
+        <div class="signature-wrapper">
+          <canvas id="signSalCanvas" class="signature-canvas" width="400" height="120"></canvas>
         </div>
-        <div class="sig-actions">
-          <button class="btn secondary" onclick="clearCanvas('signSal')">Effacer</button>
-        </div>
+        <div class="signature-actions"><button type="button" onclick="clearCanvas('signSalCanvas')">Effacer</button></div>
       </div>
     </div>
 
   </div>
 </div>
-
-<!-- ===================== GABARIT A4 CACHÉ (PDF) ===================== -->
-<div id="sheetA4" aria-hidden="true">
-  <div class="a4-header">
-    <img id="logoA4" src="logo_otacos.png" alt="Logo">
-    <div>
-      <div style="font-weight:700">HITS BOULOGNE</div>
-      <div>O’tacos Boulogne-sur-Mer</div>
-    </div>
-  </div>
-
-  <div class="a4-title">FICHE INCIDENTS</div>
-
-  <table class="a4-grid">
-    <tr>
-      <td class="a4-label">Date :</td>
-      <td id="p_date">—</td>
-      <td class="a4-label" style="text-align:right">Fiche ouverte pour le salarié :</td>
-      <td id="p_salarie">—</td>
-    </tr>
-    <tr>
-      <td class="a4-label">Responsable :</td>
-      <td colspan="3" id="p_responsable">—</td>
-    </tr>
-  </table>
-
-  <div class="bar">Descriptif de l’incident</div>
-  <div class="box small" style="min-height:auto;padding-bottom:4mm">
-    <div>☐ Absence prévue le : <span id="p_abs_prev_date">—</span>,
-      Shift prévu à : <span id="p_abs_prev_shift">—</span>
-      <span id="tick_abs_prev" style="margin-left:6px;color:var(--muted)"></span>
-    </div>
-    <div>☐ Absence non prévue le : <span id="p_abs_np_date">—</span>
-      <span id="tick_abs_np" style="margin-left:6px;color:var(--muted)"></span>
-    </div>
-    <div>☐ Retard prévu de : <span id="p_ret_prev">—</span>
-      <span id="tick_ret_prev" style="margin-left:6px;color:var(--muted)"></span>
-    </div>
-    <div>☐ Retard non prévu de : <span id="p_ret_np">—</span>
-      <span id="tick_ret_np" style="margin-left:6px;color:var(--muted)"></span>
-    </div>
-    <div>☐ Autre : <span id="p_autre">—</span>
-      <span id="tick_autre" style="margin-left:6px;color:var(--muted)"></span>
-    </div>
-  </div>
-
-  <div class="bar">Origine de l’incident</div>
-  <div class="box" id="p_origine">—</div>
-
-  <div class="bar">Action curative</div>
-  <div class="box" id="p_action">—</div>
-
-  <div class="small" style="margin-top:6mm">Fait le : <span id="p_fait_le">—</span>, à Boulogne-sur-Mer</div>
-
-  <div class="sig-row">
-    <div class="sig-box">
-      <div class="small" style="font-weight:700;margin-bottom:3mm">Signature Responsable</div>
-      <div class="sig-slot"><img id="p_sig_resp" alt=""></div>
-    </div>
-    <div class="sig-box">
-      <div class="small" style="font-weight:700;margin-bottom:3mm">Signature Salarié</div>
-      <div class="sig-slot"><img id="p_sig_sal" alt=""></div>
-    </div>
-  </div>
-</div>
-<!-- ================================================================ -->
 
 <script>
-/* ========= utilitaires ========= */
+/* ---------- Helpers UI ---------- */
 const $ = s => document.querySelector(s);
-const byId = id => document.getElementById(id);
+const loader = $("#loader");
+const sendBtn = $("#sendBtn");
+const showLoader = (v=true)=>{ loader.style.display = v ? "flex":"none" };
+const disableSend = (v=true)=>{ sendBtn.disabled = v; sendBtn.style.opacity = v ? .6 : 1 };
 
-/* Auto-date par défaut (pas de bouton "Aujourd'hui") */
-function setDefaultDates(){
-  const today = new Date().toISOString().slice(0,10);
-  if(!byId('date_fiche').value) byId('date_fiche').value = today;
-  if(!byId('fait_le').value) byId('fait_le').value = today;
-}
-setDefaultDates();
+/* ---------- Champs conditionnels ---------- */
+["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
+  const box = document.getElementById(id);
+  if(!box) return;
+  box.addEventListener("change", ()=>{
+    const sub = document.getElementById(id+"_fields");
+    if(sub) sub.style.display = box.checked ? "inline-flex" : "none";
+  });
+});
 
-/* Signatures simples */
-function setupSignature(id){
-  const c = byId(id), ctx = c.getContext('2d');
-  // fond blanc pour éviter les fonds sombres
-  ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height);
-  let drawing=false, prev=null;
-  const draw = (x,y) => {
-    if(!drawing) return;
-    if(!prev) prev = {x,y};
-    ctx.strokeStyle="#000"; ctx.lineWidth=2; ctx.lineCap="round";
-    ctx.beginPath(); ctx.moveTo(prev.x, prev.y); ctx.lineTo(x,y); ctx.stroke();
-    prev = {x,y};
-  };
-  c.addEventListener('mousedown',e=>{drawing=true;prev=null;draw(e.offsetX,e.offsetY)});
-  c.addEventListener('mousemove',e=>draw(e.offsetX,e.offsetY));
-  ['mouseup','mouseleave'].forEach(ev=>c.addEventListener(ev,()=>{drawing=false;prev=null}));
-  // tactile
-  c.addEventListener('touchstart',e=>{e.preventDefault();drawing=true;prev=null;
-    const r=c.getBoundingClientRect(); draw(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top)});
-  c.addEventListener('touchmove',e=>{e.preventDefault();
-    const r=c.getBoundingClientRect(); draw(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top)});
-  c.addEventListener('touchend',()=>{drawing=false;prev=null});
+/* ---------- Signatures ---------- */
+const drawn = new Map(); // id -> bool
+function setupCanvas(id){
+  const c = document.getElementById(id);
+  const ctx = c.getContext("2d", { willReadFrequently:true });
+  ctx.lineWidth = 2; ctx.lineCap="round";
+  let drawing=false;
+
+  const start = (x,y)=>{ drawing=true; ctx.beginPath(); ctx.moveTo(x,y) };
+  const move  = (x,y)=>{ if(!drawing) return; ctx.lineTo(x,y); ctx.stroke(); drawn.set(id,true) };
+  const stop  = ()=>{ drawing=false };
+
+  c.addEventListener("mousedown",e=>start(e.offsetX,e.offsetY));
+  c.addEventListener("mousemove",e=>move(e.offsetX,e.offsetY));
+  c.addEventListener("mouseup",stop);
+  c.addEventListener("mouseleave",stop);
+
+  c.addEventListener("touchstart",e=>{
+    const r=c.getBoundingClientRect(); start(e.touches[0].clientX-r.left, e.touches[0].clientY-r.top);
+  },{passive:false});
+  c.addEventListener("touchmove",e=>{
+    const r=c.getBoundingClientRect(); move(e.touches[0].clientX-r.left, e.touches[0].clientY-r.top);
+  },{passive:false});
+  c.addEventListener("touchend",stop);
 }
 function clearCanvas(id){
-  const c = byId(id), ctx = c.getContext('2d');
-  ctx.clearRect(0,0,c.width,c.height);
-  ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height);
+  const c = document.getElementById(id);
+  c.getContext("2d").clearRect(0,0,c.width,c.height);
+  drawn.set(id,false);
 }
-setupSignature('signResp');
-setupSignature('signSal');
+setupCanvas("signRespCanvas");
+setupCanvas("signSalCanvas");
 
-/* Sauvegarde auto locale */
-const STORAGE_KEY="ficheIncidentV2";
-function saveLocal(){
-  const data={};
-  document.querySelectorAll('input,textarea').forEach(el=>{
-    data[el.id] = (el.type==='checkbox') ? el.checked : el.value;
-  });
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  $('#autosaveState').textContent = 'Sauvegarde auto : ON';
+/* Signature -> dataURL compacte (JPEG + downscale) */
+function canvasToSmallDataURL(srcCanvas, maxW=320, mime='image/jpeg', quality=.85){
+  const w=srcCanvas.width, h=srcCanvas.height, r=Math.min(1, maxW/w);
+  const dw=Math.round(w*r), dh=Math.round(h*r);
+  const off=document.createElement('canvas'); off.width=dw; off.height=dh;
+  off.getContext('2d').drawImage(srcCanvas,0,0,dw,dh);
+  return off.toDataURL(mime, quality); /* JPEG => fond blanc, plus de “noir” */
 }
-function restoreLocal(){
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if(!raw) return;
-  const data = JSON.parse(raw);
-  Object.keys(data).forEach(id=>{
-    const el = byId(id);
-    if(!el) return;
-    if(el.type==='checkbox') el.checked = !!data[id];
-    else el.value = data[id];
+
+/* Blob -> base64 avec FileReader (évite un énorme tableau JS) */
+function blobToBase64(blob){
+  return new Promise((resolve,reject)=>{
+    const fr = new FileReader();
+    fr.onload = ()=>resolve(String(fr.result).split(',')[1] || '');
+    fr.onerror= ()=>reject(fr.error || new Error('FileReader error'));
+    fr.readAsDataURL(blob);
   });
 }
-function clearAll(){
-  document.querySelectorAll('input[type="text"], input[type="date"], textarea').forEach(el=>el.value='');
-  document.querySelectorAll('input[type="checkbox"]').forEach(el=>el.checked=false);
-  clearCanvas('signResp'); clearCanvas('signSal');
-  localStorage.removeItem(STORAGE_KEY);
-  setDefaultDates();
-}
-window.addEventListener('input',saveLocal);
-window.addEventListener('change',saveLocal);
-restoreLocal();
 
-/* ========= Remplir le gabarit A4 et générer le PDF ========= */
-function nl2br(str){return String(str||'').replace(/\n/g,'<br>')}
-
-function fillSheet(){
-  byId('p_date').textContent = byId('date_fiche').value || '—';
-  byId('p_salarie').textContent = byId('salarie').value || '—';
-  byId('p_responsable').textContent = byId('responsable').value || '—';
-
-  // cases + ticks
-  byId('p_abs_prev_date').textContent = byId('abs_prev_date').value || '—';
-  byId('p_abs_prev_shift').textContent = byId('abs_prev_shift').value || '—';
-  byId('tick_abs_prev').textContent = byId('abs_prev').checked ? '☑' : '';
-
-  byId('p_abs_np_date').textContent = byId('abs_np_date').value || '—';
-  byId('tick_abs_np').textContent = byId('abs_np').checked ? '☑' : '';
-
-  byId('p_ret_prev').textContent = byId('ret_prev_duree').value || '—';
-  byId('tick_ret_prev').textContent = byId('ret_prev').checked ? '☑' : '';
-
-  byId('p_ret_np').textContent = byId('ret_np_duree').value || '—';
-  byId('tick_ret_np').textContent = byId('ret_np').checked ? '☑' : '';
-
-  byId('p_autre').textContent = byId('autre_detail').value || '—';
-  byId('tick_autre').textContent = byId('autre').checked ? '☑' : '';
-
-  byId('p_origine').innerHTML = nl2br(byId('origine').value||'—');
-  byId('p_action').innerHTML  = nl2br(byId('action').value||'—');
-  byId('p_fait_le').textContent = byId('fait_le').value || '—';
-
-  // signatures -> images
-  byId('p_sig_resp').src = byId('signResp').toDataURL('image/png');
-  byId('p_sig_sal').src  = byId('signSal').toDataURL('image/png');
-}
-
-async function makePdf(){
-  fillSheet();
-  // attendre chargement du logo si besoin
-  await new Promise(r=>{
-    const img = byId('logoA4'); if(img.complete) return r();
-    img.addEventListener('load',r,{once:true}); img.addEventListener('error',r,{once:true});
-  });
-
-  const el = byId('sheetA4');
-  const opt = {
-    margin: 0,
-    filename: `Fiche_Incident_${(byId('salarie').value||'SansNom').replace(/\s+/g,'_')}_${(byId('date_fiche').value||'SansDate')}.pdf`,
-    html2canvas: { scale: 2, useCORS:true, scrollY: 0, backgroundColor:'#ffffff' },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['avoid-all'] }
-  };
-  await html2pdf().set(opt).from(el).save();
-}
-
-/* ========= Envoi via proxy Cloudflare (PDF → base64) ========= */
+/* ---------- Envoi PDF ---------- */
 async function sendToServer(){
-  fillSheet();
-  const el = byId('sheetA4');
-  const opt = {
-    margin: 0,
-    html2canvas: { scale: 2, useCORS:true, scrollY: 0, backgroundColor:'#ffffff' },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
-  const blob = await html2pdf().set(opt).from(el).outputPdf('blob');
-  const buf  = await blob.arrayBuffer();
-  const b64  = btoa(String.fromCharCode(...new Uint8Array(buf)));
-
-  const meta = {
-    salarie: byId('salarie').value || 'Inconnu',
-    responsable: byId('responsable').value || 'N/A',
-    date_fiche: byId('date_fiche').value || ''
-  };
+  const WEBAPP_URL = "https://otacos-proxy.contact-otacosbsm.workers.dev/"; // ton proxy
+  disableSend(true); showLoader(true);
 
   try{
-    const res = await fetch('https://otacos-proxy.contact-otacosbsm.workers.dev/', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ meta, b64 })
-    });
-    let msg='OK';
-    const ct = res.headers.get('content-type')||'';
-    if(ct.includes('application/json')){
-      const j = await res.json(); msg = j.message || msg;
-      if(j.status!=='ok') throw new Error(msg);
-    }else if(!res.ok){
-      const t = await res.text(); throw new Error(`HTTP ${res.status} - ${t.slice(0,200)}`);
+    // 1) signatures présentes
+    const respCanvas = $("#signRespCanvas");
+    const salCanvas  = $("#signSalCanvas");
+    if(!respCanvas || !salCanvas){
+      alert("❌ Erreur : les zones de signature ne sont pas disponibles.");
+      return;
     }
-    alert(`✅ Fiche envoyée.\n\n${msg}`);
+
+    // 2) meta
+    const meta = {
+      salarie:     ($("#salarie").value || "Inconnu").trim(),
+      responsable: ($("#responsable").value || "N/A").trim(),
+      date_fiche:  $("#date_fiche").value || new Date().toISOString().split("T")[0],
+    };
+
+    // 3) clone propre + remplacer les canvases par images
+    const original = $("#pageContent");
+    const clone = original.cloneNode(true);
+
+    const toImg = (canvas, nodeInClone)=>{
+      const wrap=document.createElement('div');
+      wrap.style.width='100%'; wrap.style.height='120px';
+      wrap.style.display='flex'; wrap.style.alignItems='center';
+
+      if (drawn.get(canvas.id)){
+        const src=canvasToSmallDataURL(canvas, 320, 'image/jpeg', .85);
+        const img=new Image(); img.src=src; img.style.maxWidth='100%'; img.style.maxHeight='120px';
+        wrap.appendChild(img);
+      }else{
+        const p=document.createElement('div');
+        p.textContent='(pas de signature)'; p.style.color='#777'; p.style.fontSize='12px'; p.style.marginLeft='8px';
+        wrap.appendChild(p);
+      }
+      nodeInClone.replaceWith(wrap);
+    };
+
+    toImg(respCanvas, clone.querySelector("#signRespCanvas"));
+    toImg(salCanvas,  clone.querySelector("#signSalCanvas"));
+
+    // 4) conteneur hors écran pour capture propre
+    const temp=document.createElement('div');
+    temp.style.position='fixed'; temp.style.top='-10000px';
+    temp.appendChild(clone); document.body.appendChild(temp);
+
+    // 5) PDF (options pour éviter page vide/coupures)
+    let pdfBlob;
+    try{
+      pdfBlob = await html2pdf()
+        .set({
+          margin:[10,10],
+          filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
+          pagebreak:{ mode:['avoid-all','css','legacy'] },
+          html2canvas:{
+            scale:2, useCORS:true, scrollY:0, backgroundColor:'#ffffff', willReadFrequently:true
+          },
+          jsPDF:{ unit:'mm', format:'a4', orientation:'portrait' },
+        })
+        .from(clone)
+        .outputPdf('blob');
+    }catch(e){
+      console.error("Erreur PDF :", e);
+      alert("⚠️ Erreur PDF : " + (e?.message || e));
+      return;
+    }finally{
+      temp.remove();
+    }
+
+    // 6) base64 + envoi
+    const b64 = await blobToBase64(pdfBlob);
+    const payload = { meta, b64 };
+
+    let ok=false, msg='';
+    try{
+      const res = await fetch(WEBAPP_URL,{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload)
+      });
+      const ct=res.headers.get('content-type')||'';
+      if(ct.includes('application/json')){
+        const j=await res.json(); ok = j.status==='ok'; msg=j.message|| (ok?'OK':'Erreur serveur');
+      }else{
+        const txt=await res.text(); ok=res.ok; msg = ok ? 'OK (non-JSON)' : `HTTP ${res.status} - ${txt.slice(0,200)}`;
+      }
+    }catch(netErr){
+      console.error('Envoi échoué :', netErr);
+      alert("⚠️ Problème réseau : " + (netErr?.message || netErr));
+      return;
+    }
+
+    alert(ok ? `✅ Merci ${meta.responsable},\n\nLa fiche a bien été enregistrée et envoyée.` : "⚠️ Erreur côté serveur : " + msg);
+
   }catch(err){
-    alert('⚠️ Envoi impossible : '+err.message);
     console.error(err);
+    alert("❌ Erreur inattendue : " + (err?.message || err));
+  }finally{
+    showLoader(false); disableSend(false);
   }
 }
 </script>
