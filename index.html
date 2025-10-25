@@ -368,41 +368,33 @@ async function sendToServer() {
   const WEBAPP_URL = "https://otacos-proxy.contact-otacosbsm.workers.dev/";
 
   try {
-    // ✅ On récupère les canvases
-    const respCanvas = document.getElementById("signRespCanvas");
-    const salCanvas = document.getElementById("signSalCanvas");
-
-    if (!respCanvas || !salCanvas) {
-      alert("❌ Erreur : les zones de signature ne sont pas disponibles.");
-      return;
-    }
-
-    // ✅ Métadonnées de la fiche
+    const page = document.getElementById("pageContent");
     const meta = {
       salarie: document.getElementById("salarie").value || "Inconnu",
       responsable: document.getElementById("responsable").value || "N/A",
-      date_fiche:
-        document.getElementById("date_fiche").value ||
-        new Date().toISOString().split("T")[0],
+      date_fiche: document.getElementById("date_fiche").value || new Date().toISOString().split("T")[0],
     };
 
-    // ✅ Capture des signatures
-    const respImg = new Image();
-    const salImg = new Image();
-    respImg.src = respCanvas.toDataURL("image/png");
-    salImg.src = salCanvas.toDataURL("image/png");
-    respImg.style.width = "100%";
-    salImg.style.width = "100%";
+    // ✅ On clone la page pour travailler sur une copie légère
+    const clone = page.cloneNode(true);
 
-    // On remplace temporairement les canvases par les images
-    respCanvas.replaceWith(respImg);
-    salCanvas.replaceWith(salImg);
+    // On supprime tous les écouteurs/canvas vivants dans la copie
+    clone.querySelectorAll("canvas").forEach((canvas) => {
+      const img = document.createElement("img");
+      img.src = canvas.toDataURL("image/png");
+      img.style.width = "100%";
+      img.style.height = "auto";
+      canvas.replaceWith(img);
+    });
 
-    // Pause courte pour que le DOM se mette à jour
-    await new Promise((r) => setTimeout(r, 300));
+    // ✅ Création d’un conteneur invisible
+    const tempDiv = document.createElement("div");
+    tempDiv.style.position = "fixed";
+    tempDiv.style.top = "-9999px";
+    tempDiv.appendChild(clone);
+    document.body.appendChild(tempDiv);
 
-    // ✅ Génération du PDF
-    const element = document.getElementById("pageContent");
+    // ✅ Génération du PDF à partir du clone uniquement
     const opt = {
       margin: [10, 10],
       filename: `Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
@@ -410,15 +402,24 @@ async function sendToServer() {
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     };
 
-    const pdfBlob = await html2pdf().set(opt).from(element).outputPdf("blob");
+    let pdfBlob;
+    try {
+      pdfBlob = await html2pdf().set(opt).from(clone).outputPdf("blob");
+    } catch (err) {
+      alert("⚠️ Erreur PDF : " + err.message);
+      console.error("Erreur PDF :", err);
+      tempDiv.remove();
+      return;
+    }
+
+    // ✅ Nettoyage du DOM temporaire
+    tempDiv.remove();
+
+    // ✅ Conversion en base64
     const buffer = await pdfBlob.arrayBuffer();
     const b64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
 
-    // ✅ On remet les canvases à la place des images
-    respImg.replaceWith(respCanvas);
-    salImg.replaceWith(salCanvas);
-
-    // ✅ Envoi au serveur
+    // ✅ Envoi via le proxy
     const payload = { meta, b64 };
     const res = await fetch(WEBAPP_URL, {
       method: "POST",
@@ -430,10 +431,10 @@ async function sendToServer() {
     if (json.status === "ok") {
       alert(`✅ Merci ${meta.responsable},\n\nLa fiche a bien été enregistrée et envoyée.`);
     } else {
-      alert("⚠️ Erreur lors de l’envoi : " + json.message);
+      alert("⚠️ Erreur : " + json.message);
     }
   } catch (err) {
-    console.error(err);
+    console.error("Erreur inattendue :", err);
     alert("❌ Erreur inattendue : " + err.message);
   }
 }
