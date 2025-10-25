@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>FICHE INCIDENTS - HITS BOULOGNE (Mobile+PDF A4)</title>
+<title>FICHE INCIDENTS - HITS BOULOGNE (Mobile+PDF A4 • 1 page)</title>
 
 <!-- Génération PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -98,6 +98,19 @@
 
   .date-actions{ display:inline-flex; gap:6px; align-items:center; }
   .date-actions .btn-mini{ background:#1a2d4a; }
+
+  /* ===== Mode compact pour le PDF 1 page ===== */
+  .compact{ gap:8px; padding: 10mm !important; }
+  .compact .header img{ width:44px; }
+  .compact .header-text strong{ font-size:14px; }
+  .compact .title{ font-size:14px; padding:3px 6px; }
+  .compact .grid{ font-size:12px; }
+  .compact input, .compact textarea{ padding:8px 10px; font-size:12.5px; }
+  .compact textarea{ min-height:80px; }
+  .compact .section-h{ padding:5px 6px; font-size:12.5px; }
+  .compact .section-b{ padding:8px; font-size:12.5px; }
+  .compact .row{ gap:8px; margin-bottom:6px; }
+  .compact .sig-wrap, .compact canvas.signature{ height:110px; }
 
   @media print{
     body{ background:#fff; }
@@ -373,7 +386,6 @@ function setupCanvas(id){
 }
 function clearCanvas(id){
   const c=document.getElementById(id);
-  const r=c.getBoundingClientRect();
   const x=c.getContext("2d");
   x.setTransform(1,0,0,1,0,0);
   x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height);
@@ -523,6 +535,35 @@ function bindAutoSaveEvents(){
   loadFromLocal();
 })();
 
+/* ====== Forcer le PDF à tenir sur 1 seule page A4 ====== */
+function fitCloneToOneA4Page(clone){
+  // active le mode compact
+  clone.classList.add('compact');
+
+  // A4 en px à 96 DPI (html2canvas travaille en px CSS)
+  const A4_W = 210 / 25.4 * 96; // ≈ 794 px
+  const A4_H = 297 / 25.4 * 96; // ≈ 1123 px
+
+  // marge html2pdf => 10mm de chaque côté => ~38px
+  const MARGIN_PX = 10 / 25.4 * 96; // ~37.8
+  const targetH = A4_H - 2*MARGIN_PX;
+
+  // force largeur A4 (avant mesure)
+  clone.style.width = "210mm";
+  clone.style.minHeight = "0";
+
+  // mesuré après insertion dans le DOM (fait dans sendToServer)
+  const h = clone.scrollHeight;
+
+  if (h > targetH) {
+    const scale = targetH / h; // < 1 => on réduit
+    clone.style.transformOrigin = "top left";
+    clone.style.transform = `scale(${scale})`;
+    // élargit la largeur pour que le rendu final (après scale) fasse bien 210mm
+    clone.style.width = `calc(210mm / ${scale})`;
+  }
+}
+
 /* ============== PDF + Envoi via proxy ============== */
 function blobToBase64(blob){
   return new Promise((resolve,reject)=>{
@@ -578,6 +619,9 @@ async function sendToServer(){
     off.style.position="fixed"; off.style.top="-10000px"; off.style.left="0";
     off.appendChild(clone); document.body.appendChild(off);
 
+    // *** AJUSTE POUR TENIR SUR 1 PAGE ***
+    fitCloneToOneA4Page(clone);
+
     const opt={
       margin:[10,10],
       filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
@@ -586,7 +630,7 @@ async function sendToServer(){
       jsPDF:{ unit:"mm", format:"a4", orientation:"portrait", compress:true },
     };
 
-    // IMPORTANT : utilise .toPdf().output('blob') pour garantir la taille A4
+    // Flux PDF fiable
     const worker = html2pdf().set(opt).from(clone).toPdf();
     await worker.get('pdf');
     const pdfBlob = await worker.output('blob');
@@ -610,7 +654,9 @@ async function sendToServer(){
       const t=await res.text(); ok=res.ok; msg=ok? "OK (non-JSON)" : `HTTP ${res.status} - ${t.slice(0,120)}`;
     }
 
-    if(ok){ alert(`✅ Merci ${meta.responsable},\n\nLa fiche a bien été enregistrée et envoyée.`); }
+    if(ok){ alert(`✅ Merci ${meta.responsable},
+
+La fiche a bien été enregistrée et envoyée (1 page A4).`); }
     else  { alert("⚠️ Erreur côté serveur : " + msg); }
 
     // resauvegarde après envoi (si autosave ON)
