@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>FICHE INCIDENTS - HITS BOULOGNE</title>
 
-<!-- html2pdf bundle (inclut jsPDF + html2canvas) -->
+<!-- html2pdf (inclut jsPDF + html2canvas interne) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
 <!-- PDF.js pour convertir un PDF joint en images -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -65,7 +65,7 @@
   .made-row input[type="date"]{ max-width:220px; flex:0 0 auto; }
   .made-row .city{ white-space:nowrap; }
 
-  /* Pièces jointes */
+  /* Pièces jointes + croix */
   .attach-box{ border:1.5px dashed #b6bcc6; border-radius:12px; padding:12px; background:#fafbfc; }
   .attach-previews{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
   .attach-previews .thumb{
@@ -227,12 +227,8 @@
       <div id="attachSection" class="no-break">
         <div class="section-h">PIÈCE JOINTE (photo ou PDF)</div>
         <div class="attach-box">
-          <!-- Caméra OU Galerie, plusieurs fichiers possibles -->
           <input id="attachment" type="file" accept="image/*,.pdf" multiple />
           <div class="attach-previews" id="attachPreviews"></div>
-          <div style="font-size:12px;color:#6b7280;margin-top:6px">
-            • Sur mobile : choisissez **Caméra** ou **Galerie**. • Photos/PDF intégrés en **pleine page** (PDF : toutes les pages, la 2ᵉ est ignorée automatiquement).
-          </div>
         </div>
       </div>
     </div>
@@ -242,22 +238,21 @@
 /* ===== Utils ===== */
 const $ = s => document.querySelector(s);
 const ALL_FIELDS_SELECTOR = "input[type='text'], input[type='date'], input[type='checkbox'], textarea";
-const toB64 = s => btoa(unescape(encodeURIComponent(s)));
-const fromB64 = b => decodeURIComponent(escape(atob(b)));
+function showToast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display="block"; t.style.opacity="1"; setTimeout(()=>{ t.style.opacity="0"; setTimeout(()=>t.style.display="none",300); },3500); }
 function todayStr(){ const d=new Date(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${d.getFullYear()}-${m}-${day}`; }
 
 /* ===== Textareas autogrow ===== */
 function autoGrow(el){ el.classList.add('autogrow'); el.style.height='auto'; el.style.height = el.scrollHeight + 'px'; }
 function bindAutoGrow(){ document.querySelectorAll('textarea').forEach(t=>{ autoGrow(t); t.addEventListener('input', ()=>autoGrow(t)); }); }
 
-/* ===== Rows show/hide ===== */
+/* ===== Show/hide rows ===== */
 ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
   const box=$(`#${id}`), sub=$(`#${id}_fields`); if(!box||!sub) return;
   const sync=()=>{ sub.style.display=box.checked?"inline-flex":"none"; };
   box.addEventListener("change",()=>{ sync(); saveToLocal(); }); sync();
 });
 
-/* ===== Signature canvases (HiDPI) ===== */
+/* ===== Signature canvases ===== */
 function setupCanvas(id){
   const c=$(`#${id}`), ctx=c.getContext("2d");
   function fit(){
@@ -270,7 +265,8 @@ function setupCanvas(id){
     ctx.lineWidth=2; ctx.lineCap="round"; ctx.strokeStyle="#000";
   }
   function sizeCss(){ const p=c.closest('.sig-wrap'); c.style.width=p.clientWidth+"px"; c.style.height=p.clientHeight+"px"; }
-  sizeCss(); fit(); window.addEventListener("resize",()=>{sizeCss();fit();}); window.addEventListener("orientationchange",()=>setTimeout(()=>{sizeCss();fit();},250));
+  sizeCss(); fit(); window.addEventListener("resize",()=>{sizeCss();fit();});
+  window.addEventListener("orientationchange",()=>setTimeout(()=>{sizeCss();fit();},250));
   let drawing=false, prev=null; const hint=c.parentElement.querySelector('.sig-hint');
   const start=(x,y)=>{ drawing=true; prev={x,y}; if(hint) hint.style.opacity='0'; };
   const move=(x,y)=>{ if(!drawing) return; ctx.beginPath(); ctx.moveTo(prev.x,prev.y); ctx.lineTo(x,y); ctx.stroke(); prev={x,y}; saveToLocalThrottled(); };
@@ -293,7 +289,7 @@ function canvasToSmallDataURL(srcCanvas,maxCssW=360,mime='image/jpeg',quality=0.
   const ctx=off.getContext('2d'); ctx.fillStyle="#fff"; ctx.fillRect(0,0,dw,dh); ctx.drawImage(src,0,0,dw,dh); return off.toDataURL(mime,quality);
 }
 
-/* ===== Auto-save ON + share URL ===== */
+/* ===== Auto-save ===== */
 const STORAGE_KEY="ficheIncidentBSM";
 function collectData(includeSigs=true){
   const data={}; document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{ data[el.id]=(el.type==="checkbox")?el.checked:el.value; });
@@ -310,38 +306,40 @@ function restoreSignature(id,dataUrl){
   img.onload=()=>{ const r=c.getBoundingClientRect(); ctx.fillStyle="#fff"; ctx.fillRect(0,0,r.width,r.height); ctx.drawImage(img,0,0,r.width,r.height); const h=c.parentElement.querySelector('.sig-hint'); if(h) h.style.opacity='0'; };
   img.src=dataUrl;
 }
-function updateShareUrl(){ const data=collectData(false); try{ const b64=toB64(JSON.stringify(data)); if(b64.length<3500){ const base=location.href.split('#')[0].split('?')[0]; history.replaceState(null,'',base+'#d='+b64); } }catch(e){} }
-function saveToLocal(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData(true))); updateShareUrl(); syncToolbarPadding(); }catch(e){} }
+function saveToLocal(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData(true))); syncToolbarPadding(); }catch(e){} }
 let _saveTimer=null; function saveToLocalThrottled(){ clearTimeout(_saveTimer); _saveTimer=setTimeout(saveToLocal,300); }
-function loadFromLocal(){ const m=location.hash.match(/[#&]d=([^&]+)/); if(m&&m[1]){ try{ applyData(JSON.parse(fromB64(m[1]))); return; }catch(e){} } try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw) applyData(JSON.parse(raw)); }catch(e){} }
+function loadFromLocal(){ try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw) applyData(JSON.parse(raw)); }catch(e){} }
 function clearCanvas(id){ const c=document.getElementById(id), x=c.getContext("2d"); x.setTransform(1,0,0,1,0,0); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); const h=c.parentElement.querySelector('.sig-hint'); if(h) h.style.opacity='1'; }
 function bindAutoSaveEvents(){ document.addEventListener("input", saveToLocal); document.addEventListener("change", saveToLocal); }
 
-/* ===== Pièces jointes: gestion avancée (croix × + clear) ===== */
+/* ===== Pièces jointes : mémoire + croix + clear ===== */
 let attachedFiles = [];
-const attachInput = document.getElementById('attachment');
+const attachInput    = document.getElementById('attachment');
 const attachPreviews = document.getElementById('attachPreviews');
 
-attachInput.addEventListener('change', ()=>{
-  const files = Array.from(attachInput.files || []);
-  if(!files.length) return;
-  attachedFiles = attachedFiles.concat(files);
-  attachInput.value='';  // reset pour pouvoir re-choisir le même fichier si besoin
-  renderAttachPreviews();
-  saveToLocal();
-});
-
+if (attachInput) {
+  attachInput.addEventListener('change', () => {
+    const files = Array.from(attachInput.files || []);
+    if (!files.length) return;
+    attachedFiles = attachedFiles.concat(files);
+    attachInput.value = '';
+    renderAttachPreviews();
+    saveToLocal();
+  });
+}
 function renderAttachPreviews(){
-  attachPreviews.innerHTML='';
-  attachedFiles.forEach((f, idx)=>{
-    const holder=document.createElement('div'); holder.className='thumb';
-    if(f.type.startsWith('image/')){
-      const url=URL.createObjectURL(f);
-      const img=document.createElement('img'); img.src=url; holder.appendChild(img);
-    }else if(f.type==='application/pdf'){
-      const span=document.createElement('span'); span.className='pdfbadge'; span.textContent='PDF joint'; holder.appendChild(span);
-    }else{
-      holder.textContent=f.name;
+  if (!attachPreviews) return;
+  attachPreviews.innerHTML = '';
+  attachedFiles.forEach((f, idx) => {
+    const holder = document.createElement('div');
+    holder.className = 'thumb';
+    if (f.type.startsWith('image/')) {
+      const url = URL.createObjectURL(f);
+      const img = document.createElement('img'); img.src=url; holder.appendChild(img);
+    } else if (f.type === 'application/pdf') {
+      const span = document.createElement('span'); span.className='pdfbadge'; span.textContent='PDF joint'; holder.appendChild(span);
+    } else {
+      holder.textContent = f.name;
     }
     const rm=document.createElement('button'); rm.className='remove'; rm.type='button'; rm.textContent='×';
     rm.onclick=()=>{ attachedFiles.splice(idx,1); renderAttachPreviews(); saveToLocal(); };
@@ -349,27 +347,11 @@ function renderAttachPreviews(){
     attachPreviews.appendChild(holder);
   });
 }
-
-/* Efface TOUT (champs + signatures + pièces jointes) */
-function clearAll(){
-  if(!confirm("Effacer tous les champs, signatures, la sauvegarde et les pièces jointes ?")) return;
-  document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{ if(el.type==="checkbox") el.checked=false; else el.value=""; });
-  ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{ const s=$(`#${id}_fields`); if(s) s.style.display="none"; });
-  clearCanvas("signRespCanvas"); clearCanvas("signSalCanvas");
-  localStorage.removeItem(STORAGE_KEY); history.replaceState(null,'',location.href.split('#')[0]);
-  // pièces jointes
+function clearAllAttachments(){
   attachedFiles = [];
-  attachPreviews.innerHTML='';
-  attachInput.value='';
-  syncToolbarPadding();
+  if (attachPreviews) attachPreviews.innerHTML = '';
+  if (attachInput)    attachInput.value = '';
 }
-
-/* ===== Anti-recouvrement toolbar ===== */
-function syncToolbarPadding(){ const tb=$("#toolbar"); const h=(tb&&getComputedStyle(tb).display!=='none')?tb.offsetHeight:0; document.documentElement.style.setProperty('--toolbar-h', h+'px'); }
-if(window.visualViewport){ visualViewport.addEventListener('resize', syncToolbarPadding); visualViewport.addEventListener('scroll', syncToolbarPadding); }
-
-/* ===== Toast ===== */
-function showToast(msg){ const t=$("#toast"); if(!t) return; t.textContent=msg; t.style.display="block"; t.style.opacity="1"; setTimeout(()=>{ t.style.opacity="0"; setTimeout(()=>{ t.style.display="none"; },300); }, 3500); }
 
 /* ===== Validation ===== */
 function validateForm(){
@@ -394,20 +376,7 @@ function validateForm(){
   return true;
 }
 
-/* ===== PDF.js helpers ===== */
-async function pdfFirstPageToDataURL(file, scale=1.8){
-  if(!window['pdfjsLib']) return null;
-  const ab = await file.arrayBuffer();
-  const doc = await pdfjsLib.getDocument({data:ab}).promise;
-  const page = await doc.getPage(1);
-  const viewport = page.getViewport({ scale });
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = viewport.width;
-  canvas.height = viewport.height;
-  await page.render({ canvasContext: ctx, viewport }).promise;
-  return canvas.toDataURL('image/jpeg', 0.95);
-}
+/* ===== PDF: helpers pour les PJ PDF -> images (sauf page 2) ===== */
 async function pdfPagesToDataURLs(file, {scale=1.8}={}){
   if(!window['pdfjsLib']) return [];
   const ab = await file.arrayBuffer();
@@ -415,7 +384,7 @@ async function pdfPagesToDataURLs(file, {scale=1.8}={}){
   const total = doc.numPages;
   const out = [];
   for(let p=1; p<=total; p++){
-    if(p===2) continue; // ignorer systématiquement la page 2
+    if(p===2) continue; // on ignore systématiquement la 2e page
     const page = await doc.getPage(p);
     const viewport = page.getViewport({ scale });
     const canvas = document.createElement('canvas');
@@ -429,54 +398,23 @@ async function pdfPagesToDataURLs(file, {scale=1.8}={}){
 function fileToDataURL(file){
   return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
 }
-
-/* Récupère images pour PDF (photos + PDF toutes pages sauf 2) */
 async function getAttachmentImages(){
   const images = [];
   for(const f of attachedFiles){
-    if(f.type.startsWith('image/')){
-      images.push(await fileToDataURL(f));
-    }else if(f.type === 'application/pdf'){
+    if(f.type.startsWith('image/')) images.push(await fileToDataURL(f));
+    else if(f.type === 'application/pdf'){
       const pages = await pdfPagesToDataURLs(f);
       if(pages.length) images.push(...pages);
-      else{
-        const d1 = await pdfFirstPageToDataURL(f);
-        if(d1) images.push(d1);
-      }
     }
   }
   return images;
 }
 
-/* Remplace les <textarea> du clone PDF par <div> (tout afficher) */
-function renderTextareasForPdf(clone){
-  clone.querySelectorAll('textarea').forEach(t=>{
-    const div = document.createElement('div');
-    div.style.whiteSpace = 'pre-wrap';
-    div.style.wordWrap   = 'break-word';
-    div.style.border     = '1.5px solid #c9ced6';
-    div.style.borderRadius = '10px';
-    div.style.padding    = '6px 8px';
-    div.style.minHeight  = '60px';
-    div.textContent      = t.value || '';
-    t.replaceWith(div);
-  });
-}
-
-/* ===== Init ===== */
-(function init(){
-  bindAutoGrow();
-  bindAutoSaveEvents(); loadFromLocal(); updateShareUrl(); syncToolbarPadding(); 
-  window.addEventListener('resize', syncToolbarPadding);
-  window.addEventListener('orientationchange', ()=>setTimeout(syncToolbarPadding,250));
-})();
-
-/* ===== Génération PDF manuelle (1re page garantie unique) ===== */
-async function buildPdfFromClone(clone, attachImgs){
-  // 1) Préparer style PDF
+/* ===== Génération PDF (page 1 A4 + PJ plein écran) ===== */
+function prepareCloneForPdf(clone){
   const style=document.createElement('style');
   style.textContent=`
-    .pdf-a4{ width:210mm!important; height:297mm!important; padding:10mm!important; box-shadow:none!important; border-radius:0!important; }
+    .pdf-a4{ width:210mm!important; min-height:297mm!important; padding:10mm!important; box-shadow:none!important; border-radius:0!important; }
     .pdf-a4 .title{ font-size:12.5px; padding:4px 6px; }
     .pdf-a4 .grid{ font-size:11.5px; }
     .pdf-a4 input, .pdf-a4 textarea{ padding:6px 8px; font-size:11.5px; }
@@ -488,62 +426,17 @@ async function buildPdfFromClone(clone, attachImgs){
     .pdf-a4 .signature, .pdf-a4 img.signature-img{ height:80px!important; width:100%!important; object-fit:contain; background:#fff; }
   `;
   clone.prepend(style); clone.classList.add('pdf-a4');
-
-  // 2) Remplacer canvases signature + textareas
-  function replaceCanvasWithImg(id,h=80){
-    const src=document.getElementById(id);
-    const img=document.createElement('img');
-    img.src=canvasToSmallDataURL(src,500,"image/jpeg",0.9);
-    img.className="signature-img"; img.style.width="100%"; img.style.height=h+"px"; img.style.objectFit="contain"; img.style.background="#fff";
-    const target=clone.querySelector("#"+id); if(target) target.replaceWith(img);
-  }
-  renderTextareasForPdf(clone);
-  replaceCanvasWithImg("signRespCanvas",80);
-  replaceCanvasWithImg("signSalCanvas",80);
-
-  // 3) Si pas de pièces jointes, retirer la section (pour ne pas la voir dans le PDF)
-  if(!attachImgs || !attachImgs.length){
-    const sec = clone.querySelector('#attachSection');
-    if(sec) sec.remove();
-  }
-
-  // 4) Prendre un screenshot unique de la page (A4) -> garantit 1 page
-  const off=document.createElement("div");
-  off.style.position="fixed"; off.style.top="-10000px"; off.style.left="0";
-  off.appendChild(clone); document.body.appendChild(off);
-
-  // html2canvas global vient du bundle html2pdf
-  const canvas = await html2canvas(clone, {
-    scale: 2, useCORS: true, backgroundColor: "#ffffff", scrollY: 0
-  });
-  const imgData = canvas.toDataURL('image/jpeg', 0.95);
-
-  // 5) Créer le PDF et placer l'image au centre (avec marges)
-  const pdf = new jspdf.jsPDF('p','mm','a4'); // jsPDF exposé par le bundle
-  const a4w=210, a4h=297, margin=10;
-  let wmm = a4w - 2*margin;
-  let hmm = wmm * (canvas.height / canvas.width);
-  if(hmm > a4h - 2*margin){ hmm = a4h - 2*margin; wmm = hmm * (canvas.width / canvas.height); }
-  const x=(a4w-wmm)/2, y=(a4h-hmm)/2;
-  pdf.addImage(imgData, 'JPEG', x, y, wmm, hmm);
-
-  // 6) Ajouter les pièces jointes (pleine page)
-  if(attachImgs && attachImgs.length){
-    const margin2=5, innerW=a4w-2*margin2, innerH=a4h-2*margin2;
-    for(const durl of attachImgs){
-      const dims = await getImageSize(durl);
-      let w=innerW, h=innerH, ratio=dims.w/dims.h;
-      if(w/h > ratio){ w=h*ratio; } else { h=w/ratio; }
-      const xx=(a4w-w)/2, yy=(a4h-h)/2;
-      pdf.addPage('a4','p');
-      const fmt = durl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-      pdf.addImage(durl, fmt, xx, yy, w, h);
-    }
-  }
-
-  off.remove();
-  return pdf;
 }
+function replaceCanvasWithImg(clone, id, h=80){
+  const src=$(`#${id}`); const img=document.createElement('img');
+  img.src=canvasToSmallDataURL(src,500,"image/jpeg",0.9); img.className="signature-img"; img.style.width="100%"; img.style.height=h+"px"; img.style.objectFit="contain"; img.style.background="#fff";
+  const target=clone.querySelector("#"+id); if(target) target.replaceWith(img);
+}
+function fitCloneToOneA4Page(clone){
+  const A4_H=297/25.4*96, M=10/25.4*96, target=A4_H-2*M, h=clone.scrollHeight;
+  if(h>target){ const s=target/h; clone.style.transformOrigin="top left"; clone.style.transform=`scale(${s})`; clone.style.width=`calc(210mm / ${s})`; }
+}
+function blobToBase64(blob){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(",")[1]||""); r.onerror=rej; r.readAsDataURL(blob); }); }
 
 /* ===== Envoi ===== */
 async function sendToServer(){
@@ -560,22 +453,76 @@ async function sendToServer(){
       date_fiche:$("#date_fiche").value||todayStr(),
     };
 
-    // Préparer clone et pièces jointes
+    // Préparer clone pour A4
     const original=$("#pageContent");
     const clone = original.cloneNode(true);
+
+    // Pièces jointes en images (photos + PDF toutes pages sauf 2)
     const attachImgs = await getAttachmentImages();
 
-    // Construire le PDF (1re page sûre + pièces jointes)
-    const pdf = await buildPdfFromClone(clone, attachImgs);
-    const pdfBlob = pdf.output('blob');
+    // Si AUCUNE pièce jointe -> retirer la section du clone (ne pas l’imprimer)
+    if(attachImgs.length === 0){
+      const sec = clone.querySelector('#attachSection');
+      if(sec) sec.remove();
+    }
 
-    // Envoi serveur
+    prepareCloneForPdf(clone);
+    // Remplacer textareas par des <div> pour tout afficher dans le PDF
+    clone.querySelectorAll('textarea').forEach(t=>{
+      const div=document.createElement('div');
+      div.style.whiteSpace='pre-wrap';
+      div.style.wordWrap='break-word';
+      div.style.border='1.5px solid #c9ced6';
+      div.style.borderRadius='10px';
+      div.style.padding='6px 8px';
+      div.style.minHeight='60px';
+      div.textContent=t.value||'';
+      t.replaceWith(div);
+    });
+    replaceCanvasWithImg(clone,"signRespCanvas",80);
+    replaceCanvasWithImg(clone,"signSalCanvas",80);
+
+    const off=document.createElement("div");
+    off.style.position="fixed"; off.style.top="-10000px"; off.style.left="0";
+    off.appendChild(clone); document.body.appendChild(off);
+    fitCloneToOneA4Page(clone);
+
+    const opt={
+      margin:[10,10],
+      filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
+      pagebreak:{ mode:['avoid-all'], avoid:['.no-break','.section-b','.signatures','textarea'] },
+      html2canvas:{ scale:2, useCORS:true, backgroundColor:"#ffffff", scrollY:0, willReadFrequently:true },
+      jsPDF:{ unit:"mm", format:"a4", orientation:"portrait", compress:true },
+    };
+    const worker=html2pdf().set(opt).from(clone).toPdf();
+    const pdf=await worker.get('pdf');  // instance jsPDF
+
+    // Ajouter les pièces jointes (pleine page) à partir de la page 2
+    if(attachImgs.length){
+      const a4w=210, a4h=297, margin=5; // petites marges
+      const innerW=a4w-2*margin, innerH=a4h-2*margin;
+
+      for(const durl of attachImgs){
+        const dims = await getImageSize(durl);
+        let wmm=innerW, hmm=innerH;
+        const ratio = dims.w/dims.h;
+        if(wmm/hmm > ratio){ wmm = hmm*ratio; } else { hmm = wmm/ratio; }
+        const x = (a4w - wmm)/2, y = (a4h - hmm)/2;
+        pdf.addPage('a4','p');
+        const fmt = durl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+        pdf.addImage(durl, fmt, x, y, wmm, hmm);
+      }
+    }
+
+    const pdfBlob = pdf.output('blob');
+    off.remove();
+
     const b64 = await blobToBase64(pdfBlob);
     const payload={ meta, b64 };
     await fetch(WEBAPP_URL,{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(payload) });
 
-    const pjMsg = attachedFiles.length ? " Les pièces jointes ont été intégrées." : "";
-    showToast(`✅ Merci ${meta.responsable}, la fiche incident est imprimée et scannée.${pjMsg}`);
+    const extra = attachedFiles.length ? " Les pièces jointes ont été intégrées." : "";
+    showToast(`✅ Merci ${meta.responsable}, la fiche incident est imprimée et scannée.${extra}`);
     saveToLocal();
   }catch(e){
     console.error(e);
@@ -586,15 +533,43 @@ async function sendToServer(){
 }
 
 /* Helpers */
-function blobToBase64(blob){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(",")[1]||""); r.onerror=rej; r.readAsDataURL(blob); }); }
-function getImageSize(dataUrl){ return new Promise(res=>{ const img=new Image(); img.onload=()=>res({w:img.naturalWidth||img.width, h:img.naturalHeight||img.height}); img.src=dataUrl; }); }
-function clearCanvas(id){ const c=document.getElementById(id), x=c.getContext("2d"); x.setTransform(1,0,0,1,0,0); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); const h=c.parentElement.querySelector('.sig-hint'); if(h) h.style.opacity='1'; }
+function getImageSize(dataUrl){
+  return new Promise(res=>{ const img=new Image(); img.onload=()=>res({w:img.naturalWidth||img.width, h:img.naturalHeight||img.height}); img.src=dataUrl; });
+}
 
-/* Share URL */
-function updateShareUrl(){ const data=collectData(false); try{ const b64=btoa(unescape(encodeURIComponent(JSON.stringify(data)))); if(b64.length<3500){ const base=location.href.split('#')[0].split('?')[0]; history.replaceState(null,'',base+'#d='+b64); } }catch(e){} }
+/* ===== Clear All (inclut PJ) ===== */
+function clearAll(){
+  if(!confirm("Effacer tous les champs, signatures, la sauvegarde et les pièces jointes ?")) return;
+  document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{
+    if(el.type==="checkbox") el.checked=false; else el.value="";
+  });
+  ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
+    const s=$(`#${id}_fields`); if(s) s.style.display="none";
+  });
+  clearCanvas("signRespCanvas"); clearCanvas("signSalCanvas");
+  localStorage.removeItem(STORAGE_KEY);
+  clearAllAttachments();                    // << efface aussi les PJ
+  syncToolbarPadding();
+}
 
-/* Init padding */
-if(window.visualViewport){ visualViewport.addEventListener('resize', syncToolbarPadding); visualViewport.addEventListener('scroll', syncToolbarPadding); }
+/* ===== Anti-recouvrement toolbar ===== */
+function syncToolbarPadding(){
+  const tb=$("#toolbar");
+  const h=(tb&&getComputedStyle(tb).display!=='none')?tb.offsetHeight:0;
+  document.documentElement.style.setProperty('--toolbar-h', h+'px');
+}
+if(window.visualViewport){
+  visualViewport.addEventListener('resize', syncToolbarPadding);
+  visualViewport.addEventListener('scroll', syncToolbarPadding);
+}
+
+/* ===== Init ===== */
+(function init(){
+  bindAutoGrow();
+  bindAutoSaveEvents(); loadFromLocal(); syncToolbarPadding();
+  window.addEventListener('resize', syncToolbarPadding);
+  window.addEventListener('orientationchange', ()=>setTimeout(syncToolbarPadding,250));
+})();
 </script>
 </body>
 </html>
