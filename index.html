@@ -126,6 +126,30 @@
     .page-wrapper { padding: 8px 8px calc(64px + env(safe-area-inset-bottom)); }
     .page { width: min(100vw - 16px, var(--page-w)); padding: 10mm; box-shadow: none; }
 
+    /* Empiler par défaut */
+    .grid tr { display:block; }
+    .grid td { display:block; width:100%; padding:8px 0; }
+    .grid .label { margin-bottom:6px; }
+
+    /* Garder la première ligne sur une seule ligne */
+    .grid.fixed tr:first-child { display:grid; grid-template-columns: auto 1fr auto 1fr; column-gap:10px; align-items:center; }
+    .grid.fixed tr:first-child td{ display:block; padding:6px 4px; }
+
+    .row { align-items:flex-start; gap:10px; }
+    .sub { display:inline-flex; flex-wrap:wrap; }
+
+    textarea { min-height:90px; }
+
+    .sig-wrap { height:120px; }
+    canvas.signature { height:120px; }
+
+    input[type="text"], input[type="date"], textarea { min-height:40px; }
+    input[type="checkbox"] { width:20px; height:20px; }
+  }
+
+    .page-wrapper { padding: 8px 8px calc(64px + env(safe-area-inset-bottom)); }
+    .page { width: min(100vw - 16px, var(--page-w)); padding: 10mm; box-shadow: none; }
+
     /* Par défaut, on empile tout SAUF la première ligne que l'on garde sur une ligne */
     .grid tr { display:block; }
     .grid td { display:block; width:100%; padding:8px 0; }
@@ -202,19 +226,19 @@
 
       <table class="grid no-break fixed grid-top" role="presentation">
         <tr>
-          <td class="label" style="width:70px;">Date :</td>
-          <td style="width:260px;">
+          <td class="label" style="width:70px; white-space:nowrap;">Date :</td>
+          <td style="width:230px; vertical-align:middle;">
             <div class="date-actions">
               <input type="date" id="date_fiche" autocomplete="off" />
               <button class="btn-mini" type="button" onclick="setToday('date_fiche')">Aujourd'hui</button>
             </div>
           </td>
-          <td class="label" style="text-align:right;">Fiche ouverte pour le salarié :</td>
-          <td style="width:240px;"><input type="text" id="salarie" placeholder="Nom du salarié" autocomplete="name" /></td>
+          <td class="label" style="text-align:right; white-space:nowrap; width:1%;">Fiche ouverte pour le salarié :</td>
+          <td style="width:260px; vertical-align:middle;"><input type="text" id="salarie" placeholder="Nom du salarié" autocomplete="name" style="width:100%;" /></td>
         </tr>
         <tr>
-          <td class="label">Responsable :</td>
-          <td colspan="3"><input type="text" id="responsable" placeholder="Responsable" style="width:60%;" autocomplete="name" /></td>
+          <td class="label" style="white-space:nowrap;">Responsable :</td>
+          <td colspan="3"><input type="text" id="responsable" placeholder="Responsable" style="width:100%;" autocomplete="name" /></td>
         </tr>
       </table>
 
@@ -628,12 +652,20 @@ async function sendToServer(){
     // Remplace canvases signature par images JPEG fond blanc
     const respCanvas=$("#signRespCanvas");
     const salCanvas=$("#signSalCanvas");
+
     const imgResp=document.createElement("img");
-    imgResp.src=canvasToSmallDataURL(respCanvas,360,"image/jpeg",0.85);
+    imgResp.src=canvasToSmallDataURL(respCanvas,500,"image/jpeg",0.9);
     imgResp.style.width="100%";
+    imgResp.style.height="80px";
+    imgResp.style.objectFit="contain";
+    imgResp.style.background="#fff";
+
     const imgSal=document.createElement("img");
-    imgSal.src=canvasToSmallDataURL(salCanvas,360,"image/jpeg",0.85);
+    imgSal.src=canvasToSmallDataURL(salCanvas,500,"image/jpeg",0.9);
     imgSal.style.width="100%";
+    imgSal.style.height="80px";
+    imgSal.style.objectFit="contain";
+    imgSal.style.background="#fff";
 
     const cloneResp=clone.querySelector("#signRespCanvas");
     const cloneSal =clone.querySelector("#signSalCanvas");
@@ -698,3 +730,4 @@ La fiche a bien été enregistrée et envoyée (1 page A4).`); }
 </script>
 </body>
 </html>
+
