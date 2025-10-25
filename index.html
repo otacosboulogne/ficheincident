@@ -10,7 +10,7 @@
 
 <style>
   :root{
-    --page-w: 210mm;             /* A4 écran (info) */
+    --page-w: 210mm;
     --pad: 14mm;
     --theme: #1a2d4a;
     --txt: #0b1320;
@@ -40,7 +40,6 @@
     padding:8px 10px; margin-top:2px;
   }
 
-  /* Tableau “entête” */
   table.grid{ width:100%; border-collapse: collapse; font-size:14px; table-layout: auto; }
   .grid td{ padding:6px 6px; vertical-align:middle; }
   .label{ font-weight:700; white-space:nowrap; }
@@ -72,7 +71,6 @@
   .sig-actions{ text-align:right; margin-top:6px; }
   .btn-mini{ font-size:13px; padding:7px 12px; border:none; background:#404b57; color:#fff; border-radius:10px; }
 
-  /* Barre d’outils mobile */
   .toolbar{ position:fixed; left:0; right:0; bottom:0; z-index:9999; }
   .toolbar-inner{
     display:flex; gap:10px; flex-wrap:wrap; justify-content:center;
@@ -87,8 +85,8 @@
   .btn.link{ background:transparent; color:#000; border:1.5px dashed #111; }
   .btn[disabled]{ opacity:.55; cursor:not-allowed; }
 
-  .today-btn{ display:inline-flex; }       /* visible à l’écran, masqué dans le PDF */
   .date-actions{ display:flex; gap:8px; align-items:center; }
+  .today-btn{ display:inline-flex; }  /* masqué uniquement dans le PDF */
 
   #loader{
     position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35);
@@ -96,7 +94,7 @@
   }
   #loader .box{ background:#111; padding:14px 18px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,.4); }
 
-  /* Mobile : entête en 2 colonnes (Date | Salarié) */
+  /* Mobile : 1ère ligne = deux colonnes (Date | Salarié) */
   @media (max-width: 768px){
     .grid tr { display:block; }
     .grid td { display:block; width:100%; padding:6px 4px; }
@@ -104,7 +102,7 @@
 
     .grid tr:first-child{
       display:grid !important;
-      grid-template-columns: 1fr 1fr;    /* Date | Salarié */
+      grid-template-columns: 1fr 1fr;
       column-gap:12px; align-items:end;
     }
     .grid tr:first-child td:nth-child(1),
@@ -138,7 +136,7 @@
 
   <div id="loader"><div class="box">⏳ Génération & envoi en cours…</div></div>
 
-  <!-- Contenu à l’écran (jamais déformé) -->
+  <!-- Contenu à l’écran -->
   <div class="page-wrapper">
     <div class="page" id="pageContent">
       <div class="header no-break">
@@ -234,7 +232,7 @@
       </div>
 
       <div class="signatures no-break">
-        <div>
+        <div class="sig-box">
           <label for="signRespCanvas">Signature Responsable</label>
           <div class="sig-wrap">
             <canvas id="signRespCanvas" class="signature"></canvas>
@@ -242,7 +240,7 @@
           </div>
           <div class="sig-actions"><button class="btn-mini" type="button" onclick="clearCanvas('signRespCanvas'); saveToLocal()">Effacer</button></div>
         </div>
-        <div>
+        <div class="sig-box">
           <label for="signSalCanvas">Signature Salarié</label>
           <div class="sig-wrap">
             <canvas id="signSalCanvas" class="signature"></canvas>
@@ -281,13 +279,13 @@ function setToday(id){
   sync();
 });
 
-/* ======= Signatures (canvas HiDPI, sans getImageData) ======= */
+/* ======= Signatures (HiDPI, sans getImageData) ======= */
 function setupCanvas(id){
   const c = document.getElementById(id);
   const ctx = c.getContext("2d");
 
   function fit(){
-    // sauvegarde en dataURL (pas de getImageData -> pas d'avertissements)
+    // snapshot léger
     let backup = null;
     try{ backup = c.toDataURL("image/png"); }catch(e){}
 
@@ -298,10 +296,8 @@ function setupCanvas(id){
     ctx.setTransform(1,0,0,1,0,0);
     ctx.scale(dpr, dpr);
 
-    // fond blanc
     ctx.fillStyle = "#fff"; ctx.fillRect(0,0,rect.width,rect.height);
 
-    // restaure
     if(backup){
       const img = new Image();
       img.onload = ()=>{ ctx.drawImage(img, 0,0, rect.width, rect.height); };
@@ -435,7 +431,6 @@ function bindAutoSaveEvents(){ document.addEventListener("input", saveToLocal); 
 
 /* ======= PDF (clone A4) ======= */
 function prepareCloneForPdf(clone){
-  // Masquer éléments d’UI dans le PDF
   const style = document.createElement('style');
   style.textContent = `
     .pdf-a4{ width:210mm !important; min-height:297mm !important; padding:10mm !important; box-shadow:none !important; border-radius:0 !important; }
@@ -453,7 +448,6 @@ function prepareCloneForPdf(clone){
   clone.prepend(style);
   clone.classList.add('pdf-a4');
 }
-
 function replaceCanvasWithImg(clone, canvasId, outHeightPx=80){
   const srcCanvas = document.getElementById(canvasId);
   const img = document.createElement('img');
@@ -466,7 +460,6 @@ function replaceCanvasWithImg(clone, canvasId, outHeightPx=80){
   const cloneCanvas = clone.querySelector("#"+canvasId);
   if(cloneCanvas) cloneCanvas.replaceWith(img);
 }
-
 function blobToBase64(blob){
   return new Promise((resolve,reject)=>{
     const r=new FileReader();
@@ -490,10 +483,10 @@ async function sendToServer(){
     const original=$("#pageContent");
     const clone = original.cloneNode(true);
 
-    // Prépare le clone (styles PDF only)
+    // Styles PDF uniquement
     prepareCloneForPdf(clone);
 
-    // Remplace les canvases par des images compactes
+    // Signatures -> images compactes
     replaceCanvasWithImg(clone, "signRespCanvas", 80);
     replaceCanvasWithImg(clone, "signSalCanvas", 80);
 
