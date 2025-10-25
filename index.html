@@ -86,7 +86,7 @@
   .btn[disabled]{ opacity:.55; cursor:not-allowed; }
 
   .date-actions{ display:flex; gap:8px; align-items:center; }
-  .today-btn{ display:inline-flex; }  /* masqué uniquement dans le PDF */
+  .today-btn{ display:inline-flex; }  /* masqué dans le PDF */
 
   #loader{
     position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35);
@@ -94,15 +94,20 @@
   }
   #loader .box{ background:#111; padding:14px 18px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,.4); }
 
-  /* Mobile : 1ère ligne = deux colonnes (Date | Salarié) */
+  /* --- HARMONIE MOBILE (<768px) --- */
   @media (max-width: 768px){
     .grid tr { display:block; }
     .grid td { display:block; width:100%; padding:6px 4px; }
-    .grid .label{ margin-bottom:4px; }
+    .grid .label{
+      margin-bottom:4px;
+      white-space: normal;     /* libellés longs sur 2 lignes si besoin */
+      line-height:1.25; word-break: break-word;
+    }
 
+    /* 1ère ligne -> 2 colonnes (Date) | (Salarié) */
     .grid tr:first-child{
       display:grid !important;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: minmax(0,1fr) minmax(0,1fr);
       column-gap:12px; align-items:end;
     }
     .grid tr:first-child td:nth-child(1),
@@ -110,8 +115,12 @@
     .grid tr:first-child td:nth-child(3),
     .grid tr:first-child td:nth-child(4){ grid-column:2; }
 
+    .date-actions{ display:flex; flex-wrap:wrap; gap:6px; }
+    .today-btn .btn-mini{ padding:6px 10px; font-size:13px; border-radius:10px; }
+    input[type="date"]{ min-width:0; }
+
     input[type="text"], input[type="date"], textarea{
-      min-height:42px; font-size:15px; padding:10px 12px;
+      width:100%; min-height:42px; font-size:15px; padding:10px 12px;
     }
     .signatures{ grid-template-columns: 1fr 1fr; }
   }
@@ -279,23 +288,20 @@ function setToday(id){
   sync();
 });
 
-/* ======= Signatures (HiDPI, sans getImageData) ======= */
+/* ======= Signatures (HiDPI sans getImageData) ======= */
 function setupCanvas(id){
   const c = document.getElementById(id);
   const ctx = c.getContext("2d");
 
   function fit(){
-    // snapshot léger
     let backup = null;
     try{ backup = c.toDataURL("image/png"); }catch(e){}
-
     const rect = c.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
     c.width  = Math.max(1, Math.round(rect.width * dpr));
     c.height = Math.max(1, Math.round(rect.height * dpr));
     ctx.setTransform(1,0,0,1,0,0);
     ctx.scale(dpr, dpr);
-
     ctx.fillStyle = "#fff"; ctx.fillRect(0,0,rect.width,rect.height);
 
     if(backup){
@@ -303,25 +309,19 @@ function setupCanvas(id){
       img.onload = ()=>{ ctx.drawImage(img, 0,0, rect.width, rect.height); };
       img.src = backup;
     }
-
-    ctx.lineWidth = 2;
-    ctx.lineCap = "round";
-    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.strokeStyle = "#000";
   }
-
   function sizeToCss(){
     const p = c.closest('.sig-wrap');
     c.style.width = p.clientWidth + "px";
     c.style.height= p.clientHeight + "px";
   }
-
   sizeToCss(); fit();
   window.addEventListener("resize", ()=>{ sizeToCss(); fit(); });
   window.addEventListener("orientationchange", ()=>{ setTimeout(()=>{ sizeToCss(); fit(); }, 250); });
 
   let drawing=false, prev=null;
   const hint = c.parentElement.querySelector('.sig-hint');
-
   const start=(x,y)=>{ drawing=true; prev={x,y}; if(hint) hint.style.opacity='0'; };
   const move =(x,y)=>{ if(!drawing) return; ctx.beginPath(); ctx.moveTo(prev.x,prev.y); ctx.lineTo(x,y); ctx.stroke(); prev={x,y}; saveToLocalThrottled(); };
   const stop =()=>{ drawing=false; prev=null; };
@@ -329,7 +329,6 @@ function setupCanvas(id){
   c.addEventListener("mousedown",e=>start(e.offsetX,e.offsetY));
   c.addEventListener("mousemove",e=>move(e.offsetX,e.offsetY));
   ["mouseup","mouseleave"].forEach(ev=>c.addEventListener(ev,stop));
-
   c.addEventListener("touchstart",e=>{ e.preventDefault(); const r=c.getBoundingClientRect(), t=e.touches[0]; start(t.clientX-r.left, t.clientY-r.top); },{passive:false});
   c.addEventListener("touchmove", e=>{ e.preventDefault(); const r=c.getBoundingClientRect(), t=e.touches[0]; move(t.clientX-r.left, t.clientY-r.top); },{passive:false});
   c.addEventListener("touchend", stop);
@@ -429,7 +428,7 @@ function bindAutoSaveEvents(){ document.addEventListener("input", saveToLocal); 
   loadFromLocal();
 })();
 
-/* ======= PDF (clone A4) ======= */
+/* ======= PDF (clone A4, 1 page) ======= */
 function prepareCloneForPdf(clone){
   const style = document.createElement('style');
   style.textContent = `
@@ -459,6 +458,19 @@ function replaceCanvasWithImg(clone, canvasId, outHeightPx=80){
   img.style.background = "#fff";
   const cloneCanvas = clone.querySelector("#"+canvasId);
   if(cloneCanvas) cloneCanvas.replaceWith(img);
+}
+function fitCloneToOneA4Page(clone){
+  const A4_H = 297/25.4*96;      // ≈ 1123 px
+  const M = 10/25.4*96;          // ≈ 38 px (marge html2pdf)
+  const targetH = A4_H - 2*M;
+  // Mesure après insertion dans le DOM
+  const h = clone.scrollHeight;
+  if(h > targetH){
+    const scale = targetH / h;
+    clone.style.transformOrigin = "top left";
+    clone.style.transform = `scale(${scale})`;
+    clone.style.width = `calc(210mm / ${scale})`; // conserve largeur A4 après scale
+  }
 }
 function blobToBase64(blob){
   return new Promise((resolve,reject)=>{
@@ -494,6 +506,9 @@ async function sendToServer(){
     const off=document.createElement("div");
     off.style.position="fixed"; off.style.top="-10000px"; off.style.left="0";
     off.appendChild(clone); document.body.appendChild(off);
+
+    // Ajuste pour tenir sur 1 page
+    fitCloneToOneA4Page(clone);
 
     const opt={
       margin:[10,10],
