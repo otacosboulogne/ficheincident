@@ -86,7 +86,6 @@
   .btn[disabled]{ opacity:.55; cursor:not-allowed; }
 
   .date-actions{ display:flex; gap:8px; align-items:center; }
-  .today-btn{ display:inline-flex; }  /* masqué dans le PDF */
 
   #loader{
     position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35);
@@ -94,17 +93,15 @@
   }
   #loader .box{ background:#111; padding:14px 18px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,.4); }
 
-  /* --- HARMONIE MOBILE (<768px) --- */
+  /* HARMONIE MOBILE */
   @media (max-width: 768px){
     .grid tr { display:block; }
     .grid td { display:block; width:100%; padding:6px 4px; }
     .grid .label{
       margin-bottom:4px;
-      white-space: normal;     /* libellés longs sur 2 lignes si besoin */
+      white-space: normal;
       line-height:1.25; word-break: break-word;
     }
-
-    /* 1ère ligne -> 2 colonnes (Date) | (Salarié) */
     .grid tr:first-child{
       display:grid !important;
       grid-template-columns: minmax(0,1fr) minmax(0,1fr);
@@ -115,8 +112,7 @@
     .grid tr:first-child td:nth-child(3),
     .grid tr:first-child td:nth-child(4){ grid-column:2; }
 
-    .date-actions{ display:flex; flex-wrap:wrap; gap:6px; }
-    .today-btn .btn-mini{ padding:6px 10px; font-size:13px; border-radius:10px; }
+    .date-actions{ flex-wrap:wrap; gap:6px; }
     input[type="date"]{ min-width:0; }
 
     input[type="text"], input[type="date"], textarea{
@@ -136,7 +132,7 @@
   <!-- Barre d’outils -->
   <div class="toolbar no-print">
     <div class="toolbar-inner">
-      <button class="btn" onclick="window.print()">📄 PDF / Imprimer</button>
+      <button class="btn" onclick="window.print()">🖨️ Imprimer manuellement ordi</button>
       <button id="sendBtn" class="btn" onclick="sendToServer()">📨 Envoyer</button>
       <button id="autoSaveBtn" class="btn link" onclick="toggleAutoSave()">💾 Sauvegarde auto : ON</button>
       <button class="btn link" onclick="clearAll()">🧹 Effacer tout</button>
@@ -161,10 +157,9 @@
           <td>
             <div class="date-actions">
               <input type="date" id="date_fiche" autocomplete="off">
-              <span class="today-btn"><button class="btn-mini" type="button" onclick="setToday('date_fiche')">Aujourd'hui</button></span>
             </div>
           </td>
-          <td class="label" style="text-align:right;">Fiche ouverte pour le salarié :</td>
+          <td class="label" style="text-align:right;">Fiche ouverte pour :</td>
           <td><input type="text" id="salarie" placeholder="Nom du salarié" autocomplete="name"></td>
         </tr>
         <tr>
@@ -178,10 +173,7 @@
         <div class="row">
           <input type="checkbox" id="abs_prev"><label for="abs_prev"><strong>Absence prévue le :</strong></label>
           <div class="sub" id="abs_prev_fields">
-            <div class="date-actions">
-              <input type="date" id="abs_prev_date">
-              <span class="today-btn"><button class="btn-mini" type="button" onclick="setToday('abs_prev_date')">Aujourd'hui</button></span>
-            </div>
+            <div class="date-actions"><input type="date" id="abs_prev_date"></div>
             <span>Shift prévu à :</span>
             <input type="text" id="abs_prev_shift" placeholder="ex: 18h" inputmode="numeric" style="width:100px">
           </div>
@@ -190,10 +182,7 @@
         <div class="row">
           <input type="checkbox" id="abs_np"><label for="abs_np"><strong>Absence non prévue le :</strong></label>
           <div class="sub" id="abs_np_fields">
-            <div class="date-actions">
-              <input type="date" id="abs_np_date">
-              <span class="today-btn"><button class="btn-mini" type="button" onclick="setToday('abs_np_date')">Aujourd'hui</button></span>
-            </div>
+            <div class="date-actions"><input type="date" id="abs_np_date"></div>
             <span>Shift prévu à :</span>
             <input type="text" id="abs_np_shift" placeholder="ex: 18h" inputmode="numeric" style="width:100px">
           </div>
@@ -233,10 +222,7 @@
 
       <div class="no-break" style="display:flex; align-items:center; gap:8px; font-size:14px;">
         <strong>Fait le :</strong>
-        <div class="date-actions">
-          <input type="date" id="fait_le">
-          <span class="today-btn"><button class="btn-mini" type="button" onclick="setToday('fait_le')">Aujourd'hui</button></span>
-        </div>
+        <div class="date-actions"><input type="date" id="fait_le"></div>
         <span>, à Boulogne-sur-Mer</span>
       </div>
 
@@ -266,16 +252,15 @@
 const $ = s => document.querySelector(s);
 const ALL_FIELDS_SELECTOR = "input[type='text'], input[type='date'], input[type='checkbox'], textarea";
 
+/* UTF-8 Base64 (pour partager l’état dans l’URL) */
+const toB64 = s => btoa(unescape(encodeURIComponent(s)));
+const fromB64 = b => decodeURIComponent(escape(atob(b)));
+
 function todayStr(){
   const d = new Date();
   const m = String(d.getMonth()+1).padStart(2,'0');
   const day = String(d.getDate()).padStart(2,'0');
   return `${d.getFullYear()}-${m}-${day}`;
-}
-function setToday(id){
-  const el = document.getElementById(id);
-  if (el) el.value = todayStr();
-  saveToLocal();
 }
 
 /* ======= Affichage conditionnel ======= */
@@ -303,12 +288,7 @@ function setupCanvas(id){
     ctx.setTransform(1,0,0,1,0,0);
     ctx.scale(dpr, dpr);
     ctx.fillStyle = "#fff"; ctx.fillRect(0,0,rect.width,rect.height);
-
-    if(backup){
-      const img = new Image();
-      img.onload = ()=>{ ctx.drawImage(img, 0,0, rect.width, rect.height); };
-      img.src = backup;
-    }
+    if(backup){ const img = new Image(); img.onload=()=>ctx.drawImage(img,0,0,rect.width,rect.height); img.src=backup; }
     ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.strokeStyle = "#000";
   }
   function sizeToCss(){
@@ -320,8 +300,7 @@ function setupCanvas(id){
   window.addEventListener("resize", ()=>{ sizeToCss(); fit(); });
   window.addEventListener("orientationchange", ()=>{ setTimeout(()=>{ sizeToCss(); fit(); }, 250); });
 
-  let drawing=false, prev=null;
-  const hint = c.parentElement.querySelector('.sig-hint');
+  let drawing=false, prev=null; const hint = c.parentElement.querySelector('.sig-hint');
   const start=(x,y)=>{ drawing=true; prev={x,y}; if(hint) hint.style.opacity='0'; };
   const move =(x,y)=>{ if(!drawing) return; ctx.beginPath(); ctx.moveTo(prev.x,prev.y); ctx.lineTo(x,y); ctx.stroke(); prev={x,y}; saveToLocalThrottled(); };
   const stop =()=>{ drawing=false; prev=null; };
@@ -354,7 +333,7 @@ function canvasToSmallDataURL(srcCanvas, maxCssW=360, mime='image/jpeg', quality
   return off.toDataURL(mime, quality);
 }
 
-/* ======= Autosauvegarde ======= */
+/* ======= Autosauvegarde + Lien partageable ======= */
 const STORAGE_KEY = "ficheIncidentBSM";
 const STORAGE_OPT_KEY = "ficheIncidentBSM_auto";
 function isAutoSaveOn(){ return localStorage.getItem(STORAGE_OPT_KEY)!=="OFF"; }
@@ -363,13 +342,15 @@ function setAutoSave(on){
   const btn = document.getElementById("autoSaveBtn");
   btn.textContent = on ? "💾 Sauvegarde auto : ON" : "💾 Sauvegarde auto : OFF";
 }
-function collectData(){
+function collectData(includeSigs=true){
   const data = {};
   document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{
     data[el.id] = (el.type==="checkbox") ? el.checked : el.value;
   });
-  data.sign_resp = canvasToSmallDataURL(document.getElementById("signRespCanvas"));
-  data.sign_sal  = canvasToSmallDataURL(document.getElementById("signSalCanvas"));
+  if(includeSigs){
+    data.sign_resp = canvasToSmallDataURL(document.getElementById("signRespCanvas"));
+    data.sign_sal  = canvasToSmallDataURL(document.getElementById("signSalCanvas"));
+  }
   return data;
 }
 function applyData(data){
@@ -383,12 +364,11 @@ function applyData(data){
     const box=document.getElementById(id), sub=document.getElementById(id+"_fields");
     if(box && sub){ sub.style.display = box.checked ? "inline-flex":"none"; }
   });
-  restoreSignature("signRespCanvas", data.sign_resp);
-  restoreSignature("signSalCanvas",  data.sign_sal);
+  if(data.sign_resp) restoreSignature("signRespCanvas", data.sign_resp);
+  if(data.sign_sal)  restoreSignature("signSalCanvas",  data.sign_sal);
 }
 function restoreSignature(id, dataUrl){
-  if(!dataUrl) return;
-  const c = document.getElementById(id);
+  const c = document.getElementById(id); if(!dataUrl||!c) return;
   const ctx = c.getContext("2d");
   const img = new Image();
   img.onload = ()=>{
@@ -400,17 +380,44 @@ function restoreSignature(id, dataUrl){
   };
   img.src = dataUrl;
 }
-function saveToLocal(){ if(!isAutoSaveOn()) return; try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData())); }catch(e){} }
+function updateShareUrl(){
+  // on partage SANS signatures pour rester court
+  const data = collectData(false);
+  try{
+    const b64 = toB64(JSON.stringify(data));
+    if(b64.length < 3500){
+      const base = location.href.split('#')[0].split('?')[0];
+      history.replaceState(null, '', base + '#d=' + b64);
+    }
+  }catch(e){}
+}
+function saveToLocal(){
+  if(!isAutoSaveOn()) return;
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData(true)));
+    updateShareUrl();
+  }catch(e){}
+}
 let _saveTimer=null;
 function saveToLocalThrottled(){ if(!isAutoSaveOn()) return; clearTimeout(_saveTimer); _saveTimer=setTimeout(saveToLocal, 300); }
-function loadFromLocal(){ try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw) applyData(JSON.parse(raw)); }catch(e){} }
+function loadFromLocal(){
+  // 1) depuis URL #d=... si présent
+  const m = location.hash.match(/[#&]d=([^&]+)/);
+  if(m && m[1]){
+    try{ const obj = JSON.parse(fromB64(m[1])); applyData(obj); return; }catch(e){}
+  }
+  // 2) sinon depuis localStorage
+  try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw) applyData(JSON.parse(raw)); }catch(e){}
+}
 function toggleAutoSave(){ const on=!isAutoSaveOn(); setAutoSave(on); if(on) saveToLocal(); }
 function clearAll(){
-  if(!confirm("Effacer tous les champs et la sauvegarde locale ?")) return;
+  if(!confirm("Effacer tous les champs, signatures et la sauvegarde ?")) return;
   document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{ if(el.type==="checkbox") el.checked=false; else el.value=""; });
   ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{ const sub=document.getElementById(id+"_fields"); if(sub) sub.style.display="none"; });
   clearCanvas("signRespCanvas"); clearCanvas("signSalCanvas");
   localStorage.removeItem(STORAGE_KEY);
+  // nettoie l’URL partagée
+  history.replaceState(null,'',location.href.split('#')[0]);
 }
 function clearCanvas(id){
   const c=document.getElementById(id); const x=c.getContext("2d");
@@ -419,13 +426,14 @@ function clearCanvas(id){
 }
 function bindAutoSaveEvents(){ document.addEventListener("input", saveToLocal); document.addEventListener("change", saveToLocal); }
 
-/* ======= Init ======= */
+/* ======= Init (dates auto, pas de bouton “Aujourd’hui”) ======= */
 (function init(){
   const def = todayStr();
   ["date_fiche","fait_le"].forEach(id=>{ const el=document.getElementById(id); if(el && !el.value) el.value=def; });
   setAutoSave(isAutoSaveOn());
   bindAutoSaveEvents();
   loadFromLocal();
+  updateShareUrl();
 })();
 
 /* ======= PDF (clone A4, 1 page) ======= */
@@ -442,7 +450,6 @@ function prepareCloneForPdf(clone){
     .pdf-a4 .row{ gap:6px; margin-bottom:6px; }
     .pdf-a4 .sig-wrap{ height:80px !important; }
     .pdf-a4 .signature, .pdf-a4 img.signature-img{ height:80px !important; width:100% !important; object-fit:contain; background:#fff; }
-    .pdf-a4 .today-btn{ display:none !important; }
   `;
   clone.prepend(style);
   clone.classList.add('pdf-a4');
@@ -463,13 +470,12 @@ function fitCloneToOneA4Page(clone){
   const A4_H = 297/25.4*96;      // ≈ 1123 px
   const M = 10/25.4*96;          // ≈ 38 px (marge html2pdf)
   const targetH = A4_H - 2*M;
-  // Mesure après insertion dans le DOM
   const h = clone.scrollHeight;
   if(h > targetH){
     const scale = targetH / h;
     clone.style.transformOrigin = "top left";
     clone.style.transform = `scale(${scale})`;
-    clone.style.width = `calc(210mm / ${scale})`; // conserve largeur A4 après scale
+    clone.style.width = `calc(210mm / ${scale})`;
   }
 }
 function blobToBase64(blob){
