@@ -5,7 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>FICHE INCIDENTS - HITS BOULOGNE</title>
 
+<!-- html2pdf (jsPDF + html2canvas) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
+<!-- PDF.js pour convertir un PDF joint en image (1re page) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script>
+  // PDF.js worker (obligatoire)
+  if (window['pdfjsLib']) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+  }
+</script>
 
 <style>
   :root{
@@ -15,6 +24,7 @@
     --toolbar-h:0px;
   }
   *{ box-sizing:border-box; }
+  html { -webkit-text-size-adjust: 100%; }
   html,body{ margin:0; background:var(--bg); color:var(--txt); font-family:Arial, Helvetica, sans-serif; }
 
   .page-wrapper{ display:flex; justify-content:center; padding:16px; padding-bottom:calc(16px + var(--toolbar-h) + env(safe-area-inset-bottom)); }
@@ -35,7 +45,8 @@
     width:100%; border:1.5px solid #c9ced6; border-radius:10px; padding:10px 12px; font-size:15px;
   }
   input::placeholder, textarea::placeholder{ color:#9aa3ad; }
-  textarea{ min-height:110px; resize:vertical; }
+  textarea{ min-height:110px; resize:vertical; overflow-wrap:anywhere; word-break:break-word; line-height:1.35; }
+  textarea.autogrow{ overflow:hidden; }
 
   .section-h{ background:var(--theme); color:#fff; font-weight:800; letter-spacing:.3px; padding:8px 10px; border-radius:10px; }
   .section-b{ border:1.5px solid #c9ced6; border-radius:12px; padding:12px; }
@@ -51,10 +62,17 @@
   .sig-actions{ text-align:right; margin-top:6px; }
   .btn-mini{ font-size:13px; padding:7px 12px; border:none; background:#404b57; color:#fff; border-radius:10px; }
 
-  /* Ligne "Fait le" en une ligne */
+  /* Ligne "Fait le" sur une seule ligne + date réduite */
   .made-row{ display:flex; align-items:center; gap:10px; flex-wrap:nowrap; }
   .made-row input[type="date"]{ max-width:220px; flex:0 0 auto; }
   .made-row .city{ white-space:nowrap; }
+
+  /* Pièce jointe */
+  .attach-box{ border:1.5px dashed #b6bcc6; border-radius:12px; padding:12px; background:#fafbfc; }
+  .attach-previews{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+  .attach-previews .thumb{ width:120px; height:90px; border:1px solid #cbd3db; border-radius:10px; overflow:hidden; background:#fff; display:flex; align-items:center; justify-content:center; }
+  .attach-previews .thumb img{ max-width:100%; max-height:100%; display:block; }
+  .attach-previews .pdfbadge{ font-size:12px; font-weight:700; color:#c12222; }
 
   /* Toolbar */
   .toolbar{ position:fixed; left:0; right:0; bottom:0; z-index:9999; }
@@ -70,7 +88,7 @@
   /* Toast */
   #toast{ position:fixed; left:50%; bottom:calc(var(--toolbar-h) + 16px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:#111; color:#fff; padding:12px 16px; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.25); display:none; z-index:10001; font-weight:700; white-space:pre-line; }
 
-  /* Mobile harmonisé */
+  /* Mobile harmonisé (titre “Fiche ouverte pour” + champ plus petits) */
   @media (max-width:768px){
     .grid tr{ display:block; }
     .grid td{ display:block; width:100%; padding:6px 4px; }
@@ -79,6 +97,8 @@
     .grid tr:first-child td:nth-child(1), .grid tr:first-child td:nth-child(2){ grid-column:1; }
     .grid tr:first-child td:nth-child(3), .grid tr:first-child td:nth-child(4){ grid-column:2; }
     .grid tr:first-child td{ min-width:0; }
+    .grid tr:first-child td:nth-child(3){ font-size:15px; }
+    #salarie, #salarie::placeholder{ font-size:16px; }
     input[type="text"], input[type="date"], textarea{ width:100%; min-height:42px; font-size:15px; padding:10px 12px; }
     .signatures{ grid-template-columns:1fr 1fr; }
   }
@@ -200,6 +220,16 @@
           <div class="sig-actions"><button class="btn-mini" type="button" onclick="clearCanvas('signSalCanvas'); saveToLocal()">Effacer</button></div>
         </div>
       </div>
+
+      <!-- Pièce jointe -->
+      <div class="section-h no-break">PIÈCE JOINTE (photo ou PDF)</div>
+      <div class="attach-box no-break">
+        <input id="attachment" type="file" accept="image/*,.pdf" capture="environment" />
+        <div class="attach-previews" id="attachPreviews"></div>
+        <div style="font-size:12px;color:#6b7280;margin-top:6px">
+          • Sur mobile, vous pouvez prendre une photo. • Si vous joignez un PDF, seule la 1ʳᵉ page sera ajoutée au PDF final.
+        </div>
+      </div>
     </div>
   </div>
 
@@ -210,6 +240,10 @@ const ALL_FIELDS_SELECTOR = "input[type='text'], input[type='date'], input[type=
 const toB64 = s => btoa(unescape(encodeURIComponent(s)));
 const fromB64 = b => decodeURIComponent(escape(atob(b)));
 function todayStr(){ const d=new Date(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${d.getFullYear()}-${m}-${day}`; }
+
+/* ===== Textareas autogrow ===== */
+function autoGrow(el){ el.classList.add('autogrow'); el.style.height='auto'; el.style.height = el.scrollHeight + 'px'; }
+function bindAutoGrow(){ document.querySelectorAll('textarea').forEach(t=>{ autoGrow(t); t.addEventListener('input', ()=>autoGrow(t)); }); }
 
 /* ===== Rows show/hide ===== */
 ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
@@ -254,7 +288,7 @@ function canvasToSmallDataURL(srcCanvas,maxCssW=360,mime='image/jpeg',quality=0.
   const ctx=off.getContext('2d'); ctx.fillStyle="#fff"; ctx.fillRect(0,0,dw,dh); ctx.drawImage(src,0,0,dw,dh); return off.toDataURL(mime,quality);
 }
 
-/* ===== Auto-save ALWAYS ON + share URL ===== */
+/* ===== Auto-save ON + share URL ===== */
 const STORAGE_KEY="ficheIncidentBSM";
 function collectData(includeSigs=true){
   const data={}; document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{ data[el.id]=(el.type==="checkbox")?el.checked:el.value; });
@@ -309,9 +343,81 @@ function validateForm(){
   return true;
 }
 
+/* ===== Pièce jointe: preview + extraction ===== */
+const attachInput = document.getElementById('attachment');
+const attachPreviews = document.getElementById('attachPreviews');
+attachInput.addEventListener('change', async ()=>{ await refreshAttachPreview(); saveToLocal(); });
+
+async function refreshAttachPreview(){
+  attachPreviews.innerHTML='';
+  const files = attachInput.files || [];
+  if(!files.length) return;
+
+  for(const f of files){
+    const holder = document.createElement('div'); holder.className='thumb';
+    if(f.type.startsWith('image/')){
+      const url = URL.createObjectURL(f);
+      const img = document.createElement('img'); img.src=url; holder.appendChild(img);
+    }else if(f.type === 'application/pdf'){
+      holder.innerHTML = '<span class="pdfbadge">PDF joint</span>';
+    }else{
+      holder.textContent = f.name;
+    }
+    attachPreviews.appendChild(holder);
+  }
+}
+
+/* Convertit la 1re page d'un PDF en dataURL JPEG */
+async function pdfFirstPageToDataURL(file, scale=1.5){
+  if(!window['pdfjsLib']) return null;
+  const ab = await file.arrayBuffer();
+  const doc = await pdfjsLib.getDocument({data:ab}).promise;
+  const page = await doc.getPage(1);
+  const viewport = page.getViewport({ scale });
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  return canvas.toDataURL('image/jpeg', 0.92);
+}
+
+/* Récupère la liste des images à ajouter (photo directe ou 1re page PDF) */
+async function getAttachmentImages(){
+  const images = [];
+  const files = attachInput.files || [];
+  for(const f of files){
+    if(f.type.startsWith('image/')){
+      images.push(await fileToDataURL(f));
+    }else if(f.type === 'application/pdf'){
+      const durl = await pdfFirstPageToDataURL(f);
+      if(durl) images.push(durl);
+    }
+  }
+  return images;
+}
+function fileToDataURL(file){
+  return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
+}
+
+/* Remplace les <textarea> du clone PDF par des <div> (pour tout afficher) */
+function renderTextareasForPdf(clone){
+  clone.querySelectorAll('textarea').forEach(t=>{
+    const div = document.createElement('div');
+    div.style.whiteSpace = 'pre-wrap';
+    div.style.wordWrap   = 'break-word';
+    div.style.border     = '1.5px solid #c9ced6';
+    div.style.borderRadius = '10px';
+    div.style.padding    = '6px 8px';
+    div.style.minHeight  = '60px';
+    div.textContent      = t.value || '';
+    t.replaceWith(div);
+  });
+}
+
 /* ===== Init ===== */
 (function init(){
-  // NE PAS auto-remplir les dates
+  bindAutoGrow();
   bindAutoSaveEvents(); loadFromLocal(); updateShareUrl(); syncToolbarPadding(); 
   window.addEventListener('resize', syncToolbarPadding);
   window.addEventListener('orientationchange', ()=>setTimeout(syncToolbarPadding,250));
@@ -360,18 +466,20 @@ async function sendToServer(){
       date_fiche:$("#date_fiche").value||todayStr(),
     };
 
+    // Préparer clone pour PDF A4 page 1
     const original=$("#pageContent");
     const clone = original.cloneNode(true);
     prepareCloneForPdf(clone);
+    renderTextareasForPdf(clone);
     replaceCanvasWithImg(clone,"signRespCanvas",80);
     replaceCanvasWithImg(clone,"signSalCanvas",80);
 
     const off=document.createElement("div");
     off.style.position="fixed"; off.style.top="-10000px"; off.style.left="0";
     off.appendChild(clone); document.body.appendChild(off);
-
     fitCloneToOneA4Page(clone);
 
+    // Générer jsPDF et récupérer l'instance pour ajouter des pages
     const opt={
       margin:[10,10],
       filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
@@ -379,18 +487,35 @@ async function sendToServer(){
       html2canvas:{ scale:2, useCORS:true, backgroundColor:"#ffffff", scrollY:0, willReadFrequently:true },
       jsPDF:{ unit:"mm", format:"a4", orientation:"portrait", compress:true },
     };
-
     const worker=html2pdf().set(opt).from(clone).toPdf();
-    await worker.get('pdf');
-    const pdfBlob=await worker.output('blob');
+    const pdf = await worker.get('pdf'); // instance jsPDF
+
+    // Pages "pièce jointe" (photos et/ou 1re page PDF)
+    const attachImgs = await getAttachmentImages();
+    const a4w=210, a4h=297, margin=10, innerW=a4w-2*margin, innerH=a4h-2*margin;
+    for(const durl of attachImgs){
+      // dimensionner l'image au mieux dans la page
+      const dims = await getImageSize(durl);
+      let wmm=innerW, hmm=innerH;
+      const ratio = dims.w/dims.h;
+      if(wmm/hmm > ratio){ wmm = hmm*ratio; } else { hmm = wmm/ratio; }
+      const x = (a4w - wmm)/2, y = (a4h - hmm)/2;
+      pdf.addPage('a4','p');
+      const fmt = durl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+      pdf.addImage(durl, fmt, x, y, wmm, hmm);
+    }
+
+    // Sortie du PDF final
+    const pdfBlob = pdf.output('blob');
     off.remove();
 
     const b64=await blobToBase64(pdfBlob);
     const payload={ meta, b64 };
     await fetch(WEBAPP_URL,{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(payload) });
 
-    // Message custom (pas d'alert navigateur)
-    showToast(`✅ Merci ${meta.responsable}, la fiche incident est imprimée et scannée.`);
+    // Message custom (avec info pièce jointe si présente)
+    const pjMsg = attachImgs.length ? " La pièce jointe a été intégrée." : "";
+    showToast(`✅ Merci ${meta.responsable}, la fiche incident est imprimée et scannée.${pjMsg}`);
     saveToLocal();
   }catch(e){
     console.error(e);
@@ -400,8 +525,12 @@ async function sendToServer(){
   }
 }
 
-/* ===== Tiny helpers ===== */
+/* Outils */
 function clearCanvas(id){ const c=document.getElementById(id), x=c.getContext("2d"); x.setTransform(1,0,0,1,0,0); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); const h=c.parentElement.querySelector('.sig-hint'); if(h) h.style.opacity='1'; }
+function getImageSize(dataUrl){
+  return new Promise(res=>{ const img=new Image(); img.onload=()=>res({w:img.naturalWidth||img.width, h:img.naturalHeight||img.height}); img.src=dataUrl; });
+}
+
 </script>
 </body>
 </html>
