@@ -201,18 +201,30 @@ function clearCanvas(id) {
 setupCanvas("signRespCanvas");
 setupCanvas("signSalCanvas");
 
-/* === ENVOI DU PDF === */
+/* === utilitaire : downscale + dataURL compact === */
+function canvasToSmallDataURL(srcCanvas, maxW = 300, mime = 'image/jpeg', quality = 0.8) {
+  const w = srcCanvas.width;
+  const h = srcCanvas.height;
+  const ratio = Math.min(1, maxW / w);
+  const dstW = Math.round(w * ratio);
+  const dstH = Math.round(h * ratio);
+
+  const off = document.createElement('canvas');
+  off.width = dstW;
+  off.height = dstH;
+  const ctx = off.getContext('2d');
+  ctx.drawImage(srcCanvas, 0, 0, dstW, dstH);
+
+  // JPEG + quality pour réduire énormément la taille
+  return off.toDataURL(mime, quality);
+}
+
+/* === ENVOI DU PDF (version robuste) === */
 async function sendToServer() {
   const WEBAPP_URL = "https://otacos-proxy.contact-otacosbsm.workers.dev/";
-  const loader = document.getElementById("loader");
-  const btn = document.getElementById("sendBtn");
-  const log = (...a)=>console.log("[FICHE]", ...a);
 
   try {
-    btn.disabled = true;
-    loader.style.display = "flex";
-
-    // Vérifs signatures
+    // 1) Récup des canvases (signatures)
     const respCanvas = document.getElementById("signRespCanvas");
     const salCanvas  = document.getElementById("signSalCanvas");
     if (!respCanvas || !salCanvas) {
@@ -220,96 +232,107 @@ async function sendToServer() {
       return;
     }
 
-    // Métadonnées
+    // 2) Métadonnées
     const meta = {
-      salarie: (document.getElementById("salarie").value || "Inconnu").trim(),
-      responsable: (document.getElementById("responsable").value || "N/A").trim(),
-      date_fiche: document.getElementById("date_fiche").value || new Date().toISOString().split("T")[0],
+      salarie:      document.getElementById("salarie").value || "Inconnu",
+      responsable:  document.getElementById("responsable").value || "N/A",
+      date_fiche:   document.getElementById("date_fiche").value || new Date().toISOString().split("T")[0],
     };
-    log("meta:", meta);
 
-    // Clone propre
+    // 3) Clone propre du contenu à exporter
     const original = document.getElementById("pageContent");
     const clone = original.cloneNode(true);
 
-    // Remplacement canvases → images
+    // 3.a) compresse les signatures et remplace dans le clone
+    const respSmall = canvasToSmallDataURL(respCanvas, 320, 'image/jpeg', 0.8);
+    const salSmall  = canvasToSmallDataURL(salCanvas, 320, 'image/jpeg', 0.8);
+
     const cloneResp = clone.querySelector("#signRespCanvas");
     const cloneSal  = clone.querySelector("#signSalCanvas");
+
     if (cloneResp) {
       const img1 = document.createElement("img");
-      img1.src = respCanvas.toDataURL("image/png");
-      img1.style.width = "100%"; img1.style.height = "auto";
+      img1.src = respSmall;
+      img1.style.width = "100%";
+      img1.style.height = "auto";
       cloneResp.replaceWith(img1);
     }
     if (cloneSal) {
       const img2 = document.createElement("img");
-      img2.src = salCanvas.toDataURL("image/png");
-      img2.style.width = "100%"; img2.style.height = "auto";
+      img2.src = salSmall;
+      img2.style.width = "100%";
+      img2.style.height = "auto";
       cloneSal.replaceWith(img2);
     }
 
-    // Conteneur invisible
-    const tempDiv = document.createElement("div");
-    tempDiv.style.position = "fixed"; tempDiv.style.top = "-9999px";
-    tempDiv.appendChild(clone);
-    document.body.appendChild(tempDiv);
+    // 3.b) container invisible pour html2pdf
+    const temp = document.createElement("div");
+    temp.style.position = "fixed";
+    temp.style.top = "-10000px";
+    temp.appendChild(clone);
+    document.body.appendChild(temp);
 
-    // Génération PDF depuis le clone
-    log("génération PDF…");
+    // 4) Génération PDF (évite toute récursion)
     let pdfBlob;
     try {
       pdfBlob = await html2pdf()
         .set({
-          margin: [10,10],
-          filename: `Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
-          html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+          margin:       [10,10],
+          filename:     `Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
+          html2canvas:  { scale: 2, useCORS: true, scrollY: 0, willReadFrequently: true },
+          jsPDF:        { unit: "mm", format: "a4", orientation: "portrait" },
         })
         .from(clone)
-        .outputPdf("blob");
-    } catch (err) {
-      console.error(err);
-      alert("⚠️ Erreur PDF : " + (err?.message || err));
+        .outputPdf('blob');
+    } catch (pdfErr) {
+      console.error("Erreur PDF :", pdfErr);
+      alert("⚠️ Erreur PDF : " + (pdfErr?.message || pdfErr));
+      temp.remove();
       return;
-    } finally {
-      tempDiv.remove();
     }
-    log("PDF OK, taille (octets):", pdfBlob.size);
+    temp.remove();
 
-    // Conversion en base64
-    const buffer = await pdfBlob.arrayBuffer();
-    const b64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+    // 5) Convertit le blob → base64
+    const buf = await pdfBlob.arrayBuffer();
+    const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
 
-    // Envoi au proxy (timeout 30s)
-    log("envoi au proxy…");
-    const controller = new AbortController();
-    const to = setTimeout(()=>controller.abort(), 30000);
+    // 6) Envoi au proxy (tolérant si la réponse n'est pas JSON)
+    const payload = { meta, b64 };
+    let ok = false, msg = '';
 
-    const res = await fetch(WEBAPP_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ meta, b64 }),
-      signal: controller.signal
-    }).catch(e => { throw new Error("fetch failed: " + e.message); });
-    clearTimeout(to);
+    try {
+      const res = await fetch(WEBAPP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    let json;
-    try { json = await res.json(); }
-    catch { throw new Error("réponse invalide (pas du JSON)"); }
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        const j = await res.json();
+        ok = j.status === 'ok';
+        msg = j.message || (ok ? 'OK' : 'Erreur inconnue');
+      } else {
+        // Réponse non-JSON : on lit le texte pour debug et on considère succès si 2xx
+        const txt = await res.text();
+        ok = res.ok;
+        msg = res.ok ? 'OK (non-JSON)' : `HTTP ${res.status} - ${txt.slice(0, 200)}`;
+      }
+    } catch (netErr) {
+      console.error('Envoi échoué :', netErr);
+      alert("⚠️ Problème réseau lors de l'envoi : " + (netErr?.message || netErr));
+      return;
+    }
 
-    log("réponse proxy:", json);
-    if (json.status === "ok") {
+    if (ok) {
       alert(`✅ Merci ${meta.responsable},\n\nLa fiche a bien été enregistrée et envoyée.`);
     } else {
-      alert("⚠️ Erreur serveur : " + (json.message || "inconnue"));
+      alert("⚠️ Erreur côté serveur : " + msg);
     }
 
   } catch (err) {
     console.error(err);
-    alert("❌ Erreur : " + (err?.message || err));
-  } finally {
-    loader.style.display = "none";
-    btn.disabled = false;
+    alert("❌ Erreur inattendue : " + (err?.message || err));
   }
 }
 </script>
