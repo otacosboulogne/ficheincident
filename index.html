@@ -5,203 +5,61 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>FICHE INCIDENTS - HITS BOULOGNE</title>
 
-<!-- Librairie pour générer le PDF -->
+<!-- Librairie PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <style>
-  html, body {
-    margin: 0;
-    background: #dcdcdc;
-    font-family: Arial, sans-serif;
-  }
+  html, body { margin: 0; background: #dcdcdc; font-family: Arial, sans-serif; }
 
-  .page-wrapper {
-    display: flex;
-    justify-content: center;
-    padding: 16px;
-  }
+  .page-wrapper { display: flex; justify-content: center; padding: 16px; }
 
   .page {
-    width: 210mm;
-    min-height: 297mm;
-    background: #fff;
-    box-shadow: 0 0 10px rgba(0,0,0,0.25);
-    padding: 15mm;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    position: relative;
+    width: 210mm; min-height: 297mm; background: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.25);
+    padding: 15mm; display: flex; flex-direction: column; gap: 12px; position: relative;
   }
 
-  .header {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .header img {
-    width: 50px;
-  }
-
-  .header-text strong {
-    display: block;
-    font-size: 15px;
-  }
+  .header { display: flex; align-items: flex-start; gap: 10px; }
+  .header img { width: 50px; }
+  .header-text strong { display: block; font-size: 15px; }
 
   .fiche-title {
-    border: 1px solid #000;
-    font-weight: bold;
-    text-align: center;
-    padding: 4px;
-    text-transform: uppercase;
-    margin-top: 8px;
-    font-size: 15px;
+    border: 1px solid #000; font-weight: bold; text-align: center; padding: 4px;
+    text-transform: uppercase; margin-top: 8px; font-size: 15px;
   }
 
-  .info-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-
-  .info-table td {
-    padding: 4px;
-    vertical-align: middle;
-  }
-
-  .label {
-    font-weight: bold;
-    white-space: nowrap;
-  }
-
-  input, textarea {
-    border: 1px solid #999;
-    border-radius: 3px;
-    padding: 4px;
-    font-size: 13px;
-    max-width: 100%;
-  }
+  .info-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .info-table td { padding: 4px; vertical-align: middle; }
+  .label { font-weight: bold; white-space: nowrap; }
+  input, textarea { border: 1px solid #999; border-radius: 3px; padding: 4px; font-size: 13px; max-width: 100%; }
 
   .section-header {
-    background: #1a2d4a;
-    color: #fff;
-    font-weight: bold;
-    text-align: center;
-    padding: 4px;
-    text-transform: uppercase;
-    font-size: 13px;
-    border: 1px solid #000;
-    border-bottom: none;
+    background: #1a2d4a; color: #fff; font-weight: bold; text-align: center; padding: 4px;
+    text-transform: uppercase; font-size: 13px; border: 1px solid #000; border-bottom: none;
   }
+  .section-body { border: 1px solid #000; border-top: none; padding: 8px; font-size: 13px; }
 
-  .section-body {
-    border: 1px solid #000;
-    border-top: none;
-    padding: 8px;
-    font-size: 13px;
-  }
+  .incident-line { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; align-items: center; }
+  .big-textarea { width: 100%; min-height: 70px; resize: vertical; }
 
-  .incident-line {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 6px;
-    align-items: center;
-  }
+  .signatures { display: flex; justify-content: space-between; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+  .signature-box { flex: 1; min-width: 45%; display: flex; flex-direction: column; align-items: center; }
+  .signature-box label { font-weight: bold; margin-bottom: 4px; font-size: 13px; align-self: flex-start; }
+  .signature-wrapper { width: 100%; border: 1px solid #000; border-radius: 4px; height: 120px; position: relative; background: #fff; }
+  canvas.signature-canvas { width: 100%; height: 120px; touch-action: none; }
+  .signature-actions { display: flex; justify-content: flex-end; margin-top: 4px; width: 100%; }
+  .signature-actions button { border: none; background: #444; color: white; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-size: 12px; }
 
-  .big-textarea {
-    width: 100%;
-    min-height: 70px;
-    resize: vertical;
-  }
+  .top-buttons { position: fixed; top: 16px; right: 16px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+  .action-btn { background: #000; color: #fff; border: none; border-radius: 6px; padding: 10px 14px; font-weight: bold; cursor: pointer; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
 
-  .signatures {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    margin-top: 15px;
-    flex-wrap: wrap;
-  }
-
-  .signature-box {
-    flex: 1;
-    min-width: 45%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .signature-box label {
-    font-weight: bold;
-    margin-bottom: 4px;
-    font-size: 13px;
-    align-self: flex-start;
-  }
-
-  .signature-wrapper {
-    width: 100%;
-    border: 1px solid #000;
-    border-radius: 4px;
-    height: 120px;
-    position: relative;
-    background: #fff;
-  }
-
-  canvas.signature-canvas {
-    width: 100%;
-    height: 120px;
-    touch-action: none;
-  }
-
-  .signature-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 4px;
-    width: 100%;
-  }
-
-  .signature-actions button {
-    border: none;
-    background: #444;
-    color: white;
-    border-radius: 4px;
-    padding: 5px 10px;
-    cursor: pointer;
-    font-size: 12px;
-  }
-
-  .top-buttons {
-    position: fixed;
-    top: 16px;
-    right: 16px;
-    z-index: 999;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .action-btn {
-    background: #000;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 10px 14px;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 14px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  }
+  /* Loader */
+  #loader { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.35); z-index: 9999; color: #fff; font: 600 16px/1.2 Arial, sans-serif; }
+  #loader .box { background: #111; padding: 16px 20px; border-radius: 10px; box-shadow: 0 6px 18px rgba(0,0,0,.4); }
 
   @media print {
     body { background: #fff; }
     .page-wrapper { padding: 0; }
-    .page {
-      box-shadow: none;
-      margin: 0;
-      width: 210mm;
-      min-height: 297mm;
-      padding: 15mm;
-    }
+    .page { box-shadow: none; margin: 0; width: 210mm; min-height: 297mm; padding: 15mm; }
     .top-buttons { display: none !important; }
   }
 </style>
@@ -210,8 +68,11 @@
 <body>
 <div class="top-buttons">
   <button class="action-btn" onclick="window.print()">📄 PDF / Imprimer</button>
-  <button class="action-btn" onclick="sendToServer()">📨 Envoyer</button>
+  <button id="sendBtn" class="action-btn" onclick="sendToServer()">📨 Envoyer</button>
 </div>
+
+<!-- Loader -->
+<div id="loader"><div class="box">⏳ génération & envoi en cours…</div></div>
 
 <div class="page-wrapper">
   <div class="page" id="pageContent">
@@ -241,31 +102,36 @@
 
     <div class="section-header">DESCRIPTIF DE L’INCIDENT</div>
     <div class="section-body">
-      <div class="incident-line"><input type="checkbox" id="abs_prev" /><label for="abs_prev"><strong>Absence prévue le :</strong></label>
+      <div class="incident-line">
+        <input type="checkbox" id="abs_prev" /><label for="abs_prev"><strong>Absence prévue le :</strong></label>
         <div class="sub-fields" id="abs_prev_fields" style="display:none;">
           <input type="date" id="abs_prev_date" /> Shift prévu à : <input type="text" id="abs_prev_shift" placeholder="ex: 18h" style="width:70px;" />
         </div>
       </div>
 
-      <div class="incident-line"><input type="checkbox" id="abs_np" /><label for="abs_np"><strong>Absence non prévue le :</strong></label>
+      <div class="incident-line">
+        <input type="checkbox" id="abs_np" /><label for="abs_np"><strong>Absence non prévue le :</strong></label>
         <div class="sub-fields" id="abs_np_fields" style="display:none;">
           <input type="date" id="abs_np_date" /> Shift prévu à : <input type="text" id="abs_np_shift" placeholder="ex: 18h" style="width:70px;" />
         </div>
       </div>
 
-      <div class="incident-line"><input type="checkbox" id="ret_prev" /><label for="ret_prev"><strong>Retard prévu de :</strong></label>
+      <div class="incident-line">
+        <input type="checkbox" id="ret_prev" /><label for="ret_prev"><strong>Retard prévu de :</strong></label>
         <div class="sub-fields" id="ret_prev_fields" style="display:none;">
           <input type="text" id="ret_prev_duree" placeholder="ex: 30 min" style="width:90px;" />
         </div>
       </div>
 
-      <div class="incident-line"><input type="checkbox" id="ret_np" /><label for="ret_np"><strong>Retard non prévu de :</strong></label>
+      <div class="incident-line">
+        <input type="checkbox" id="ret_np" /><label for="ret_np"><strong>Retard non prévu de :</strong></label>
         <div class="sub-fields" id="ret_np_fields" style="display:none;">
           <input type="text" id="ret_np_duree" placeholder="ex: 20 min" style="width:90px;" />
         </div>
       </div>
 
-      <div class="incident-line"><input type="checkbox" id="autre" /><label for="autre"><strong>Autre :</strong></label>
+      <div class="incident-line">
+        <input type="checkbox" id="autre" /><label for="autre"><strong>Autre :</strong></label>
         <div class="sub-fields" id="autre_fields" style="display:none;">
           <input type="text" id="autre_detail" placeholder="Préciser..." style="flex:1; min-width:200px;" />
         </div>
@@ -297,8 +163,9 @@
 
   </div>
 </div>
+
 <script>
-/* === Gestion des sous-champs conditionnels === */
+/* === Champs conditionnels === */
 const boxes = ["abs_prev", "abs_np", "ret_prev", "ret_np", "autre"];
 boxes.forEach(id => {
   const box = document.getElementById(id);
@@ -308,67 +175,44 @@ boxes.forEach(id => {
   });
 });
 
-/* === Gestion des signatures === */
+/* === Signatures === */
 function setupCanvas(id) {
-  const c = document.getElementById(id),
-    x = c.getContext("2d");
+  const c = document.getElementById(id), x = c.getContext("2d");
   let d = false;
-  c.addEventListener("mousedown", e => {
-    d = true;
-    x.beginPath();
-    x.moveTo(e.offsetX, e.offsetY);
-  });
-  c.addEventListener("mousemove", e => {
+  c.addEventListener("mousedown", e => { d = true; x.beginPath(); x.moveTo(e.offsetX, e.offsetY); });
+  c.addEventListener("mousemove", e => { if (!d) return; x.lineTo(e.offsetX, e.offsetY); x.stroke(); });
+  ["mouseup", "mouseleave"].forEach(ev => c.addEventListener(ev, () => (d = false)));
+  c.addEventListener("touchstart", e => {
+    d = true; const r = c.getBoundingClientRect();
+    x.beginPath(); x.moveTo(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top);
+  }, { passive: false });
+  c.addEventListener("touchmove", e => {
     if (!d) return;
-    x.lineTo(e.offsetX, e.offsetY);
+    const r = c.getBoundingClientRect();
+    x.lineTo(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top);
     x.stroke();
-  });
-  ["mouseup", "mouseleave"].forEach(ev =>
-    c.addEventListener(ev, () => (d = false))
-  );
-  c.addEventListener(
-    "touchstart",
-    e => {
-      d = true;
-      const r = c.getBoundingClientRect();
-      x.beginPath();
-      x.moveTo(
-        e.touches[0].clientX - r.left,
-        e.touches[0].clientY - r.top
-      );
-    },
-    { passive: false }
-  );
-  c.addEventListener(
-    "touchmove",
-    e => {
-      if (!d) return;
-      const r = c.getBoundingClientRect();
-      x.lineTo(
-        e.touches[0].clientX - r.left,
-        e.touches[0].clientY - r.top
-      );
-      x.stroke();
-    },
-    { passive: false }
-  );
+  }, { passive: false });
   c.addEventListener("touchend", () => (d = false));
 }
-
 function clearCanvas(id) {
   const c = document.getElementById(id);
   c.getContext("2d").clearRect(0, 0, c.width, c.height);
 }
-
 setupCanvas("signRespCanvas");
 setupCanvas("signSalCanvas");
 
 /* === ENVOI DU PDF === */
 async function sendToServer() {
   const WEBAPP_URL = "https://otacos-proxy.contact-otacosbsm.workers.dev/";
+  const loader = document.getElementById("loader");
+  const btn = document.getElementById("sendBtn");
+  const log = (...a)=>console.log("[FICHE]", ...a);
 
   try {
-    // --- Vérifie la présence des canvases ---
+    btn.disabled = true;
+    loader.style.display = "flex";
+
+    // Vérifs signatures
     const respCanvas = document.getElementById("signRespCanvas");
     const salCanvas  = document.getElementById("signSalCanvas");
     if (!respCanvas || !salCanvas) {
@@ -376,50 +220,47 @@ async function sendToServer() {
       return;
     }
 
-    // --- Données de base ---
+    // Métadonnées
     const meta = {
-      salarie: document.getElementById("salarie").value || "Inconnu",
-      responsable: document.getElementById("responsable").value || "N/A",
+      salarie: (document.getElementById("salarie").value || "Inconnu").trim(),
+      responsable: (document.getElementById("responsable").value || "N/A").trim(),
       date_fiche: document.getElementById("date_fiche").value || new Date().toISOString().split("T")[0],
     };
+    log("meta:", meta);
 
-    // --- Crée une COPIE du contenu à exporter ---
+    // Clone propre
     const original = document.getElementById("pageContent");
     const clone = original.cloneNode(true);
 
-    // --- Remplace les canvases par des images dans la copie ---
+    // Remplacement canvases → images
     const cloneResp = clone.querySelector("#signRespCanvas");
     const cloneSal  = clone.querySelector("#signSalCanvas");
-
-    if (cloneResp && respCanvas) {
+    if (cloneResp) {
       const img1 = document.createElement("img");
       img1.src = respCanvas.toDataURL("image/png");
-      img1.style.width = "100%";
-      img1.style.height = "auto";
+      img1.style.width = "100%"; img1.style.height = "auto";
       cloneResp.replaceWith(img1);
     }
-
-    if (cloneSal && salCanvas) {
+    if (cloneSal) {
       const img2 = document.createElement("img");
       img2.src = salCanvas.toDataURL("image/png");
-      img2.style.width = "100%";
-      img2.style.height = "auto";
+      img2.style.width = "100%"; img2.style.height = "auto";
       cloneSal.replaceWith(img2);
     }
 
-    // --- Conteneur temporaire invisible ---
+    // Conteneur invisible
     const tempDiv = document.createElement("div");
-    tempDiv.style.position = "fixed";
-    tempDiv.style.top = "-9999px";
+    tempDiv.style.position = "fixed"; tempDiv.style.top = "-9999px";
     tempDiv.appendChild(clone);
     document.body.appendChild(tempDiv);
 
-    // --- Génération du PDF à partir du CLONE ---
+    // Génération PDF depuis le clone
+    log("génération PDF…");
     let pdfBlob;
     try {
       pdfBlob = await html2pdf()
         .set({
-          margin: [10, 10],
+          margin: [10,10],
           filename: `Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
           html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
           jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
@@ -427,36 +268,48 @@ async function sendToServer() {
         .from(clone)
         .outputPdf("blob");
     } catch (err) {
-      alert("⚠️ Erreur PDF : " + err.message);
-      console.error("Erreur PDF :", err);
-      tempDiv.remove();
+      console.error(err);
+      alert("⚠️ Erreur PDF : " + (err?.message || err));
       return;
+    } finally {
+      tempDiv.remove();
     }
+    log("PDF OK, taille (octets):", pdfBlob.size);
 
-    tempDiv.remove();
-
-    // --- Convertit en Base64 ---
+    // Conversion en base64
     const buffer = await pdfBlob.arrayBuffer();
     const b64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
 
-    // --- Envoie au serveur ---
-    const payload = { meta, b64 };
+    // Envoi au proxy (timeout 30s)
+    log("envoi au proxy…");
+    const controller = new AbortController();
+    const to = setTimeout(()=>controller.abort(), 30000);
+
     const res = await fetch(WEBAPP_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+      body: JSON.stringify({ meta, b64 }),
+      signal: controller.signal
+    }).catch(e => { throw new Error("fetch failed: " + e.message); });
+    clearTimeout(to);
 
-    const json = await res.json();
+    let json;
+    try { json = await res.json(); }
+    catch { throw new Error("réponse invalide (pas du JSON)"); }
+
+    log("réponse proxy:", json);
     if (json.status === "ok") {
       alert(`✅ Merci ${meta.responsable},\n\nLa fiche a bien été enregistrée et envoyée.`);
     } else {
-      alert("⚠️ Erreur : " + json.message);
+      alert("⚠️ Erreur serveur : " + (json.message || "inconnue"));
     }
 
   } catch (err) {
     console.error(err);
-    alert("❌ Erreur inattendue : " + err.message);
+    alert("❌ Erreur : " + (err?.message || err));
+  } finally {
+    loader.style.display = "none";
+    btn.disabled = false;
   }
 }
 </script>
