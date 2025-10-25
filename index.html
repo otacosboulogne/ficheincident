@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>FICHE INCIDENTS - HITS BOULOGNE</title>
 
-<!-- Génération PDF (SANS integrity pour éviter le blocage SRI) -->
+<!-- Génération PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <style>
@@ -67,12 +67,14 @@
   .sig-actions{ text-align:right; margin-top:6px; }
   .btn-mini{ font-size:12px; padding:5px 10px; border:none; background:#444; color:#fff; border-radius:4px; cursor:pointer; }
 
-  .toolbar{ position:fixed; top:14px; right:14px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+  .toolbar{ position:fixed; top:14px; right:14px; z-index:9999; display:flex; flex-direction:column; gap:8px; align-items:flex-end; }
+  .toolbar-row{ display:flex; gap:8px; }
   .btn{
     background:#000; color:#fff; border:none; border-radius:6px; padding:10px 14px; font-weight:700; cursor:pointer; font-size:14px;
     box-shadow:0 2px 6px rgba(0,0,0,.3);
   }
   .btn[disabled]{ opacity:.6; cursor:not-allowed; }
+  .link{ background:transparent; color:#000; border:1px dashed #000; }
 
   #loader{
     position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35);
@@ -80,19 +82,59 @@
   }
   #loader .box{ background:#111; padding:14px 18px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,.4); }
 
+  .date-actions{ display:inline-flex; gap:6px; align-items:center; }
+  .date-actions .btn-mini{ background:#1a2d4a; }
+
   @media print{
     body{ background:#fff; }
     .page-wrapper{ padding:0; }
     .page{ width:var(--page-w); min-height:var(--page-h); padding:var(--pad); box-shadow:none; }
     .toolbar{ display:none!important; }
   }
+
+  /* --- Responsive mobile --- */
+  @media (max-width: 768px) {
+    :root { --pad: 10mm; }
+
+    .page-wrapper { padding: 8px; }
+    .page {
+      width: min(100vw - 16px, var(--page-w));
+      padding: 10mm;
+      box-shadow: none;
+    }
+
+    .toolbar{ right:12px; bottom:12px; top:auto; flex-direction:column; gap:10px; align-items:flex-end; }
+    .toolbar-row{ flex-wrap:wrap; justify-content:flex-end; }
+    .btn{ padding:10px 12px; font-size:15px; }
+
+    .grid tr { display:block; }
+    .grid td { display:block; width:100%; padding:6px 0; }
+    .grid .label { margin-bottom:4px; }
+
+    .row { align-items:flex-start; gap:10px; }
+    .sub { display:inline-flex; flex-wrap:wrap; }
+
+    textarea { min-height:110px; }
+
+    .sig-wrap { height:160px; }
+    canvas.signature { height:160px; }
+
+    input[type="text"], input[type="date"], textarea { min-height:44px; }
+    input[type="checkbox"] { width:20px; height:20px; }
+  }
 </style>
 </head>
 
 <body>
   <div class="toolbar no-print">
-    <button class="btn" onclick="window.print()">📄 PDF / Imprimer</button>
-    <button id="sendBtn" class="btn" onclick="sendToServer()">📨 Envoyer</button>
+    <div class="toolbar-row">
+      <button class="btn" onclick="window.print()">📄 PDF / Imprimer</button>
+      <button id="sendBtn" class="btn" onclick="sendToServer()">📨 Envoyer</button>
+    </div>
+    <div class="toolbar-row">
+      <button id="autoSaveBtn" class="btn link" onclick="toggleAutoSave()">💾 Sauvegarde auto : ON</button>
+      <button class="btn link" onclick="clearAll()">🧹 Effacer tout</button>
+    </div>
   </div>
 
   <div id="loader"><div class="box">⏳ Génération & envoi en cours…</div></div>
@@ -112,7 +154,12 @@
       <table class="grid no-break">
         <tr>
           <td class="label" style="width:70px;">Date :</td>
-          <td style="width:220px;"><input type="date" id="date_fiche" /></td>
+          <td style="width:260px;">
+            <div class="date-actions">
+              <input type="date" id="date_fiche" />
+              <button class="btn-mini" type="button" onclick="setToday('date_fiche')">Aujourd'hui</button>
+            </div>
+          </td>
           <td class="label" style="text-align:right;">Fiche ouverte pour le salarié :</td>
           <td style="width:240px;"><input type="text" id="salarie" placeholder="Nom du salarié" /></td>
         </tr>
@@ -127,31 +174,41 @@
         <div class="row">
           <input type="checkbox" id="abs_prev" /><label for="abs_prev"><strong>Absence prévue le :</strong></label>
           <div class="sub" id="abs_prev_fields">
-            <input type="date" id="abs_prev_date" />
+            <div class="date-actions">
+              <input type="date" id="abs_prev_date" />
+              <button class="btn-mini" type="button" onclick="setToday('abs_prev_date')">Aujourd'hui</button>
+            </div>
             <span>Shift prévu à :</span>
             <input type="text" id="abs_prev_shift" placeholder="ex: 18h" style="width:70px;" />
           </div>
         </div>
+
         <div class="row">
           <input type="checkbox" id="abs_np" /><label for="abs_np"><strong>Absence non prévue le :</strong></label>
           <div class="sub" id="abs_np_fields">
-            <input type="date" id="abs_np_date" />
+            <div class="date-actions">
+              <input type="date" id="abs_np_date" />
+              <button class="btn-mini" type="button" onclick="setToday('abs_np_date')">Aujourd'hui</button>
+            </div>
             <span>Shift prévu à :</span>
             <input type="text" id="abs_np_shift" placeholder="ex: 18h" style="width:70px;" />
           </div>
         </div>
+
         <div class="row">
           <input type="checkbox" id="ret_prev" /><label for="ret_prev"><strong>Retard prévu de :</strong></label>
           <div class="sub" id="ret_prev_fields">
             <input type="text" id="ret_prev_duree" placeholder="ex: 30 min" style="width:90px;" />
           </div>
         </div>
+
         <div class="row">
           <input type="checkbox" id="ret_np" /><label for="ret_np"><strong>Retard non prévu de :</strong></label>
           <div class="sub" id="ret_np_fields">
             <input type="text" id="ret_np_duree" placeholder="ex: 20 min" style="width:90px;" />
           </div>
         </div>
+
         <div class="row">
           <input type="checkbox" id="autre" /><label for="autre"><strong>Autre :</strong></label>
           <div class="sub" id="autre_fields">
@@ -172,7 +229,10 @@
 
       <div class="no-break" style="display:flex; align-items:center; gap:8px; font-size:14px; margin-top:2px;">
         <strong>Fait le :</strong>
-        <input type="date" id="fait_le" style="font-size:13px;" />
+        <div class="date-actions">
+          <input type="date" id="fait_le" style="font-size:13px;" />
+          <button class="btn-mini" type="button" onclick="setToday('fait_le')">Aujourd'hui</button>
+        </div>
         <span>, à Boulogne-sur-Mer</span>
       </div>
 
@@ -180,22 +240,22 @@
         <div class="sig-box">
           <label for="signRespCanvas">Signature Responsable</label>
           <div class="sig-wrap">
-            <canvas id="signRespCanvas" class="signature" width="800" height="240"></canvas>
+            <canvas id="signRespCanvas" class="signature"></canvas>
             <span class="sig-hint">Signez ici</span>
           </div>
           <div class="sig-actions">
-            <button class="btn-mini" type="button" onclick="clearCanvas('signRespCanvas')">Effacer</button>
+            <button class="btn-mini" type="button" onclick="clearCanvas('signRespCanvas'); saveToLocal()">Effacer</button>
           </div>
         </div>
 
         <div class="sig-box">
           <label for="signSalCanvas">Signature Salarié</label>
           <div class="sig-wrap">
-            <canvas id="signSalCanvas" class="signature" width="800" height="240"></canvas>
+            <canvas id="signSalCanvas" class="signature"></canvas>
             <span class="sig-hint">Signez ici</span>
           </div>
           <div class="sig-actions">
-            <button class="btn-mini" type="button" onclick="clearCanvas('signSalCanvas')">Effacer</button>
+            <button class="btn-mini" type="button" onclick="clearCanvas('signSalCanvas'); saveToLocal()">Effacer</button>
           </div>
         </div>
       </div>
@@ -203,26 +263,81 @@
   </div>
 
 <script>
-/* === Champs conditionnels === */
+/* ============== Utils communs ============== */
+const $ = s => document.querySelector(s);
+const ALL_FIELDS_SELECTOR = "input[type='text'], input[type='date'], input[type='checkbox'], textarea";
+
+/* ============== Aides dates ============== */
+function todayStr(){
+  const d = new Date();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+function setToday(id){
+  const el = document.getElementById(id);
+  if (el) el.value = todayStr();
+  saveToLocal();
+}
+
+/* ============== Affichage conditionnel ============== */
 ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
   const box=document.getElementById(id);
   const sub=document.getElementById(id+"_fields");
   if(!box||!sub) return;
   const sync=()=>{ sub.style.display=box.checked?"inline-flex":"none"; };
-  box.addEventListener("change",sync); sync();
+  box.addEventListener("change",()=>{ sync(); saveToLocal(); });
+  sync();
 });
 
-/* === Signatures === */
+/* ============== Signatures (canvas haute densité) ============== */
+const drawn = new Map(); // suit si l'utilisateur a dessiné
 function setupCanvas(id){
-  const c=document.getElementById(id);
-  const ctx=c.getContext("2d");
-  /* Fond blanc pour éviter les zones noires dans le PDF */
-  ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height);
-  ctx.lineWidth=2; ctx.lineCap="round"; ctx.strokeStyle="#000";
+  const c = document.getElementById(id);
+  const ctx = c.getContext("2d");
+
+  function fit(){
+    const rect = c.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    // snapshot existant
+    let snap = null;
+    if (c.width && c.height) {
+      try { snap = ctx.getImageData(0,0,c.width,c.height); } catch(e){}
+    }
+
+    c.width  = Math.max(1, Math.round(rect.width * dpr));
+    c.height = Math.max(1, Math.round(rect.height * dpr));
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.scale(dpr, dpr);
+
+    // fond blanc
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0,0,rect.width,rect.height);
+
+    if (snap) { try{ ctx.putImageData(snap, 0, 0); }catch(e){} }
+
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "#000";
+  }
+
+  // dimensionne le canvas à la taille CSS
+  function sizeToCss(){
+    const parent = c.closest('.sig-wrap');
+    const w = parent.clientWidth;
+    const h = parent.clientHeight;
+    c.style.width = w + "px";
+    c.style.height = h + "px";
+  }
+
+  sizeToCss();
+  fit();
+  window.addEventListener("resize", ()=>{ sizeToCss(); fit(); });
 
   let drawing=false, prev=null;
   const start=(x,y)=>{ drawing=true; prev={x,y}; };
-  const move=(x,y)=>{ if(!drawing) return; ctx.beginPath(); ctx.moveTo(prev.x,prev.y); ctx.lineTo(x,y); ctx.stroke(); prev={x,y}; };
+  const move=(x,y)=>{ if(!drawing) return; ctx.beginPath(); ctx.moveTo(prev.x,prev.y); ctx.lineTo(x,y); ctx.stroke(); prev={x,y}; drawn.set(id,true); saveToLocalThrottled(); };
   const stop=()=>{ drawing=false; prev=null; };
 
   c.addEventListener("mousedown",e=>start(e.offsetX,e.offsetY));
@@ -242,22 +357,154 @@ function setupCanvas(id){
   c.addEventListener("touchend",stop);
 }
 function clearCanvas(id){
-  const c=document.getElementById(id), x=c.getContext("2d");
+  const c=document.getElementById(id);
+  const r=c.getBoundingClientRect();
+  const x=c.getContext("2d");
+  x.setTransform(1,0,0,1,0,0);
   x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height);
+  drawn.set(id,false);
 }
 setupCanvas("signRespCanvas");
 setupCanvas("signSalCanvas");
 
-/* === Utils === */
-function canvasToSmallDataURL(srcCanvas,maxW=360,mime='image/jpeg',quality=0.85){
-  const w=srcCanvas.width, h=srcCanvas.height, ratio=Math.min(1,maxW/w);
-  const dw=Math.round(w*ratio), dh=Math.round(h*ratio);
-  const off=document.createElement('canvas'); off.width=dw; off.height=dh;
-  const ctx=off.getContext('2d');
-  ctx.fillStyle="#fff"; ctx.fillRect(0,0,dw,dh);
-  ctx.drawImage(srcCanvas,0,0,dw,dh);
-  return off.toDataURL(mime,quality);
+/* Signatures -> dataURL compacte (JPEG + downscale) */
+function canvasToSmallDataURL(srcCanvas, maxCssW=360, mime='image/jpeg', quality=0.85){
+  // convertit depuis la taille CSS visible (pas la résolution interne dpr)
+  const rect = srcCanvas.getBoundingClientRect();
+  const src = document.createElement('canvas');
+  src.width = Math.max(1, Math.round(rect.width));
+  src.height = Math.max(1, Math.round(rect.height));
+  const sctx = src.getContext('2d');
+  // dessine le canvas haute résolution vers un canvas CSS 1:1
+  sctx.fillStyle = "#fff"; sctx.fillRect(0,0,src.width,src.height);
+  sctx.drawImage(srcCanvas, 0,0, src.width, src.height);
+
+  const ratio = Math.min(1, maxCssW / src.width);
+  const dw = Math.round(src.width * ratio), dh = Math.round(src.height * ratio);
+  const off = document.createElement('canvas');
+  off.width = dw; off.height = dh;
+  const ctx = off.getContext('2d');
+  ctx.fillStyle = "#fff"; ctx.fillRect(0,0,dw,dh);
+  ctx.drawImage(src, 0,0, dw, dh);
+
+  return off.toDataURL(mime, quality);
 }
+
+/* ============== Autosauvegarde ============== */
+const STORAGE_KEY = "ficheIncidentBSM";
+const STORAGE_OPT_KEY = "ficheIncidentBSM_auto";
+function isAutoSaveOn(){ return localStorage.getItem(STORAGE_OPT_KEY)!=="OFF"; }
+function setAutoSave(on){
+  localStorage.setItem(STORAGE_OPT_KEY, on ? "ON":"OFF");
+  const btn = document.getElementById("autoSaveBtn");
+  btn.textContent = on ? "💾 Sauvegarde auto : ON" : "💾 Sauvegarde auto : OFF";
+}
+
+function collectData(){
+  const data = {};
+  document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{
+    data[el.id] = (el.type==="checkbox") ? el.checked : el.value;
+  });
+  // signatures compressées
+  data.sign_resp = canvasToSmallDataURL(document.getElementById("signRespCanvas"));
+  data.sign_sal  = canvasToSmallDataURL(document.getElementById("signSalCanvas"));
+  return data;
+}
+function applyData(data){
+  if(!data) return;
+  document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{
+    if(!(el.id in data)) return;
+    if(el.type==="checkbox") el.checked = !!data[el.id];
+    else el.value = data[el.id] || "";
+  });
+  // re-synchronise l'affichage conditionnel
+  ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
+    const box=document.getElementById(id), sub=document.getElementById(id+"_fields");
+    if(box && sub){ sub.style.display = box.checked ? "inline-flex":"none"; }
+  });
+  // signatures
+  restoreSignature("signRespCanvas", data.sign_resp);
+  restoreSignature("signSalCanvas",  data.sign_sal);
+}
+function restoreSignature(id, dataUrl){
+  if(!dataUrl) return;
+  const c = document.getElementById(id);
+  const ctx = c.getContext("2d");
+  const img = new Image();
+  img.onload = ()=>{
+    const r = c.getBoundingClientRect();
+    ctx.fillStyle="#fff"; ctx.fillRect(0,0,r.width,r.height);
+    ctx.drawImage(img, 0,0, r.width, r.height);
+    drawn.set(id, true);
+  };
+  img.src = dataUrl;
+}
+function saveToLocal(){
+  if(!isAutoSaveOn()) return;
+  try{
+    const data = collectData();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }catch(e){ console.warn("saveToLocal error", e); }
+}
+// throttle léger pour dessin
+let _saveTimer=null;
+function saveToLocalThrottled(){
+  if(!isAutoSaveOn()) return;
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(saveToLocal, 300);
+}
+function loadFromLocal(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    applyData(JSON.parse(raw));
+  }catch(e){ console.warn("loadFromLocal error", e); }
+}
+
+function toggleAutoSave(){
+  const on = !isAutoSaveOn();
+  setAutoSave(on);
+  if(on) saveToLocal();
+}
+
+function clearAll(){
+  if(!confirm("Effacer tous les champs et la sauvegarde locale ?")) return;
+  document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{
+    if(el.type==="checkbox") el.checked = false;
+    else el.value = "";
+  });
+  ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
+    const sub=document.getElementById(id+"_fields");
+    if(sub) sub.style.display="none";
+  });
+  clearCanvas("signRespCanvas");
+  clearCanvas("signSalCanvas");
+  localStorage.removeItem(STORAGE_KEY);
+  // on laisse l'option de sauvegarde telle qu'elle est (ON/OFF)
+}
+
+/* branche les événements pour autosave */
+function bindAutoSaveEvents(){
+  document.addEventListener("input", saveToLocal);
+  document.addEventListener("change", saveToLocal);
+}
+
+/* init */
+(function init(){
+  // date par défaut si vide
+  const def = todayStr();
+  ["date_fiche","fait_le"].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el && !el.value) el.value = def;
+  });
+
+  // état autosave (ON par défaut)
+  setAutoSave(isAutoSaveOn());
+  bindAutoSaveEvents();
+  loadFromLocal();
+})();
+
+/* ============== PDF + Envoi via proxy ============== */
 function blobToBase64(blob){
   return new Promise((resolve,reject)=>{
     const r=new FileReader();
@@ -266,45 +513,47 @@ function blobToBase64(blob){
   });
 }
 
-/* === Envoi PDF via proxy === */
 async function sendToServer(){
   const WEBAPP_URL="https://otacos-proxy.contact-otacosbsm.workers.dev/";
-  const loader=document.getElementById("loader");
-  const btn=document.getElementById("sendBtn");
+  const loader=$("#loader");
+  const btn=$("#sendBtn");
 
   try{
     btn.disabled=true; loader.style.display="flex";
 
     const meta={
-      salarie:(document.getElementById("salarie").value||"Inconnu").trim(),
-      responsable:(document.getElementById("responsable").value||"N/A").trim(),
-      date_fiche:document.getElementById("date_fiche").value||new Date().toISOString().slice(0,10),
+      salarie:($("#salarie").value||"Inconnu").trim(),
+      responsable:($("#responsable").value||"N/A").trim(),
+      date_fiche:$("#date_fiche").value||todayStr(),
     };
 
-    const original=document.getElementById("pageContent");
-    const clone=original.cloneNode(true);
+    const original=$("#pageContent");
+    const clone = original.cloneNode(true);
 
-    /* Remplace les canvases par images JPEG (fond blanc) dans le clone */
-    const respCanvas=document.getElementById("signRespCanvas");
-    const salCanvas=document.getElementById("signSalCanvas");
+    // Forcer A4 pour le clone (même en mode mobile)
+    clone.style.width = "210mm";
+    clone.style.minHeight = "297mm";
+
+    // Remplace canvases signature par images JPEG fond blanc
+    const respCanvas=$("#signRespCanvas");
+    const salCanvas=$("#signSalCanvas");
     const imgResp=document.createElement("img");
     imgResp.src=canvasToSmallDataURL(respCanvas,360,"image/jpeg",0.85);
-    imgResp.style.width="100%"; imgResp.style.height="auto";
+    imgResp.style.width="100%";
     const imgSal=document.createElement("img");
     imgSal.src=canvasToSmallDataURL(salCanvas,360,"image/jpeg",0.85);
-    imgSal.style.width="100%"; imgSal.style.height="auto";
+    imgSal.style.width="100%";
 
     const cloneResp=clone.querySelector("#signRespCanvas");
-    const cloneSal=clone.querySelector("#signSalCanvas");
+    const cloneSal =clone.querySelector("#signSalCanvas");
     if(cloneResp) cloneResp.replaceWith(imgResp);
     if(cloneSal)  cloneSal.replaceWith(imgSal);
 
-    /* Conteneur hors-écran pour html2pdf */
+    // conteneur hors-écran
     const off=document.createElement("div");
-    off.style.position="fixed"; off.style.top="-10000px";
+    off.style.position="fixed"; off.style.top="-10000px"; off.style.left="0";
     off.appendChild(clone); document.body.appendChild(off);
 
-    /* Options PDF A4 strictes + pagebreak */
     const opt={
       margin:[10,10],
       filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
@@ -313,12 +562,12 @@ async function sendToServer(){
       jsPDF:{ unit:"mm", format:"a4", orientation:"portrait", compress:true },
     };
 
-    const pdfBlob=await html2pdf().set(opt).from(clone).outputPdf("blob");
+    const pdfBlob = await html2pdf().set(opt).from(clone).outputPdf("blob");
     off.remove();
 
-    const b64=await blobToBase64(pdfBlob);
-
+    const b64 = await blobToBase64(pdfBlob);
     const payload={ meta, b64 };
+
     const res=await fetch(WEBAPP_URL,{
       method:"POST",
       headers:{ "Content-Type":"application/json" },
@@ -335,6 +584,9 @@ async function sendToServer(){
 
     if(ok){ alert(`✅ Merci ${meta.responsable},\n\nLa fiche a bien été enregistrée et envoyée.`); }
     else  { alert("⚠️ Erreur côté serveur : " + msg); }
+
+    // resauvegarde après envoi (si autosave ON)
+    saveToLocal();
 
   }catch(e){
     console.error(e);
