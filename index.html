@@ -68,10 +68,10 @@
   .sig-box{ flex:1; min-width:46%; }
   .sig-box label{ font-weight:bold; font-size:14px; display:block; margin-bottom:6px; }
   .sig-wrap{
-    position:relative; width:100%; height:140px; border:1px dashed #888; border-radius:10px; background:#fff;
+    position:relative; width:100%; height:120px; border:1px dashed #888; border-radius:10px; background:#fff;
     touch-action:none; /* évite le scroll dans le canvas */
   }
-  canvas.signature{ width:100%; height:140px; touch-action:none; display:block; }
+  canvas.signature{ width:100%; height:120px; touch-action:none; display:block; }
   .sig-hint{ position:absolute; top:8px; right:12px; font-size:12px; color:#666; pointer-events:none; }
   .sig-actions{ text-align:right; margin-top:8px; }
   .btn-mini{ font-size:13px; padding:7px 12px; border:none; background:#444; color:#fff; border-radius:6px; cursor:pointer; }
@@ -100,17 +100,17 @@
   .date-actions .btn-mini{ background:#1a2d4a; }
 
   /* ===== Mode compact pour le PDF 1 page ===== */
-  .compact{ gap:8px; padding: 10mm !important; }
-  .compact .header img{ width:44px; }
-  .compact .header-text strong{ font-size:14px; }
-  .compact .title{ font-size:14px; padding:3px 6px; }
-  .compact .grid{ font-size:12px; }
-  .compact input, .compact textarea{ padding:8px 10px; font-size:12.5px; }
-  .compact textarea{ min-height:80px; }
-  .compact .section-h{ padding:5px 6px; font-size:12.5px; }
-  .compact .section-b{ padding:8px; font-size:12.5px; }
-  .compact .row{ gap:8px; margin-bottom:6px; }
-  .compact .sig-wrap, .compact canvas.signature{ height:110px; }
+  .compact{ gap:6px; padding: 8mm !important; }
+  .compact .header img{ width:38px; }
+  .compact .header-text strong{ font-size:12.5px; }
+  .compact .title{ font-size:12.5px; padding:2px 4px; }
+  .compact .grid{ font-size:11.5px; }
+  .compact input, .compact textarea{ padding:6px 8px; font-size:11.5px; }
+  .compact textarea{ min-height:60px; }
+  .compact .section-h{ padding:4px 6px; font-size:11.5px; }
+  .compact .section-b{ padding:6px; font-size:11.5px; }
+  .compact .row{ gap:6px; margin-bottom:4px; }
+  .compact .sig-wrap, .compact canvas.signature{ height:80px; }
 
   @media print{
     body{ background:#fff; }
@@ -122,6 +122,29 @@
   /* --- Responsive mobile --- */
   @media (max-width: 768px) {
     :root { --pad: 10mm; }
+
+    .page-wrapper { padding: 8px 8px calc(64px + env(safe-area-inset-bottom)); }
+    .page { width: min(100vw - 16px, var(--page-w)); padding: 10mm; box-shadow: none; }
+
+    /* Par défaut, on empile tout SAUF la première ligne que l'on garde sur une ligne */
+    .grid tr { display:block; }
+    .grid td { display:block; width:100%; padding:8px 0; }
+    .grid .label { margin-bottom:6px; }
+
+    .grid.fixed tr:first-child { display:table-row; }
+    .grid.fixed tr:first-child td { display:table-cell; width:auto; padding:4px 6px; }
+
+    .row { align-items:flex-start; gap:10px; }
+    .sub { display:inline-flex; flex-wrap:wrap; }
+
+    textarea { min-height:90px; }
+
+    .sig-wrap { height:120px; }
+    canvas.signature { height:120px; }
+
+    input[type="text"], input[type="date"], textarea { min-height:40px; }
+    input[type="checkbox"] { width:20px; height:20px; }
+  }
 
     .page-wrapper { padding: 8px 8px calc(64px + env(safe-area-inset-bottom)); /* espace pour la barre d’outils */ }
     .page {
@@ -177,7 +200,7 @@
 
       <div class="title no-break">FICHE INCIDENTS</div>
 
-      <table class="grid no-break" role="presentation">
+      <table class="grid no-break fixed grid-top" role="presentation">
         <tr>
           <td class="label" style="width:70px;">Date :</td>
           <td style="width:260px;">
@@ -552,9 +575,12 @@ function fitCloneToOneA4Page(clone){
   clone.style.width = "210mm";
   clone.style.minHeight = "0";
 
-  // mesuré après insertion dans le DOM (fait dans sendToServer)
-  const h = clone.scrollHeight;
+  // mini-ajustements de densité
+  clone.querySelectorAll('.section-b textarea').forEach(t=>{ t.style.minHeight = '60px'; });
+  clone.querySelectorAll('.sig-wrap, canvas.signature').forEach(s=>{ s.style.height = '80px'; });
 
+  // mesuré après insertion dans le DOM
+  let h = clone.scrollHeight;
   if (h > targetH) {
     const scale = targetH / h; // < 1 => on réduit
     clone.style.transformOrigin = "top left";
