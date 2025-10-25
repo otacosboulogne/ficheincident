@@ -2,93 +2,93 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>FICHE INCIDENTS - HITS BOULOGNE (Mobile+PDF A4 • 1 page)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FICHE INCIDENTS - HITS BOULOGNE</title>
 
 <!-- Génération PDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
 
 <style>
   :root{
-    --page-w: 210mm;      /* A4 */
-    --page-h: 297mm;
+    --page-w: 210mm;             /* A4 écran (info) */
     --pad: 14mm;
     --theme: #1a2d4a;
-    --bg: #dcdcdc;
     --txt: #0b1320;
-    --radius: 10px;
+    --bg: #e9ebee;
+    --radius: 12px;
   }
-
-  html,body{ margin:0; background:var(--bg); color:var(--txt); font-family:Arial, Helvetica, sans-serif; }
-  *{ box-sizing:border-box; }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; background:var(--bg); color:var(--txt); font-family: Arial, Helvetica, sans-serif; }
 
   .page-wrapper{ display:flex; justify-content:center; padding:16px; }
   .page{
-    width:var(--page-w); min-height:var(--page-h);
-    background:#fff; box-shadow:0 0 10px rgba(0,0,0,.25);
-    padding:var(--pad); position:relative; display:flex; flex-direction:column; gap:10px;
-    overflow:visible; border-radius: var(--radius);
+    width: min(100%, var(--page-w));
+    background:#fff; border-radius: var(--radius);
+    box-shadow: 0 10px 28px rgba(0,0,0,.10);
+    padding: var(--pad);
+    display:flex; flex-direction:column; gap:12px;
   }
+  .no-break{ break-inside: avoid; page-break-inside: avoid; }
 
-  /* Empêche les coupures mal placées dans le PDF */
-  .no-break{ page-break-inside:avoid; break-inside:avoid; }
-
-  .header{ display:flex; align-items:flex-start; gap:10px; }
-  .header img{ width:50px; height:auto; }
-  .header-text strong{ font-size:15px; display:block; }
+  .header{ display:flex; align-items:center; gap:12px; }
+  .header img{ width:54px; height:auto; }
+  .header strong{ display:block; font-size:16px; }
 
   .title{
-    border:1px solid #000; font-weight:700; text-align:center; padding:4px 6px;
-    text-transform:uppercase; margin-top:6px; font-size:15px; border-radius:6px;
+    border:2px solid #0f1a2d20; border-radius: 10px;
+    text-align:center; font-weight:800; letter-spacing:.4px;
+    padding:8px 10px; margin-top:2px;
   }
 
-  .grid{ width:100%; border-collapse:collapse; font-size:13px; }
-  .grid td{ padding:4px 6px; vertical-align:middle; }
-  .label{ font-weight:bold; white-space:nowrap; }
+  /* Tableau “entête” */
+  table.grid{ width:100%; border-collapse: collapse; font-size:14px; table-layout: auto; }
+  .grid td{ padding:6px 6px; vertical-align:middle; }
+  .label{ font-weight:700; white-space:nowrap; }
 
-  input,textarea{
-    border:1px solid #999; border-radius:6px; padding:10px 12px; font-size:14px; max-width:100%;
+  input[type="text"], input[type="date"], textarea{
+    width:100%; border:1.5px solid #c9ced6; border-radius:10px; padding:10px 12px; font-size:15px;
   }
-  textarea{ width:100%; min-height:100px; resize:vertical; }
-
-  input:focus-visible, textarea:focus-visible, button:focus-visible{
-    outline:2px solid #1a2d4a; outline-offset:2px;
-  }
+  input::placeholder, textarea::placeholder{ color:#9aa3ad; }
+  textarea{ min-height:110px; resize:vertical; }
 
   .section-h{
-    background:var(--theme); color:#fff; text-align:center; padding:6px 8px; font-weight:700;
-    border:1px solid #000; border-bottom:none; font-size:14px; border-top-left-radius:8px; border-top-right-radius:8px;
+    background:var(--theme); color:#fff; font-weight:800; letter-spacing:.3px;
+    padding:8px 10px; border-radius:10px;
   }
-  .section-b{ border:1px solid #000; border-top:none; padding:10px; font-size:14px; border-bottom-left-radius:8px; border-bottom-right-radius:8px; }
+  .section-b{ border:1.5px solid #c9ced6; border-radius:12px; padding:12px; }
 
   .row{ display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px; }
   .sub{ display:none; gap:8px; align-items:center; }
 
-  .signatures{ display:flex; flex-wrap:wrap; gap:14px; justify-content:space-between; }
-  .sig-box{ flex:1; min-width:46%; }
-  .sig-box label{ font-weight:bold; font-size:14px; display:block; margin-bottom:6px; }
+  .signatures{ display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+  .sig-box label{ font-weight:700; display:block; margin-bottom:6px; }
   .sig-wrap{
-    position:relative; width:100%; height:120px; border:1px dashed #888; border-radius:10px; background:#fff;
-    touch-action:none; /* évite le scroll dans le canvas */
+    position:relative; width:100%; height:140px; border:1.5px dashed #b6bcc6; border-radius:12px; background:#fff;
+    touch-action:none;
   }
-  canvas.signature{ width:100%; height:120px; touch-action:none; display:block; }
-  .sig-hint{ position:absolute; top:8px; right:12px; font-size:12px; color:#666; pointer-events:none; }
-  .sig-actions{ text-align:right; margin-top:8px; }
-  .btn-mini{ font-size:13px; padding:7px 12px; border:none; background:#444; color:#fff; border-radius:6px; cursor:pointer; }
+  canvas.signature{ width:100%; height:140px; display:block; touch-action:none; }
+  .sig-hint{ position:absolute; top:8px; right:12px; font-size:12px; color:#7a8592; }
 
+  .sig-actions{ text-align:right; margin-top:6px; }
+  .btn-mini{ font-size:13px; padding:7px 12px; border:none; background:#404b57; color:#fff; border-radius:10px; }
+
+  /* Barre d’outils mobile */
   .toolbar{ position:fixed; left:0; right:0; bottom:0; z-index:9999; }
   .toolbar-inner{
     display:flex; gap:10px; flex-wrap:wrap; justify-content:center;
-    background:#fff; border-top:1px solid #0002; padding:10px;
+    background:#fff; border-top:1px solid #00000010; padding:10px;
     padding-bottom: calc(10px + env(safe-area-inset-bottom));
-    box-shadow:0 -6px 20px rgba(0,0,0,.08);
+    box-shadow:0 -8px 22px rgba(0,0,0,.06);
   }
   .btn{
-    background:#000; color:#fff; border:none; border-radius:10px; padding:12px 16px; font-weight:700; cursor:pointer; font-size:15px;
-    box-shadow:0 2px 6px rgba(0,0,0,.3);
+    background:#000; color:#fff; border:none; border-radius:12px; padding:12px 16px; font-weight:800; cursor:pointer; font-size:15px;
+    box-shadow:0 4px 10px rgba(0,0,0,.20);
   }
-  .btn[disabled]{ opacity:.6; cursor:not-allowed; }
-  .link{ background:transparent; color:#000; border:1px dashed #000; }
+  .btn.link{ background:transparent; color:#000; border:1.5px dashed #111; }
+  .btn[disabled]{ opacity:.55; cursor:not-allowed; }
+
+  .today-btn{ display:inline-flex; }       /* visible à l’écran, masqué dans le PDF */
+  .date-actions{ display:flex; gap:8px; align-items:center; }
 
   #loader{
     position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35);
@@ -96,159 +96,37 @@
   }
   #loader .box{ background:#111; padding:14px 18px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,.4); }
 
-  .date-actions{ display:inline-flex; gap:6px; align-items:center; }
-  .date-actions .btn-mini{ background:#1a2d4a; }
+  /* Mobile : entête en 2 colonnes (Date | Salarié) */
+  @media (max-width: 768px){
+    .grid tr { display:block; }
+    .grid td { display:block; width:100%; padding:6px 4px; }
+    .grid .label{ margin-bottom:4px; }
 
-  /* ===== Mode compact pour le PDF 1 page ===== */
-  .compact{ gap:6px; padding: 8mm !important; }
-  .compact .header img{ width:38px; }
-  .compact .header-text strong{ font-size:12.5px; }
-  .compact .title{ font-size:12.5px; padding:2px 4px; }
-  .compact .grid{ font-size:11.5px; }
-  .compact input, .compact textarea{ padding:6px 8px; font-size:11.5px; }
-  .compact textarea{ min-height:60px; }
-  .compact .section-h{ padding:4px 6px; font-size:11.5px; }
-  .compact .section-b{ padding:6px; font-size:11.5px; }
-  .compact .row{ gap:6px; margin-bottom:4px; }
-  .compact .sig-wrap, .compact canvas.signature{ height:80px; }
+    .grid tr:first-child{
+      display:grid !important;
+      grid-template-columns: 1fr 1fr;    /* Date | Salarié */
+      column-gap:12px; align-items:end;
+    }
+    .grid tr:first-child td:nth-child(1),
+    .grid tr:first-child td:nth-child(2){ grid-column:1; }
+    .grid tr:first-child td:nth-child(3),
+    .grid tr:first-child td:nth-child(4){ grid-column:2; }
+
+    input[type="text"], input[type="date"], textarea{
+      min-height:42px; font-size:15px; padding:10px 12px;
+    }
+    .signatures{ grid-template-columns: 1fr 1fr; }
+  }
 
   @media print{
+    .toolbar{ display:none !important; }
     body{ background:#fff; }
-    .page-wrapper{ padding:0; }
-    .page{ width:var(--page-w); min-height:var(--page-h); padding:var(--pad); box-shadow:none; }
-    .toolbar{ display:none!important; }
-  }
-
-  /* --- Responsive mobile --- */
-  @media (max-width: 768px) {
-    :root { --pad: 10mm; }
-
-    .page-wrapper { padding: 8px 8px calc(64px + env(safe-area-inset-bottom)); }
-    .page { width: min(100vw - 16px, var(--page-w)); padding: 10mm; box-shadow: none; }
-
-    /* Empilement souple sur mobile */
-    .grid tr { display:block; }
-    .grid td { display:block; width:100%; padding:6px 0; }
-    .grid .label { margin-bottom:4px; }
-
-    /* 1ère ligne en 2 colonnes : (Date) | (Fiche ouverte pour le salarié) */
-    .grid.fixed tr:first-child { display:grid; grid-template-columns: 1fr 1fr; column-gap:12px; align-items:end; }
-    .grid.fixed tr:first-child td { display:block; padding:0; }
-    .grid.fixed tr:first-child td:nth-child(1),
-    .grid.fixed tr:first-child td:nth-child(2) { grid-column:1; }
-    .grid.fixed tr:first-child td:nth-child(3),
-    .grid.fixed tr:first-child td:nth-child(4) { grid-column:2; }
-
-    .row { align-items:flex-start; gap:10px; }
-    .sub { display:inline-flex; flex-wrap:wrap; }
-
-    textarea { min-height:100px; }
-
-    .sig-wrap { height:140px; }
-    canvas.signature { height:140px; }
-
-    input[type="text"], input[type="date"], textarea { min-height:40px; width:100%; font-size:14px; padding:8px 10px; }
-    input[type="checkbox"] { width:20px; height:20px; }
-  }
-
-    .page-wrapper { padding: 8px 8px calc(64px + env(safe-area-inset-bottom)); }
-    .page { width: min(100vw - 16px, var(--page-w)); padding: 10mm; box-shadow: none; }
-
-    /* Empilement souple sur mobile */
-    .grid tr { display:block; }
-    .grid td { display:block; width:100%; padding:8px 0; }
-    .grid .label { margin-bottom:6px; }
-
-    .row { align-items:flex-start; gap:12px; }
-    .sub { display:inline-flex; flex-wrap:wrap; }
-
-    textarea { min-height:110px; }
-
-    .sig-wrap { height:140px; }
-    canvas.signature { height:140px; }
-
-    input[type="text"], input[type="date"], textarea { min-height:44px; width:100%; }
-    input[type="checkbox"] { width:20px; height:20px; }
-  }
-
-    .page-wrapper { padding: 8px 8px calc(64px + env(safe-area-inset-bottom)); }
-    .page { width: min(100vw - 16px, var(--page-w)); padding: 10mm; box-shadow: none; }
-
-    /* Empiler par défaut */
-    .grid tr { display:block; }
-    .grid td { display:block; width:100%; padding:8px 0; }
-    .grid .label { margin-bottom:6px; }
-
-    /* Garder la première ligne sur une seule ligne */
-    .grid.fixed tr:first-child { display:grid; grid-template-columns: auto 1fr auto 1fr; column-gap:10px; align-items:center; }
-    .grid.fixed tr:first-child td{ display:block; padding:6px 4px; }
-
-    .row { align-items:flex-start; gap:10px; }
-    .sub { display:inline-flex; flex-wrap:wrap; }
-
-    textarea { min-height:90px; }
-
-    .sig-wrap { height:120px; }
-    canvas.signature { height:120px; }
-
-    input[type="text"], input[type="date"], textarea { min-height:40px; }
-    input[type="checkbox"] { width:20px; height:20px; }
-  }
-
-    .page-wrapper { padding: 8px 8px calc(64px + env(safe-area-inset-bottom)); }
-    .page { width: min(100vw - 16px, var(--page-w)); padding: 10mm; box-shadow: none; }
-
-    /* Par défaut, on empile tout SAUF la première ligne que l'on garde sur une ligne */
-    .grid tr { display:block; }
-    .grid td { display:block; width:100%; padding:8px 0; }
-    .grid .label { margin-bottom:6px; }
-
-    .grid.fixed tr:first-child { display:table-row; }
-    .grid.fixed tr:first-child td { display:table-cell; width:auto; padding:4px 6px; }
-
-    .row { align-items:flex-start; gap:10px; }
-    .sub { display:inline-flex; flex-wrap:wrap; }
-
-    textarea { min-height:90px; }
-
-    .sig-wrap { height:120px; }
-    canvas.signature { height:120px; }
-
-    input[type="text"], input[type="date"], textarea { min-height:40px; }
-    input[type="checkbox"] { width:20px; height:20px; }
-  }
-
-    .page-wrapper { padding: 8px 8px calc(64px + env(safe-area-inset-bottom)); /* espace pour la barre d’outils */ }
-    .page {
-      width: min(100vw - 16px, var(--page-w));
-      padding: 10mm;
-      box-shadow: none;
-    }
-
-    .grid tr { display:block; }
-    .grid td { display:block; width:100%; padding:8px 0; }
-    .grid .label { margin-bottom:6px; }
-
-    .row { align-items:flex-start; gap:12px; }
-    .sub { display:inline-flex; flex-wrap:wrap; }
-
-    textarea { min-height:120px; }
-
-    .sig-wrap { height:180px; }
-    canvas.signature { height:180px; }
-
-    input[type="text"], input[type="date"], textarea { min-height:46px; }
-    input[type="checkbox"] { width:22px; height:22px; }
-  }
-
-  @media (prefers-color-scheme: dark){
-    :root{ --bg:#0e1116; --txt:#e9eef7; }
-    .page{ box-shadow: none; }
   }
 </style>
 </head>
 
 <body>
+  <!-- Barre d’outils -->
   <div class="toolbar no-print">
     <div class="toolbar-inner">
       <button class="btn" onclick="window.print()">📄 PDF / Imprimer</button>
@@ -260,80 +138,78 @@
 
   <div id="loader"><div class="box">⏳ Génération & envoi en cours…</div></div>
 
+  <!-- Contenu à l’écran (jamais déformé) -->
   <div class="page-wrapper">
     <div class="page" id="pageContent">
       <div class="header no-break">
-        <img src="logo_otacos.png" alt="O'Tacos" />
-        <div class="header-text">
-          <strong>HITS BOULOGNE</strong>
-          O’tacos Boulogne-sur-Mer
-        </div>
+        <img src="logo_otacos.png" alt="O'Tacos">
+        <div><strong>HITS BOULOGNE</strong>O’tacos Boulogne-sur-Mer</div>
       </div>
 
       <div class="title no-break">FICHE INCIDENTS</div>
 
-      <table class="grid no-break fixed grid-top" role="presentation">
+      <table class="grid no-break" role="presentation">
         <tr>
-          <td class="label" style="width:70px; white-space:nowrap;">Date :</td>
-          <td style="width:230px; vertical-align:middle;">
+          <td class="label">Date :</td>
+          <td>
             <div class="date-actions">
-              <input type="date" id="date_fiche" autocomplete="off" />
-              
+              <input type="date" id="date_fiche" autocomplete="off">
+              <span class="today-btn"><button class="btn-mini" type="button" onclick="setToday('date_fiche')">Aujourd'hui</button></span>
             </div>
           </td>
-          <td class="label" style="text-align:right; white-space:nowrap; width:1%;">Fiche ouverte pour le salarié :</td>
-          <td style="width:260px; vertical-align:middle;"><input type="text" id="salarie" placeholder="Nom du salarié" autocomplete="name" style="width:100%;" /></td>
+          <td class="label" style="text-align:right;">Fiche ouverte pour le salarié :</td>
+          <td><input type="text" id="salarie" placeholder="Nom du salarié" autocomplete="name"></td>
         </tr>
         <tr>
-          <td class="label" style="white-space:nowrap;">Responsable :</td>
-          <td colspan="3"><input type="text" id="responsable" placeholder="Responsable" style="width:100%;" autocomplete="name" /></td>
+          <td class="label">Responsable :</td>
+          <td colspan="3"><input type="text" id="responsable" placeholder="Responsable" autocomplete="name"></td>
         </tr>
       </table>
 
       <div class="section-h no-break">DESCRIPTIF DE L’INCIDENT</div>
       <div class="section-b no-break">
         <div class="row">
-          <input type="checkbox" id="abs_prev" /><label for="abs_prev"><strong>Absence prévue le :</strong></label>
+          <input type="checkbox" id="abs_prev"><label for="abs_prev"><strong>Absence prévue le :</strong></label>
           <div class="sub" id="abs_prev_fields">
             <div class="date-actions">
-              <input type="date" id="abs_prev_date" />
-              
+              <input type="date" id="abs_prev_date">
+              <span class="today-btn"><button class="btn-mini" type="button" onclick="setToday('abs_prev_date')">Aujourd'hui</button></span>
             </div>
             <span>Shift prévu à :</span>
-            <input type="text" id="abs_prev_shift" placeholder="ex: 18h" inputmode="numeric" pattern="[0-2]?[0-9]h" style="width:90px;" />
+            <input type="text" id="abs_prev_shift" placeholder="ex: 18h" inputmode="numeric" style="width:100px">
           </div>
         </div>
 
         <div class="row">
-          <input type="checkbox" id="abs_np" /><label for="abs_np"><strong>Absence non prévue le :</strong></label>
+          <input type="checkbox" id="abs_np"><label for="abs_np"><strong>Absence non prévue le :</strong></label>
           <div class="sub" id="abs_np_fields">
             <div class="date-actions">
-              <input type="date" id="abs_np_date" />
-              
+              <input type="date" id="abs_np_date">
+              <span class="today-btn"><button class="btn-mini" type="button" onclick="setToday('abs_np_date')">Aujourd'hui</button></span>
             </div>
             <span>Shift prévu à :</span>
-            <input type="text" id="abs_np_shift" placeholder="ex: 18h" inputmode="numeric" pattern="[0-2]?[0-9]h" style="width:90px;" />
+            <input type="text" id="abs_np_shift" placeholder="ex: 18h" inputmode="numeric" style="width:100px">
           </div>
         </div>
 
         <div class="row">
-          <input type="checkbox" id="ret_prev" /><label for="ret_prev"><strong>Retard prévu de :</strong></label>
+          <input type="checkbox" id="ret_prev"><label for="ret_prev"><strong>Retard prévu de :</strong></label>
           <div class="sub" id="ret_prev_fields">
-            <input type="text" id="ret_prev_duree" placeholder="ex: 30 min" inputmode="numeric" style="width:110px;" />
+            <input type="text" id="ret_prev_duree" placeholder="ex: 30 min" inputmode="numeric" style="width:120px">
           </div>
         </div>
 
         <div class="row">
-          <input type="checkbox" id="ret_np" /><label for="ret_np"><strong>Retard non prévu de :</strong></label>
+          <input type="checkbox" id="ret_np"><label for="ret_np"><strong>Retard non prévu de :</strong></label>
           <div class="sub" id="ret_np_fields">
-            <input type="text" id="ret_np_duree" placeholder="ex: 20 min" inputmode="numeric" style="width:110px;" />
+            <input type="text" id="ret_np_duree" placeholder="ex: 20 min" inputmode="numeric" style="width:120px">
           </div>
         </div>
 
         <div class="row">
-          <input type="checkbox" id="autre" /><label for="autre"><strong>Autre :</strong></label>
+          <input type="checkbox" id="autre"><label for="autre"><strong>Autre :</strong></label>
           <div class="sub" id="autre_fields">
-            <input type="text" id="autre_detail" placeholder="Préciser…" style="min-width:220px; flex:1;" />
+            <input type="text" id="autre_detail" placeholder="Préciser…" style="min-width:220px; flex:1">
           </div>
         </div>
       </div>
@@ -348,47 +224,41 @@
         <textarea id="action" placeholder="Décrire l'action corrective…"></textarea>
       </div>
 
-      <div class="no-break" style="display:flex; align-items:center; gap:8px; font-size:14px; margin-top:2px;">
+      <div class="no-break" style="display:flex; align-items:center; gap:8px; font-size:14px;">
         <strong>Fait le :</strong>
         <div class="date-actions">
-          <input type="date" id="fait_le" style="font-size:14px;" />
-          
+          <input type="date" id="fait_le">
+          <span class="today-btn"><button class="btn-mini" type="button" onclick="setToday('fait_le')">Aujourd'hui</button></span>
         </div>
         <span>, à Boulogne-sur-Mer</span>
       </div>
 
       <div class="signatures no-break">
-        <div class="sig-box">
+        <div>
           <label for="signRespCanvas">Signature Responsable</label>
           <div class="sig-wrap">
             <canvas id="signRespCanvas" class="signature"></canvas>
             <span class="sig-hint">Signez ici</span>
           </div>
-          <div class="sig-actions">
-            <button class="btn-mini" type="button" onclick="clearCanvas('signRespCanvas'); saveToLocal()">Effacer</button>
-          </div>
+          <div class="sig-actions"><button class="btn-mini" type="button" onclick="clearCanvas('signRespCanvas'); saveToLocal()">Effacer</button></div>
         </div>
-
-        <div class="sig-box">
+        <div>
           <label for="signSalCanvas">Signature Salarié</label>
           <div class="sig-wrap">
             <canvas id="signSalCanvas" class="signature"></canvas>
             <span class="sig-hint">Signez ici</span>
           </div>
-          <div class="sig-actions">
-            <button class="btn-mini" type="button" onclick="clearCanvas('signSalCanvas'); saveToLocal()">Effacer</button>
-          </div>
+          <div class="sig-actions"><button class="btn-mini" type="button" onclick="clearCanvas('signSalCanvas'); saveToLocal()">Effacer</button></div>
         </div>
       </div>
     </div>
   </div>
 
 <script>
-/* ============== Utils communs ============== */
+/* ======= Helpers ======= */
 const $ = s => document.querySelector(s);
 const ALL_FIELDS_SELECTOR = "input[type='text'], input[type='date'], input[type='checkbox'], textarea";
 
-/* ============== Aides dates ============== */
 function todayStr(){
   const d = new Date();
   const m = String(d.getMonth()+1).padStart(2,'0');
@@ -401,120 +271,95 @@ function setToday(id){
   saveToLocal();
 }
 
-/* ============== Affichage conditionnel ============== */
+/* ======= Affichage conditionnel ======= */
 ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
-  const box=document.getElementById(id);
-  const sub=document.getElementById(id+"_fields");
-  if(!box||!sub) return;
-  const sync=()=>{ sub.style.display=box.checked?"inline-flex":"none"; };
-  box.addEventListener("change",()=>{ sync(); saveToLocal(); });
+  const box = document.getElementById(id);
+  const sub = document.getElementById(id+"_fields");
+  if(!box || !sub) return;
+  const sync = ()=>{ sub.style.display = box.checked ? "inline-flex" : "none"; };
+  box.addEventListener("change", ()=>{ sync(); saveToLocal(); });
   sync();
 });
 
-/* ============== Signatures (canvas haute densité) ============== */
-const drawn = new Map(); // suit si l'utilisateur a dessiné
+/* ======= Signatures (canvas HiDPI, sans getImageData) ======= */
 function setupCanvas(id){
   const c = document.getElementById(id);
   const ctx = c.getContext("2d");
 
   function fit(){
+    // sauvegarde en dataURL (pas de getImageData -> pas d'avertissements)
+    let backup = null;
+    try{ backup = c.toDataURL("image/png"); }catch(e){}
+
     const rect = c.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-
-    // snapshot existant
-    let snap = null;
-    if (c.width && c.height) {
-      try { snap = ctx.getImageData(0,0,c.width,c.height); } catch(e){}
-    }
-
     c.width  = Math.max(1, Math.round(rect.width * dpr));
     c.height = Math.max(1, Math.round(rect.height * dpr));
     ctx.setTransform(1,0,0,1,0,0);
     ctx.scale(dpr, dpr);
 
     // fond blanc
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0,0,rect.width,rect.height);
+    ctx.fillStyle = "#fff"; ctx.fillRect(0,0,rect.width,rect.height);
 
-    if (snap) { try{ ctx.putImageData(snap, 0, 0); }catch(e){} }
+    // restaure
+    if(backup){
+      const img = new Image();
+      img.onload = ()=>{ ctx.drawImage(img, 0,0, rect.width, rect.height); };
+      img.src = backup;
+    }
 
     ctx.lineWidth = 2;
     ctx.lineCap = "round";
     ctx.strokeStyle = "#000";
   }
 
-  // dimensionne le canvas à la taille CSS
   function sizeToCss(){
-    const parent = c.closest('.sig-wrap');
-    const w = parent.clientWidth;
-    const h = parent.clientHeight;
-    c.style.width = w + "px";
-    c.style.height = h + "px";
+    const p = c.closest('.sig-wrap');
+    c.style.width = p.clientWidth + "px";
+    c.style.height= p.clientHeight + "px";
   }
 
-  sizeToCss();
-  fit();
+  sizeToCss(); fit();
   window.addEventListener("resize", ()=>{ sizeToCss(); fit(); });
   window.addEventListener("orientationchange", ()=>{ setTimeout(()=>{ sizeToCss(); fit(); }, 250); });
 
   let drawing=false, prev=null;
   const hint = c.parentElement.querySelector('.sig-hint');
+
   const start=(x,y)=>{ drawing=true; prev={x,y}; if(hint) hint.style.opacity='0'; };
-  const move=(x,y)=>{ if(!drawing) return; ctx.beginPath(); ctx.moveTo(prev.x,prev.y); ctx.lineTo(x,y); ctx.stroke(); prev={x,y}; drawn.set(id,true); saveToLocalThrottled(); };
-  const stop=()=>{ drawing=false; prev=null; };
+  const move =(x,y)=>{ if(!drawing) return; ctx.beginPath(); ctx.moveTo(prev.x,prev.y); ctx.lineTo(x,y); ctx.stroke(); prev={x,y}; saveToLocalThrottled(); };
+  const stop =()=>{ drawing=false; prev=null; };
 
   c.addEventListener("mousedown",e=>start(e.offsetX,e.offsetY));
   c.addEventListener("mousemove",e=>move(e.offsetX,e.offsetY));
   ["mouseup","mouseleave"].forEach(ev=>c.addEventListener(ev,stop));
 
-  c.addEventListener("touchstart",e=>{
-    e.preventDefault();
-    const r=c.getBoundingClientRect(), t=e.touches[0];
-    start(t.clientX-r.left, t.clientY-r.top);
-  },{passive:false});
-  c.addEventListener("touchmove",e=>{
-    e.preventDefault();
-    const r=c.getBoundingClientRect(), t=e.touches[0];
-    move(t.clientX-r.left, t.clientY-r.top);
-  },{passive:false});
-  c.addEventListener("touchend",stop);
-}
-function clearCanvas(id){
-  const c=document.getElementById(id);
-  const x=c.getContext("2d");
-  x.setTransform(1,0,0,1,0,0);
-  x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height);
-  drawn.set(id,false);
-  const hint = c.parentElement.querySelector('.sig-hint');
-  if(hint) hint.style.opacity='1';
+  c.addEventListener("touchstart",e=>{ e.preventDefault(); const r=c.getBoundingClientRect(), t=e.touches[0]; start(t.clientX-r.left, t.clientY-r.top); },{passive:false});
+  c.addEventListener("touchmove", e=>{ e.preventDefault(); const r=c.getBoundingClientRect(), t=e.touches[0]; move(t.clientX-r.left, t.clientY-r.top); },{passive:false});
+  c.addEventListener("touchend", stop);
 }
 setupCanvas("signRespCanvas");
 setupCanvas("signSalCanvas");
 
-/* Signatures -> dataURL compacte (JPEG + downscale) */
-function canvasToSmallDataURL(srcCanvas, maxCssW=360, mime='image/jpeg', quality=0.85){
-  // convertit depuis la taille CSS visible (pas la résolution interne dpr)
+function canvasToSmallDataURL(srcCanvas, maxCssW=360, mime='image/jpeg', quality=0.9){
   const rect = srcCanvas.getBoundingClientRect();
-  const src = document.createElement('canvas');
-  src.width = Math.max(1, Math.round(rect.width));
+  const src  = document.createElement('canvas');
+  src.width  = Math.max(1, Math.round(rect.width));
   src.height = Math.max(1, Math.round(rect.height));
   const sctx = src.getContext('2d');
-  // dessine le canvas haute résolution vers un canvas CSS 1:1
-  sctx.fillStyle = "#fff"; sctx.fillRect(0,0,src.width,src.height);
+  sctx.fillStyle="#fff"; sctx.fillRect(0,0,src.width,src.height);
   sctx.drawImage(srcCanvas, 0,0, src.width, src.height);
 
-  const ratio = Math.min(1, maxCssW / src.width);
-  const dw = Math.round(src.width * ratio), dh = Math.round(src.height * ratio);
-  const off = document.createElement('canvas');
-  off.width = dw; off.height = dh;
+  const ratio = Math.min(1, maxCssW/src.width);
+  const dw = Math.round(src.width*ratio), dh=Math.round(src.height*ratio);
+  const off = document.createElement('canvas'); off.width=dw; off.height=dh;
   const ctx = off.getContext('2d');
-  ctx.fillStyle = "#fff"; ctx.fillRect(0,0,dw,dh);
+  ctx.fillStyle="#fff"; ctx.fillRect(0,0,dw,dh);
   ctx.drawImage(src, 0,0, dw, dh);
-
   return off.toDataURL(mime, quality);
 }
 
-/* ============== Autosauvegarde ============== */
+/* ======= Autosauvegarde ======= */
 const STORAGE_KEY = "ficheIncidentBSM";
 const STORAGE_OPT_KEY = "ficheIncidentBSM_auto";
 function isAutoSaveOn(){ return localStorage.getItem(STORAGE_OPT_KEY)!=="OFF"; }
@@ -523,13 +368,11 @@ function setAutoSave(on){
   const btn = document.getElementById("autoSaveBtn");
   btn.textContent = on ? "💾 Sauvegarde auto : ON" : "💾 Sauvegarde auto : OFF";
 }
-
 function collectData(){
   const data = {};
   document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{
     data[el.id] = (el.type==="checkbox") ? el.checked : el.value;
   });
-  // signatures compressées
   data.sign_resp = canvasToSmallDataURL(document.getElementById("signRespCanvas"));
   data.sign_sal  = canvasToSmallDataURL(document.getElementById("signSalCanvas"));
   return data;
@@ -541,12 +384,10 @@ function applyData(data){
     if(el.type==="checkbox") el.checked = !!data[el.id];
     else el.value = data[el.id] || "";
   });
-  // re-synchronise l'affichage conditionnel
   ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
     const box=document.getElementById(id), sub=document.getElementById(id+"_fields");
     if(box && sub){ sub.style.display = box.checked ? "inline-flex":"none"; }
   });
-  // signatures
   restoreSignature("signRespCanvas", data.sign_resp);
   restoreSignature("signSalCanvas",  data.sign_sal);
 }
@@ -559,98 +400,73 @@ function restoreSignature(id, dataUrl){
     const r = c.getBoundingClientRect();
     ctx.fillStyle="#fff"; ctx.fillRect(0,0,r.width,r.height);
     ctx.drawImage(img, 0,0, r.width, r.height);
-    drawn.set(id, true);
     const hint = c.parentElement.querySelector('.sig-hint');
     if(hint) hint.style.opacity='0';
   };
   img.src = dataUrl;
 }
-function saveToLocal(){
-  if(!isAutoSaveOn()) return;
-  try{
-    const data = collectData();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }catch(e){ console.warn("saveToLocal error", e); }
-}
-// throttle léger pour dessin
+function saveToLocal(){ if(!isAutoSaveOn()) return; try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData())); }catch(e){} }
 let _saveTimer=null;
-function saveToLocalThrottled(){
-  if(!isAutoSaveOn()) return;
-  clearTimeout(_saveTimer);
-  _saveTimer = setTimeout(saveToLocal, 300);
-}
-function loadFromLocal(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(!raw) return;
-    applyData(JSON.parse(raw));
-  }catch(e){ console.warn("loadFromLocal error", e); }
-}
-
-function toggleAutoSave(){
-  const on = !isAutoSaveOn();
-  setAutoSave(on);
-  if(on) saveToLocal();
-}
-
+function saveToLocalThrottled(){ if(!isAutoSaveOn()) return; clearTimeout(_saveTimer); _saveTimer=setTimeout(saveToLocal, 300); }
+function loadFromLocal(){ try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw) applyData(JSON.parse(raw)); }catch(e){} }
+function toggleAutoSave(){ const on=!isAutoSaveOn(); setAutoSave(on); if(on) saveToLocal(); }
 function clearAll(){
   if(!confirm("Effacer tous les champs et la sauvegarde locale ?")) return;
-  document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{
-    if(el.type==="checkbox") el.checked = false;
-    else el.value = "";
-  });
-  ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
-    const sub=document.getElementById(id+"_fields");
-    if(sub) sub.style.display="none";
-  });
-  clearCanvas("signRespCanvas");
-  clearCanvas("signSalCanvas");
+  document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{ if(el.type==="checkbox") el.checked=false; else el.value=""; });
+  ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{ const sub=document.getElementById(id+"_fields"); if(sub) sub.style.display="none"; });
+  clearCanvas("signRespCanvas"); clearCanvas("signSalCanvas");
   localStorage.removeItem(STORAGE_KEY);
-  // on laisse l'option de sauvegarde telle qu'elle est (ON/OFF)
 }
-
-/* branche les événements pour autosave */
-function bindAutoSaveEvents(){
-  document.addEventListener("input", saveToLocal);
-  document.addEventListener("change", saveToLocal);
+function clearCanvas(id){
+  const c=document.getElementById(id); const x=c.getContext("2d");
+  x.setTransform(1,0,0,1,0,0); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height);
+  const hint = c.parentElement.querySelector('.sig-hint'); if(hint) hint.style.opacity='1';
 }
+function bindAutoSaveEvents(){ document.addEventListener("input", saveToLocal); document.addEventListener("change", saveToLocal); }
 
-/* init */
+/* ======= Init ======= */
 (function init(){
-  // date par défaut si vide
   const def = todayStr();
-  ["date_fiche","fait_le"].forEach(id=>{
-    const el = document.getElementById(id);
-    if(el && !el.value) el.value = def;
-  });
-
-  // état autosave (ON par défaut)
+  ["date_fiche","fait_le"].forEach(id=>{ const el=document.getElementById(id); if(el && !el.value) el.value=def; });
   setAutoSave(isAutoSaveOn());
   bindAutoSaveEvents();
   loadFromLocal();
 })();
 
-/* ====== Forcer le PDF à tenir sur 1 seule page A4 ====== */
+/* ======= PDF (clone A4) ======= */
 function prepareCloneForPdf(clone){
-  // Ajoute une classe PDF et un style dédié INSIDE le clone (n'affecte pas l'écran)
-  clone.classList.add('pdf-a4');
+  // Masquer éléments d’UI dans le PDF
   const style = document.createElement('style');
   style.textContent = `
     .pdf-a4{ width:210mm !important; min-height:297mm !important; padding:10mm !important; box-shadow:none !important; border-radius:0 !important; }
-    .pdf-a4 .title{ font-size:12.5px; padding:2px 4px; }
+    .pdf-a4 .title{ font-size:12.5px; padding:4px 6px; }
     .pdf-a4 .grid{ font-size:11.5px; }
     .pdf-a4 input, .pdf-a4 textarea{ padding:6px 8px; font-size:11.5px; }
     .pdf-a4 textarea{ min-height:60px !important; }
-    .pdf-a4 .section-h{ padding:4px 6px; font-size:11.5px; }
-    .pdf-a4 .section-b{ padding:6px; font-size:11.5px; }
-    .pdf-a4 .row{ gap:6px; margin-bottom:4px; }
+    .pdf-a4 .section-h{ padding:6px 8px; font-size:12px; }
+    .pdf-a4 .section-b{ padding:8px; font-size:12px; }
+    .pdf-a4 .row{ gap:6px; margin-bottom:6px; }
     .pdf-a4 .sig-wrap{ height:80px !important; }
     .pdf-a4 .signature, .pdf-a4 img.signature-img{ height:80px !important; width:100% !important; object-fit:contain; background:#fff; }
+    .pdf-a4 .today-btn{ display:none !important; }
   `;
   clone.prepend(style);
+  clone.classList.add('pdf-a4');
 }
 
-/* ============== PDF + Envoi via proxy ============== */
+function replaceCanvasWithImg(clone, canvasId, outHeightPx=80){
+  const srcCanvas = document.getElementById(canvasId);
+  const img = document.createElement('img');
+  img.src = canvasToSmallDataURL(srcCanvas, 500, "image/jpeg", 0.9);
+  img.className = "signature-img";
+  img.style.width = "100%";
+  img.style.height = outHeightPx + "px";
+  img.style.objectFit = "contain";
+  img.style.background = "#fff";
+  const cloneCanvas = clone.querySelector("#"+canvasId);
+  if(cloneCanvas) cloneCanvas.replaceWith(img);
+}
+
 function blobToBase64(blob){
   return new Promise((resolve,reject)=>{
     const r=new FileReader();
@@ -661,9 +477,7 @@ function blobToBase64(blob){
 
 async function sendToServer(){
   const WEBAPP_URL="https://otacos-proxy.contact-otacosbsm.workers.dev/";
-  const loader=$("#loader");
-  const btn=$("#sendBtn");
-
+  const loader=$("#loader"), btn=$("#sendBtn");
   try{
     btn.disabled=true; loader.style.display="flex";
 
@@ -676,30 +490,17 @@ async function sendToServer(){
     const original=$("#pageContent");
     const clone = original.cloneNode(true);
 
-    // Nettoie les éléments d'UI qui ne doivent pas apparaître autrement
-    clone.querySelectorAll('.sig-hint').forEach(h=>h.remove());
-
-    // Forcer A4 via style dédié PDF uniquement
+    // Prépare le clone (styles PDF only)
     prepareCloneForPdf(clone);
 
-    // Remplace canvases signature par images JPEG fond blanc
-    const respCanvas=$("#signRespCanvas");
-    const salCanvas=$("#signSalCanvas");
+    // Remplace les canvases par des images compactes
+    replaceCanvasWithImg(clone, "signRespCanvas", 80);
+    replaceCanvasWithImg(clone, "signSalCanvas", 80);
 
-    const imgResp=document.createElement("img");
-    imgResp.src=canvasToSmallDataURL(respCanvas,500,"image/jpeg",0.9);
-    imgResp.className='signature-img';
-    const cloneResp=clone.querySelector("#signRespCanvas");
-    if(cloneResp) cloneResp.replaceWith(imgResp);
-    const cloneSal = clone.querySelector('#signSalCanvas'); if (cloneSal) cloneSal.replaceWith(imgSal);
-
-    // conteneur hors-écran
+    // conteneur hors écran
     const off=document.createElement("div");
     off.style.position="fixed"; off.style.top="-10000px"; off.style.left="0";
     off.appendChild(clone); document.body.appendChild(off);
-
-    // *** AJUSTE POUR TENIR SUR 1 PAGE ***
-    fitCloneToOneA4Page(clone);
 
     const opt={
       margin:[10,10],
@@ -709,7 +510,6 @@ async function sendToServer(){
       jsPDF:{ unit:"mm", format:"a4", orientation:"portrait", compress:true },
     };
 
-    // Flux PDF fiable
     const worker = html2pdf().set(opt).from(clone).toPdf();
     await worker.get('pdf');
     const pdfBlob = await worker.output('blob');
@@ -719,28 +519,15 @@ async function sendToServer(){
     const b64 = await blobToBase64(pdfBlob);
     const payload={ meta, b64 };
 
-    const res=await fetch(WEBAPP_URL,{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify(payload)
-    });
+    const res=await fetch(WEBAPP_URL,{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(payload) });
 
     let ok=false, msg='';
     const ct=res.headers.get("content-type")||"";
-    if(ct.includes("application/json")){
-      const j=await res.json(); ok=(j.status==="ok"); msg=j.message||"";
-    }else{
-      const t=await res.text(); ok=res.ok; msg=ok? "OK (non-JSON)" : `HTTP ${res.status} - ${t.slice(0,120)}`;
-    }
+    if(ct.includes("application/json")){ const j=await res.json(); ok=(j.status==="ok"); msg=j.message||""; }
+    else{ const t=await res.text(); ok=res.ok; msg=ok? "OK (non-JSON)" : `HTTP ${res.status} - ${t.slice(0,120)}`; }
 
-    if(ok){ alert(`✅ Merci ${meta.responsable},
-
-La fiche a bien été enregistrée et envoyée (1 page A4).`); }
-    else  { alert("⚠️ Erreur côté serveur : " + msg); }
-
-    // resauvegarde après envoi (si autosave ON)
+    alert(ok ? `✅ Merci ${meta.responsable},\n\nLa fiche a bien été enregistrée et envoyée.` : "⚠️ Erreur côté serveur : " + msg);
     saveToLocal();
-
   }catch(e){
     console.error(e);
     alert("❌ Erreur inattendue : " + (e?.message||e));
