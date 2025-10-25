@@ -82,44 +82,37 @@
     <div class="section-header">DESCRIPTIF DE L’INCIDENT</div>
     <div class="section-body">
       <div class="incident-line">
-        <input type="checkbox" id="abs_prev" />
-        <label for="abs_prev"><strong>Absence prévue le :</strong></label>
+        <input type="checkbox" id="abs_prev" /><label for="abs_prev"><strong>Absence prévue le :</strong></label>
         <div class="sub-fields" id="abs_prev_fields" style="display:none;">
           <input type="date" id="abs_prev_date" />
-          Shift prévu à :
-          <input type="text" id="abs_prev_shift" placeholder="ex: 18h" style="width:70px" />
+          Shift prévu à : <input type="text" id="abs_prev_shift" placeholder="ex: 18h" style="width:70px" />
         </div>
       </div>
 
       <div class="incident-line">
-        <input type="checkbox" id="abs_np" />
-        <label for="abs_np"><strong>Absence non prévue le :</strong></label>
+        <input type="checkbox" id="abs_np" /><label for="abs_np"><strong>Absence non prévue le :</strong></label>
         <div class="sub-fields" id="abs_np_fields" style="display:none;">
           <input type="date" id="abs_np_date" />
-          Shift prévu à :
-          <input type="text" id="abs_np_shift" placeholder="ex: 18h" style="width:70px" />
+          Shift prévu à : <input type="text" id="abs_np_shift" placeholder="ex: 18h" style="width:70px" />
         </div>
       </div>
 
       <div class="incident-line">
-        <input type="checkbox" id="ret_prev" />
-        <label for="ret_prev"><strong>Retard prévu de :</strong></label>
+        <input type="checkbox" id="ret_prev" /><label for="ret_prev"><strong>Retard prévu de :</strong></label>
         <div class="sub-fields" id="ret_prev_fields" style="display:none;">
           <input type="text" id="ret_prev_duree" placeholder="ex: 30 min" style="width:90px" />
         </div>
       </div>
 
       <div class="incident-line">
-        <input type="checkbox" id="ret_np" />
-        <label for="ret_np"><strong>Retard non prévu de :</strong></label>
+        <input type="checkbox" id="ret_np" /><label for="ret_np"><strong>Retard non prévu de :</strong></label>
         <div class="sub-fields" id="ret_np_fields" style="display:none;">
           <input type="text" id="ret_np_duree" placeholder="ex: 20 min" style="width:90px" />
         </div>
       </div>
 
       <div class="incident-line">
-        <input type="checkbox" id="autre" />
-        <label for="autre"><strong>Autre :</strong></label>
+        <input type="checkbox" id="autre" /><label for="autre"><strong>Autre :</strong></label>
         <div class="sub-fields" id="autre_fields" style="display:none;">
           <input type="text" id="autre_detail" placeholder="Préciser..." style="flex:1;min-width:200px" />
         </div>
@@ -166,11 +159,9 @@
 </div>
 
 <script>
-/* ============ helpers UI ============ */
+/* ===== Dates auto ===== */
 function todayISO(){
-  const d=new Date();
-  const m=('0'+(d.getMonth()+1)).slice(-2);
-  const day=('0'+d.getDate()).slice(-2);
+  const d=new Date(),m=('0'+(d.getMonth()+1)).slice(-2),day=('0'+d.getDate()).slice(-2);
   return `${d.getFullYear()}-${m}-${day}`;
 }
 (function initDates(){
@@ -180,17 +171,16 @@ function todayISO(){
   if(fl && !fl.value) fl.value=todayISO();
 })();
 
-const boxes=['abs_prev','abs_np','ret_prev','ret_np','autre'];
-boxes.forEach(id=>{
+/* ===== Affichage conditionnel ===== */
+['abs_prev','abs_np','ret_prev','ret_np','autre'].forEach(id=>{
   const box=document.getElementById(id);
   const sub=document.getElementById(id+'_fields');
   if(!box||!sub) return;
   const sync=()=>{sub.style.display=box.checked?'inline-flex':'none';};
-  box.addEventListener('change',sync);
-  sync();
+  box.addEventListener('change',sync); sync();
 });
 
-/* signatures (simple) */
+/* ===== Signatures ===== */
 function setupCanvas(id){
   const c=document.getElementById(id),x=c.getContext('2d');let d=false;
   c.addEventListener('mousedown',e=>{d=true;x.beginPath();x.moveTo(e.offsetX,e.offsetY);});
@@ -203,7 +193,7 @@ function setupCanvas(id){
 function clearCanvas(id){const c=document.getElementById(id);if(c)c.getContext('2d').clearRect(0,0,c.width,c.height);}
 setupCanvas('signRespCanvas'); setupCanvas('signSalCanvas');
 
-/* ====== export helpers ====== */
+/* ===== Helpers export ===== */
 function canvasToSmallDataURL(srcCanvas,maxW=340,mime='image/jpeg',quality=.9){
   const w=srcCanvas.width,h=srcCanvas.height,ratio=Math.min(1,maxW/w);
   const off=document.createElement('canvas'); off.width=Math.round(w*ratio); off.height=Math.round(h*ratio);
@@ -218,20 +208,20 @@ function textFromInput(el){
   return el.value||'';
 }
 function checkboxRowToText(box,labelEl,extraText){
-  const mark = box && box.checked ? '☑' : '☐';
-  const label = labelEl ? labelEl.textContent.trim() : '';
-  const extra = (extraText||'').trim();
+  const mark=box && box.checked ? '☑' : '☐';
+  const label=labelEl ? labelEl.textContent.trim() : '';
+  const extra=(extraText||'').trim();
   return `${mark} ${label}${extra?(' '+extra):''}`;
 }
 
-/* ============ ENVOI PDF ============ */
+/* ===== ENVOI + PDF robuste ===== */
 async function sendToServer(){
   const WEBAPP_URL="https://otacos-proxy.contact-otacosbsm.workers.dev/";
   const loader=document.getElementById('loader'); loader.style.display='flex';
 
   try{
     const respCanvas=document.getElementById('signRespCanvas');
-    const salCanvas=document.getElementById('signSalCanvas');
+    const salCanvas =document.getElementById('signSalCanvas');
 
     const meta={
       salarie:document.getElementById('salarie').value||'Inconnu',
@@ -239,21 +229,20 @@ async function sendToServer(){
       date_fiche:document.getElementById('date_fiche').value||todayISO(),
     };
 
-    /* clone propre */
+    /* 1) Clone propre */
     const original=document.getElementById('pageContent');
     const clone=original.cloneNode(true);
 
-    /* 1) inputs/textarea -> texte épuré */
+    /* 2) Inputs/textarea -> texte */
     clone.querySelectorAll('input, textarea').forEach(el=>{
-      if(el.type==='checkbox'){ /* géré plus bas (cases) */ return; }
+      if(el.type==='checkbox') return;
       const span=document.createElement('div');
-      span.style.minHeight='18px';
-      span.style.padding='2px 0';
+      span.style.minHeight='18px'; span.style.padding='2px 0';
       span.textContent=textFromInput(el);
       el.replaceWith(span);
     });
 
-    /* 2) cases à cocher -> ☑/☐ + libellé + valeurs */
+    /* 3) Cases -> ☑/☐ + libellé + valeurs */
     const map=[
       ['abs_prev','abs_prev_fields',['abs_prev_date','abs_prev_shift']],
       ['abs_np','abs_np_fields',['abs_np_date','abs_np_shift']],
@@ -261,107 +250,110 @@ async function sendToServer(){
       ['ret_np','ret_np_fields',['ret_np_duree']],
       ['autre','autre_fields',['autre_detail']],
     ];
-    map.forEach(([id,fields,extraIds])=>{
+    map.forEach(([id,_fields,extraIds])=>{
       const box=original.querySelector('#'+id);
       const cloneRow=clone.querySelector('#'+id)?.closest('.incident-line');
       if(!cloneRow) return;
       const labelEl=cloneRow.querySelector('label[for="'+id+'"]');
 
       let extraText='';
-      if(extraIds && extraIds.length){
-        extraIds.forEach(eid=>{
-          const src=original.querySelector('#'+eid);
-          if(src && src.value){
-            if(src.type==='date'){
-              const [Y,M,D]=src.value.split('-'); extraText+=` ${D}/${M}/${Y}`;
-            }else{
-              extraText+=` ${src.value}`;
-            }
-          }
-        });
-      }
+      (extraIds||[]).forEach(eid=>{
+        const src=original.querySelector('#'+eid);
+        if(src && src.value){
+          if(src.type==='date'){ const [Y,M,D]=src.value.split('-'); extraText+=` ${D}/${M}/${Y}`; }
+          else extraText+=` ${src.value}`;
+        }
+      });
+
       const lineText=checkboxRowToText(box,labelEl,extraText);
       const p=document.createElement('div'); p.textContent=lineText; p.style.padding='2px 0';
       cloneRow.replaceWith(p);
     });
 
-    /* 3) textes libres (origine, action) */
+    /* 4) Textareas libres */
     ['origine','action'].forEach(id=>{
       const src=original.querySelector('#'+id);
       const dst=clone.querySelector('#'+id);
       if(src && dst){
-        const dv=document.createElement('div');
-        dv.style.minHeight='60px';
-        dv.style.whiteSpace='pre-wrap';
-        dv.textContent=src.value||'';
+        const dv=document.createElement('div'); dv.style.minHeight='60px'; dv.style.whiteSpace='pre-wrap'; dv.textContent=src.value||'';
         dst.replaceWith(dv);
       }
     });
 
-    /* 4) signatures -> images + légende */
+    /* 5) Signatures -> images */
     const respSmall=canvasToSmallDataURL(respCanvas,360,'image/jpeg',0.92);
     const salSmall =canvasToSmallDataURL(salCanvas ,360,'image/jpeg',0.92);
 
     const replaceSign=(canvasId,smallSrc,legend)=>{
       const c=clone.querySelector('#'+canvasId);
       if(!c) return;
-      const wrap=c.parentElement; // .signature-wrapper
-      const img=document.createElement('img');
-      img.src=smallSrc; img.style.width='100%'; img.style.height='auto';
-      const cap=document.createElement('div');
-      cap.textContent=legend; cap.style.fontSize='11px'; cap.style.marginTop='4px'; cap.style.color='#333';
-      wrap.replaceWith((()=>{const box=document.createElement('div'); box.appendChild(img); box.appendChild(cap); return box;})());
+      const wrap=c.parentElement;
+      const img=document.createElement('img'); img.src=smallSrc; img.style.width='100%'; img.style.height='auto';
+      const cap=document.createElement('div'); cap.textContent=legend; cap.style.fontSize='11px'; cap.style.marginTop='4px'; cap.style.color='#333';
+      const box=document.createElement('div'); box.appendChild(img); box.appendChild(cap);
+      wrap.replaceWith(box);
     };
     replaceSign('signRespCanvas',respSmall,'Signé : Responsable');
     replaceSign('signSalCanvas' ,salSmall ,'Signé : Salarié');
 
-    /* 5) retirer tous les boutons “Effacer” dans le clone */
+    /* 6) Remove boutons Effacer */
     clone.querySelectorAll('.signature-actions').forEach(e=>e.remove());
 
-    /* 6) conteneur offscreen pour html2pdf */
+    /* 7) Conteneur offscreen */
     const temp=document.createElement('div');
     temp.style.position='fixed'; temp.style.top='-10000px';
     temp.appendChild(clone); document.body.appendChild(temp);
 
-    /* 7) génération pdf */
-    const pdfBlob=await html2pdf()
-      .set({
-        margin:[10,10],
-        filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
-        html2canvas:{scale:2,useCORS:true,scrollY:0,willReadFrequently:true},
-        jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
-      })
-      .from(clone)
-      .outputPdf('blob');
+    /* 8) Génération PDF – séquence robuste pour éviter la pile infinie */
+    const opt={
+      margin:[10,10],
+      filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
+      html2canvas:{scale:1.8,useCORS:true,scrollY:0,willReadFrequently:true},
+      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+    };
 
+    // Laisser l'event loop respirer avant html2pdf
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+
+    let pdfBlob;
+    try{
+      // Étapes découpées : toPdf() puis output(...)
+      const inst = html2pdf().set(opt).from(clone).toPdf();
+      await inst; // attend le rendu PDF
+      // Deuxième micro-pause (évite des boucles internes sur certains navigateurs)
+      await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+
+      // Essaye l’API moderne…
+      if(typeof inst.output==='function'){
+        pdfBlob = await inst.output('blob');
+      }else{
+        // …sinon fallback ancien
+        pdfBlob = await html2pdf().set(opt).from(clone).outputPdf('blob');
+      }
+    }catch(pdfErr){
+      temp.remove();
+      throw pdfErr;
+    }
     temp.remove();
 
-    /* 8) blob -> base64 */
+    /* 9) blob -> base64 */
     const buf=await pdfBlob.arrayBuffer();
     const b64=btoa(String.fromCharCode(...new Uint8Array(buf)));
 
-    /* 9) envoi */
+    /* 10) Envoi */
     const payload={meta,b64};
-    const res=await fetch(WEBAPP_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload)
-    });
-
+    const res=await fetch(WEBAPP_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const ct=res.headers.get('content-type')||'';
     let ok=false,msg='';
-    if(ct.includes('application/json')){
-      const j=await res.json(); ok=j.status==='ok'; msg=j.message||'';
-    }else{
-      ok=res.ok; msg=res.ok?'OK (non-JSON)':`HTTP ${res.status}`;
-    }
+    if(ct.includes('application/json')){ const j=await res.json(); ok=j.status==='ok'; msg=j.message||''; }
+    else { ok=res.ok; msg=ok?'OK (non-JSON)':`HTTP ${res.status}`; }
 
     alert(ok?`✅ Merci ${meta.responsable},\n\nLa fiche a bien été enregistrée et envoyée.`:`⚠️ Erreur côté serveur : ${msg}`);
   }catch(err){
     console.error(err);
-    alert('❌ Erreur inattendue : '+(err?.message||err));
+    alert('❌ Erreur : '+(err?.message||err));
   }finally{
-    loader.style.display='none';
+    document.getElementById('loader').style.display='none';
   }
 }
 </script>
