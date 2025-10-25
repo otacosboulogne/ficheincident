@@ -16,11 +16,17 @@
     --txt: #0b1320;
     --bg: #e9ebee;
     --radius: 12px;
+    --toolbar-h: 0px;           /* sera mis à jour en JS */
   }
   *{ box-sizing: border-box; }
   html,body{ margin:0; background:var(--bg); color:var(--txt); font-family: Arial, Helvetica, sans-serif; }
 
-  .page-wrapper{ display:flex; justify-content:center; padding:16px; }
+  .page-wrapper{
+    display:flex; justify-content:center;
+    padding:16px;
+    /* espace réservé en bas = hauteur barre + safe-area + marge */
+    padding-bottom: calc(16px + var(--toolbar-h) + env(safe-area-inset-bottom));
+  }
   .page{
     width: min(100%, var(--page-w));
     background:#fff; border-radius: var(--radius);
@@ -71,6 +77,7 @@
   .sig-actions{ text-align:right; margin-top:6px; }
   .btn-mini{ font-size:13px; padding:7px 12px; border:none; background:#404b57; color:#fff; border-radius:10px; }
 
+  /* Barre d’outils */
   .toolbar{ position:fixed; left:0; right:0; bottom:0; z-index:9999; }
   .toolbar-inner{
     display:flex; gap:10px; flex-wrap:wrap; justify-content:center;
@@ -85,7 +92,10 @@
   .btn.link{ background:transparent; color:#000; border:1.5px dashed #111; }
   .btn[disabled]{ opacity:.55; cursor:not-allowed; }
 
-  .date-actions{ display:flex; gap:8px; align-items:center; }
+  /* Cacher le bouton d’impression sur mobile/tablette */
+  @media (max-width: 768px), (max-device-width: 768px){
+    .btn-print{ display:none !important; }
+  }
 
   #loader{
     position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35);
@@ -93,7 +103,7 @@
   }
   #loader .box{ background:#111; padding:14px 18px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,.4); }
 
-  /* HARMONIE MOBILE */
+  /* HARMONIE MOBILE (entête en 2 colonnes) */
   @media (max-width: 768px){
     .grid tr { display:block; }
     .grid td { display:block; width:100%; padding:6px 4px; }
@@ -130,9 +140,9 @@
 
 <body>
   <!-- Barre d’outils -->
-  <div class="toolbar no-print">
+  <div class="toolbar no-print" id="toolbar">
     <div class="toolbar-inner">
-      <button class="btn" onclick="window.print()">🖨️ Imprimer manuellement ordi</button>
+      <button id="btnPrint" class="btn btn-print" onclick="window.print()">🖨️ Imprimer manuellement ordi</button>
       <button id="sendBtn" class="btn" onclick="sendToServer()">📨 Envoyer</button>
       <button id="autoSaveBtn" class="btn link" onclick="toggleAutoSave()">💾 Sauvegarde auto : ON</button>
       <button class="btn link" onclick="clearAll()">🧹 Effacer tout</button>
@@ -141,7 +151,7 @@
 
   <div id="loader"><div class="box">⏳ Génération & envoi en cours…</div></div>
 
-  <!-- Contenu à l’écran -->
+  <!-- Contenu -->
   <div class="page-wrapper">
     <div class="page" id="pageContent">
       <div class="header no-break">
@@ -154,11 +164,7 @@
       <table class="grid no-break" role="presentation">
         <tr>
           <td class="label">Date :</td>
-          <td>
-            <div class="date-actions">
-              <input type="date" id="date_fiche" autocomplete="off">
-            </div>
-          </td>
+          <td><div class="date-actions"><input type="date" id="date_fiche" autocomplete="off"></div></td>
           <td class="label" style="text-align:right;">Fiche ouverte pour :</td>
           <td><input type="text" id="salarie" placeholder="Nom du salarié" autocomplete="name"></td>
         </tr>
@@ -333,7 +339,7 @@ function canvasToSmallDataURL(srcCanvas, maxCssW=360, mime='image/jpeg', quality
   return off.toDataURL(mime, quality);
 }
 
-/* ======= Autosauvegarde + Lien partageable ======= */
+/* ======= Autosauvegarde + URL partageable ======= */
 const STORAGE_KEY = "ficheIncidentBSM";
 const STORAGE_OPT_KEY = "ficheIncidentBSM_auto";
 function isAutoSaveOn(){ return localStorage.getItem(STORAGE_OPT_KEY)!=="OFF"; }
@@ -375,14 +381,12 @@ function restoreSignature(id, dataUrl){
     const r = c.getBoundingClientRect();
     ctx.fillStyle="#fff"; ctx.fillRect(0,0,r.width,r.height);
     ctx.drawImage(img, 0,0, r.width, r.height);
-    const hint = c.parentElement.querySelector('.sig-hint');
-    if(hint) hint.style.opacity='0';
+    const hint = c.parentElement.querySelector('.sig-hint'); if(hint) hint.style.opacity='0';
   };
   img.src = dataUrl;
 }
 function updateShareUrl(){
-  // on partage SANS signatures pour rester court
-  const data = collectData(false);
+  const data = collectData(false); // sans signatures
   try{
     const b64 = toB64(JSON.stringify(data));
     if(b64.length < 3500){
@@ -396,17 +400,14 @@ function saveToLocal(){
   try{
     localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData(true)));
     updateShareUrl();
+    syncToolbarPadding(); // au cas où clavier/viewport modifie la hauteur
   }catch(e){}
 }
 let _saveTimer=null;
 function saveToLocalThrottled(){ if(!isAutoSaveOn()) return; clearTimeout(_saveTimer); _saveTimer=setTimeout(saveToLocal, 300); }
 function loadFromLocal(){
-  // 1) depuis URL #d=... si présent
   const m = location.hash.match(/[#&]d=([^&]+)/);
-  if(m && m[1]){
-    try{ const obj = JSON.parse(fromB64(m[1])); applyData(obj); return; }catch(e){}
-  }
-  // 2) sinon depuis localStorage
+  if(m && m[1]){ try{ applyData(JSON.parse(fromB64(m[1]))); return; }catch(e){} }
   try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw) applyData(JSON.parse(raw)); }catch(e){}
 }
 function toggleAutoSave(){ const on=!isAutoSaveOn(); setAutoSave(on); if(on) saveToLocal(); }
@@ -416,8 +417,8 @@ function clearAll(){
   ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{ const sub=document.getElementById(id+"_fields"); if(sub) sub.style.display="none"; });
   clearCanvas("signRespCanvas"); clearCanvas("signSalCanvas");
   localStorage.removeItem(STORAGE_KEY);
-  // nettoie l’URL partagée
   history.replaceState(null,'',location.href.split('#')[0]);
+  syncToolbarPadding();
 }
 function clearCanvas(id){
   const c=document.getElementById(id); const x=c.getContext("2d");
@@ -426,7 +427,18 @@ function clearCanvas(id){
 }
 function bindAutoSaveEvents(){ document.addEventListener("input", saveToLocal); document.addEventListener("change", saveToLocal); }
 
-/* ======= Init (dates auto, pas de bouton “Aujourd’hui”) ======= */
+/* ======= Réserver l’espace sous la barre (anti-recouvrement) ======= */
+function syncToolbarPadding(){
+  const tb = document.getElementById('toolbar');
+  const h = (tb && getComputedStyle(tb).display!=='none') ? tb.offsetHeight : 0;
+  document.documentElement.style.setProperty('--toolbar-h', h + 'px');
+}
+if(window.visualViewport){
+  visualViewport.addEventListener('resize', syncToolbarPadding);
+  visualViewport.addEventListener('scroll', syncToolbarPadding);
+}
+
+/* ======= Init ======= */
 (function init(){
   const def = todayStr();
   ["date_fiche","fait_le"].forEach(id=>{ const el=document.getElementById(id); if(el && !el.value) el.value=def; });
@@ -434,6 +446,9 @@ function bindAutoSaveEvents(){ document.addEventListener("input", saveToLocal); 
   bindAutoSaveEvents();
   loadFromLocal();
   updateShareUrl();
+  syncToolbarPadding();
+  window.addEventListener('resize', syncToolbarPadding);
+  window.addEventListener('orientationchange', ()=>setTimeout(syncToolbarPadding, 250));
 })();
 
 /* ======= PDF (clone A4, 1 page) ======= */
@@ -468,7 +483,7 @@ function replaceCanvasWithImg(clone, canvasId, outHeightPx=80){
 }
 function fitCloneToOneA4Page(clone){
   const A4_H = 297/25.4*96;      // ≈ 1123 px
-  const M = 10/25.4*96;          // ≈ 38 px (marge html2pdf)
+  const M = 10/25.4*96;          // ≈ 38 px
   const targetH = A4_H - 2*M;
   const h = clone.scrollHeight;
   if(h > targetH){
@@ -501,19 +516,14 @@ async function sendToServer(){
     const original=$("#pageContent");
     const clone = original.cloneNode(true);
 
-    // Styles PDF uniquement
     prepareCloneForPdf(clone);
-
-    // Signatures -> images compactes
     replaceCanvasWithImg(clone, "signRespCanvas", 80);
     replaceCanvasWithImg(clone, "signSalCanvas", 80);
 
-    // conteneur hors écran
     const off=document.createElement("div");
     off.style.position="fixed"; off.style.top="-10000px"; off.style.left="0";
     off.appendChild(clone); document.body.appendChild(off);
 
-    // Ajuste pour tenir sur 1 page
     fitCloneToOneA4Page(clone);
 
     const opt={
