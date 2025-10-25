@@ -51,22 +51,26 @@
   .sig-actions{ text-align:right; margin-top:6px; }
   .btn-mini{ font-size:13px; padding:7px 12px; border:none; background:#404b57; color:#fff; border-radius:10px; }
 
+  /* Ligne "Fait le" en une ligne */
+  .made-row{ display:flex; align-items:center; gap:10px; flex-wrap:nowrap; }
+  .made-row input[type="date"]{ max-width:220px; flex:0 0 auto; }
+  .made-row .city{ white-space:nowrap; }
+
   /* Toolbar */
   .toolbar{ position:fixed; left:0; right:0; bottom:0; z-index:9999; }
   .toolbar-inner{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; background:#fff; border-top:1px solid #0001; padding:10px; padding-bottom:calc(10px + env(safe-area-inset-bottom)); box-shadow:0 -8px 22px rgba(0,0,0,.06); }
   .btn{ background:#000; color:#fff; border:none; border-radius:12px; padding:12px 16px; font-weight:800; cursor:pointer; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,.2); }
   .btn.link{ background:transparent; color:#000; border:1.5px dashed #111; }
   .btn[disabled]{ opacity:.55; cursor:not-allowed; }
-  /* Cache le bouton imprimante sur mobile/tablette */
   @media (max-width:768px), (max-device-width:768px){ .btn-print{ display:none!important; } }
 
   #loader{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35); z-index:10000; color:#fff; font:600 16px/1.2 Arial, sans-serif; }
   #loader .box{ background:#111; padding:14px 18px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,.4); }
 
   /* Toast */
-  #toast{ position:fixed; left:50%; bottom:calc(var(--toolbar-h) + 16px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:#111; color:#fff; padding:12px 16px; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.25); display:none; z-index:10001; font-weight:700; }
+  #toast{ position:fixed; left:50%; bottom:calc(var(--toolbar-h) + 16px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:#111; color:#fff; padding:12px 16px; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.25); display:none; z-index:10001; font-weight:700; white-space:pre-line; }
 
-  /* Harmonisation mobile entête en 2 colonnes */
+  /* Mobile harmonisé */
   @media (max-width:768px){
     .grid tr{ display:block; }
     .grid td{ display:block; width:100%; padding:6px 4px; }
@@ -88,7 +92,7 @@
     <div class="toolbar-inner">
       <button id="btnPrint" class="btn btn-print" onclick="window.print()">🖨️ Imprimer manuellement ordi</button>
       <button id="sendBtn" class="btn" onclick="sendToServer()">📨 Envoyer</button>
-      <!-- Sauvegarde auto forcée ON en arrière-plan, bouton masqué -->
+      <!-- autosave ON (aucun bouton visible) -->
       <button id="autoSaveBtn" class="btn link" style="display:none">💾 Sauvegarde auto : ON</button>
       <button class="btn link" onclick="clearAll()">🧹 Effacer tout</button>
     </div>
@@ -110,9 +114,9 @@
       <table class="grid no-break" role="presentation">
         <tr>
           <td class="label">Date :</td>
-          <td><input type="date" id="date_fiche" autocomplete="off"></td>
+          <td><input type="date" id="date_fiche" autocomplete="off" placeholder="jj/mm/aaaa"></td>
           <td class="label" style="text-align:right;">Fiche ouverte pour :</td>
-          <td><input type="text" id="salarie" placeholder="Nom du salarié" autocomplete="name"></td>
+          <td><input type="text" id="salarie" placeholder="Nom de l’équipier" autocomplete="name"></td>
         </tr>
         <tr>
           <td class="label">Responsable :</td>
@@ -125,8 +129,7 @@
         <div class="row">
           <input type="checkbox" id="abs_prev"><label for="abs_prev"><strong>Absence prévue le :</strong></label>
           <div class="sub" id="abs_prev_fields">
-            <!-- Champ date en TEXTE pour clavier complet -->
-            <input type="text" id="abs_prev_date" class="date-text" placeholder="jj/mm/aaaa" inputmode="text" />
+            <input type="date" id="abs_prev_date" placeholder="jj/mm/aaaa" />
             <span>Shift prévu à :</span>
             <input type="text" id="abs_prev_shift" placeholder="ex: 18h" inputmode="text" style="width:100px">
           </div>
@@ -135,7 +138,7 @@
         <div class="row">
           <input type="checkbox" id="abs_np"><label for="abs_np"><strong>Absence non prévue le :</strong></label>
           <div class="sub" id="abs_np_fields">
-            <input type="text" id="abs_np_date" class="date-text" placeholder="jj/mm/aaaa" inputmode="text" />
+            <input type="date" id="abs_np_date" placeholder="jj/mm/aaaa" />
             <span>Shift prévu à :</span>
             <input type="text" id="abs_np_shift" placeholder="ex: 18h" inputmode="text" style="width:100px">
           </div>
@@ -173,10 +176,10 @@
         <textarea id="action" placeholder="Décrire l'action corrective…"></textarea>
       </div>
 
-      <div class="no-break made-row" style="display:flex; align-items:center; gap:8px; font-size:14px;">
+      <div class="no-break made-row" style="font-size:14px;">
         <strong>Fait le :</strong>
-        <input type="date" id="fait_le">
-        <span class="city" style="margin-left:10px;">, à Boulogne-sur-Mer</span>
+        <input type="date" id="fait_le" placeholder="jj/mm/aaaa">
+        <span class="city">, à Boulogne-sur-Mer</span>
       </div>
 
       <div class="signatures no-break">
@@ -251,9 +254,8 @@ function canvasToSmallDataURL(srcCanvas,maxCssW=360,mime='image/jpeg',quality=0.
   const ctx=off.getContext('2d'); ctx.fillStyle="#fff"; ctx.fillRect(0,0,dw,dh); ctx.drawImage(src,0,0,dw,dh); return off.toDataURL(mime,quality);
 }
 
-/* ===== Auto-save ALWAYS ON (hidden) + share URL ===== */
+/* ===== Auto-save ALWAYS ON + share URL ===== */
 const STORAGE_KEY="ficheIncidentBSM";
-function isAutoSaveOn(){ return true; } // toujours ON
 function collectData(includeSigs=true){
   const data={}; document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{ data[el.id]=(el.type==="checkbox")?el.checked:el.value; });
   if(includeSigs){ data.sign_resp=canvasToSmallDataURL($("#signRespCanvas")); data.sign_sal=canvasToSmallDataURL($("#signSalCanvas")); }
@@ -274,7 +276,7 @@ function saveToLocal(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(co
 let _saveTimer=null; function saveToLocalThrottled(){ clearTimeout(_saveTimer); _saveTimer=setTimeout(saveToLocal,300); }
 function loadFromLocal(){ const m=location.hash.match(/[#&]d=([^&]+)/); if(m&&m[1]){ try{ applyData(JSON.parse(fromB64(m[1]))); return; }catch(e){} } try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw) applyData(JSON.parse(raw)); }catch(e){} }
 function clearAll(){ if(!confirm("Effacer tous les champs, signatures et la sauvegarde ?")) return; document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{ if(el.type==="checkbox") el.checked=false; else el.value=""; }); ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{ const s=$(`#${id}_fields`); if(s) s.style.display="none"; }); clearCanvas("signRespCanvas"); clearCanvas("signSalCanvas"); localStorage.removeItem(STORAGE_KEY); history.replaceState(null,'',location.href.split('#')[0]); syncToolbarPadding(); }
-function clearCanvas(id){ const c=$(`#${id}`), x=c.getContext("2d"); x.setTransform(1,0,0,1,0,0); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); const h=c.parentElement.querySelector('.sig-hint'); if(h) h.style.opacity='1'; }
+function clearCanvas(id){ const c=document.getElementById(id), x=c.getContext("2d"); x.setTransform(1,0,0,1,0,0); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); const h=c.parentElement.querySelector('.sig-hint'); if(h) h.style.opacity='1'; }
 function bindAutoSaveEvents(){ document.addEventListener("input", saveToLocal); document.addEventListener("change", saveToLocal); }
 
 /* ===== Anti-recouvrement toolbar ===== */
@@ -282,15 +284,40 @@ function syncToolbarPadding(){ const tb=$("#toolbar"); const h=(tb&&getComputedS
 if(window.visualViewport){ visualViewport.addEventListener('resize', syncToolbarPadding); visualViewport.addEventListener('scroll', syncToolbarPadding); }
 
 /* ===== Toast ===== */
-function showToast(msg){ const t=$("#toast"); if(!t) return; t.textContent=msg; t.style.display="block"; t.style.opacity="1"; setTimeout(()=>{ t.style.opacity="0"; setTimeout(()=>{ t.style.display="none"; },300); }, 3000); }
+function showToast(msg){ const t=$("#toast"); if(!t) return; t.textContent=msg; t.style.display="block"; t.style.opacity="1"; setTimeout(()=>{ t.style.opacity="0"; setTimeout(()=>{ t.style.display="none"; },300); }, 3500); }
+
+/* ===== Validation ===== */
+function validateForm(){
+  const missing=[];
+  const responsable=($("#responsable").value||"").trim();
+  const salarie=($("#salarie").value||"").trim();
+  const origine=($("#origine").value||"").trim();
+  const action =($("#action").value||"").trim();
+
+  if(!responsable) missing.push("• Responsable");
+  if(!salarie)     missing.push("• Équipier (Fiche ouverte pour)");
+  if(!origine)     missing.push("• Origine de l'incident");
+  if(!action)      missing.push("• Action curative");
+
+  const anyDesc = ["abs_prev","abs_np","ret_prev","ret_np","autre"].some(id => $(`#${id}`).checked);
+  if(!anyDesc) missing.push("• Au moins un descriptif (cocher Absence/Retard/Autre)");
+
+  if(missing.length){
+    showToast("Champs à compléter :\n" + missing.join("\n"));
+    return false;
+  }
+  return true;
+}
 
 /* ===== Init ===== */
 (function init(){
-  const def=todayStr(); ["date_fiche","fait_le"].forEach(id=>{ const el=$(`#${id}`); if(el && !el.value) el.value=def; });
-  bindAutoSaveEvents(); loadFromLocal(); updateShareUrl(); syncToolbarPadding(); window.addEventListener('resize', syncToolbarPadding); window.addEventListener('orientationchange', ()=>setTimeout(syncToolbarPadding,250));
+  // NE PAS auto-remplir les dates
+  bindAutoSaveEvents(); loadFromLocal(); updateShareUrl(); syncToolbarPadding(); 
+  window.addEventListener('resize', syncToolbarPadding);
+  window.addEventListener('orientationchange', ()=>setTimeout(syncToolbarPadding,250));
 })();
 
-/* ===== PDF (A4, signatures compactes) ===== */
+/* ===== PDF (A4) ===== */
 function prepareCloneForPdf(clone){
   const style=document.createElement('style');
   style.textContent=`
@@ -318,29 +345,52 @@ function fitCloneToOneA4Page(clone){
 }
 function blobToBase64(blob){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(",")[1]||""); r.onerror=rej; r.readAsDataURL(blob); }); }
 
-/* ===== Send ===== */
+/* ===== Envoi ===== */
 async function sendToServer(){
+  if(!validateForm()) return;
+
   const WEBAPP_URL="https://otacos-proxy.contact-otacosbsm.workers.dev/";
   const loader=$("#loader"), btn=$("#sendBtn");
   try{
     btn.disabled=true; loader.style.display="flex";
-    const meta={ salarie:($("#salarie").value||"Inconnu").trim(), responsable:($("#responsable").value||"N/A").trim(), date_fiche:$("#date_fiche").value||todayStr() };
 
-    const original=$("#pageContent"); const clone=original.cloneNode(true);
-    prepareCloneForPdf(clone); replaceCanvasWithImg(clone,"signRespCanvas",80); replaceCanvasWithImg(clone,"signSalCanvas",80);
-    const off=document.createElement("div"); off.style.position="fixed"; off.style.top="-10000px"; off.style.left="0"; off.appendChild(clone); document.body.appendChild(off);
+    const meta={
+      salarie:($("#salarie").value||"Inconnu").trim(),
+      responsable:($("#responsable").value||"N/A").trim(),
+      date_fiche:$("#date_fiche").value||todayStr(),
+    };
+
+    const original=$("#pageContent");
+    const clone = original.cloneNode(true);
+    prepareCloneForPdf(clone);
+    replaceCanvasWithImg(clone,"signRespCanvas",80);
+    replaceCanvasWithImg(clone,"signSalCanvas",80);
+
+    const off=document.createElement("div");
+    off.style.position="fixed"; off.style.top="-10000px"; off.style.left="0";
+    off.appendChild(clone); document.body.appendChild(off);
+
     fitCloneToOneA4Page(clone);
 
-    const opt={ margin:[10,10], filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`, pagebreak:{mode:['avoid-all'], avoid:['.no-break','.section-b','.signatures','textarea']}, html2canvas:{ scale:2, useCORS:true, backgroundColor:"#ffffff", scrollY:0, willReadFrequently:true }, jsPDF:{ unit:"mm", format:"a4", orientation:"portrait", compress:true } };
-    const worker=html2pdf().set(opt).from(clone).toPdf(); await worker.get('pdf'); const pdfBlob=await worker.output('blob'); off.remove();
+    const opt={
+      margin:[10,10],
+      filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
+      pagebreak:{ mode:['avoid-all'], avoid:['.no-break','.section-b','.signatures','textarea'] },
+      html2canvas:{ scale:2, useCORS:true, backgroundColor:"#ffffff", scrollY:0, willReadFrequently:true },
+      jsPDF:{ unit:"mm", format:"a4", orientation:"portrait", compress:true },
+    };
 
-    const b64=await blobToBase64(pdfBlob); const payload={ meta, b64 };
-    const res=await fetch(WEBAPP_URL,{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(payload) });
-    const ok = res.ok;
+    const worker=html2pdf().set(opt).from(clone).toPdf();
+    await worker.get('pdf');
+    const pdfBlob=await worker.output('blob');
+    off.remove();
 
-    // Message custom (pas d'alert natif)
+    const b64=await blobToBase64(pdfBlob);
+    const payload={ meta, b64 };
+    await fetch(WEBAPP_URL,{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(payload) });
+
+    // Message custom (pas d'alert navigateur)
     showToast(`✅ Merci ${meta.responsable}, la fiche incident est imprimée et scannée.`);
-
     saveToLocal();
   }catch(e){
     console.error(e);
@@ -351,7 +401,7 @@ async function sendToServer(){
 }
 
 /* ===== Tiny helpers ===== */
-function clearCanvas(id){ const c=document.getElementById(id); const x=c.getContext("2d"); x.setTransform(1,0,0,1,0,0); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); const hint=c.parentElement.querySelector('.sig-hint'); if(hint) hint.style.opacity='1'; }
+function clearCanvas(id){ const c=document.getElementById(id), x=c.getContext("2d"); x.setTransform(1,0,0,1,0,0); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); const h=c.parentElement.querySelector('.sig-hint'); if(h) h.style.opacity='1'; }
 </script>
 </body>
 </html>
