@@ -7,7 +7,7 @@
 
 <!-- html2pdf (jsPDF + html2canvas) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
-<!-- PDF.js pour convertir un PDF joint en image (1re page) -->
+<!-- PDF.js pour convertir un PDF joint en images -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script>
   if (window['pdfjsLib']) {
@@ -223,10 +223,11 @@
       <div id="attachSection" class="no-break">
         <div class="section-h">PIÈCE JOINTE (photo ou PDF)</div>
         <div class="attach-box">
-          <input id="attachment" type="file" accept="image/*,.pdf" capture="environment" />
+          <!-- Camera OU Galerie, plusieurs fichiers possibles -->
+          <input id="attachment" type="file" accept="image/*,.pdf" multiple />
           <div class="attach-previews" id="attachPreviews"></div>
           <div style="font-size:12px;color:#6b7280;margin-top:6px">
-            • Sur mobile, vous pouvez prendre une photo. • Si vous joignez un PDF, seule la 1ʳᵉ page sera ajoutée au PDF final.
+            • Sur mobile : choisissez **Caméra** ou **Galerie**. • Les photos/PDF seront intégrés en **pleine page** (PDF : toutes les pages, la 2ᵉ est ignorée).
           </div>
         </div>
       </div>
@@ -359,7 +360,7 @@ async function refreshAttachPreview(){
       const url = URL.createObjectURL(f);
       const img = document.createElement('img'); img.src=url; holder.appendChild(img);
     }else if(f.type === 'application/pdf'){
-      holder.innerHTML = '<span class="pdfbadge">PDF joint</span>';
+      holder.innerHTML = '<span class="pdfbadge">PDF joint (toutes pages, sauf la 2ᵉ)</span>';
     }else{
       holder.textContent = f.name;
     }
@@ -382,7 +383,27 @@ async function pdfFirstPageToDataURL(file, scale=1.8){
   return canvas.toDataURL('image/jpeg', 0.95);
 }
 
-/* Récupère la/les images de pièce jointe (photo(s) ou 1re page PDF) */
+/* Convertit TOUTES les pages d'un PDF en dataURL JPEG (saute la 2e) */
+async function pdfPagesToDataURLs(file, {scale=1.8}={}){
+  if(!window['pdfjsLib']) return [];
+  const ab = await file.arrayBuffer();
+  const doc = await pdfjsLib.getDocument({data:ab}).promise;
+  const total = doc.numPages;
+  const out = [];
+  for(let p=1; p<=total; p++){
+    if(p===2) continue; // saute systématiquement la 2e page
+    const page = await doc.getPage(p);
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = viewport.width; canvas.height = viewport.height;
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    out.push(canvas.toDataURL('image/jpeg', 0.95));
+  }
+  return out;
+}
+
+/* Récupère la/les images de pièce jointe (photo(s) ou pages PDF) */
 async function getAttachmentImages(){
   const images = [];
   const files = attachInput.files || [];
@@ -390,8 +411,14 @@ async function getAttachmentImages(){
     if(f.type.startsWith('image/')){
       images.push(await fileToDataURL(f));
     }else if(f.type === 'application/pdf'){
-      const durl = await pdfFirstPageToDataURL(f);
-      if(durl) images.push(durl);
+      // AUTOMATIQUE : toutes les pages du PDF, sauf la 2e
+      const pages = await pdfPagesToDataURLs(f);
+      // Si jamais PDF.js indisponible, fallback = 1ère page
+      if(pages.length) images.push(...pages);
+      else {
+        const d1 = await pdfFirstPageToDataURL(f);
+        if(d1) images.push(d1);
+      }
     }
   }
   return images;
@@ -466,10 +493,10 @@ async function sendToServer(){
       date_fiche:$("#date_fiche").value||todayStr(),
     };
 
-    // Images de pièces jointes (photo(s) ou 1re page PDF)
+    // Images de pièces jointes (photos et/ou PDF toutes pages sauf 2)
     const attachImgs = await getAttachmentImages();
 
-    // Préparer clone pour PDF A4 (page 1)
+    // Clone pour PDF A4 (page 1)
     const original=$("#pageContent");
     const clone = original.cloneNode(true);
 
@@ -500,9 +527,9 @@ async function sendToServer(){
     const worker=html2pdf().set(opt).from(clone).toPdf();
     const pdf = await worker.get('pdf'); // instance jsPDF
 
-    // Ajouter les pièces jointes très grandes (quasi pleine page) à partir de la page 2
+    // Ajouter les pièces jointes très grandes (pleine page) à partir de la page 2
     if(attachImgs.length){
-      const a4w=210, a4h=297, margin=5; // marge réduite pour photo très grande
+      const a4w=210, a4h=297, margin=5; // petites marges
       const innerW=a4w-2*margin, innerH=a4h-2*margin;
 
       for(const durl of attachImgs){
@@ -524,7 +551,7 @@ async function sendToServer(){
     const payload={ meta, b64 };
     await fetch(WEBAPP_URL,{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(payload) });
 
-    const pjMsg = attachImgs.length ? " La pièce jointe a été intégrée en pleine page." : "";
+    const pjMsg = attachImgs.length ? " La ou les pièces jointes ont été intégrées en pleine page (PDF: toutes les pages, sauf la 2ᵉ)." : "";
     showToast(`✅ Merci ${meta.responsable}, la fiche incident est imprimée et scannée.${pjMsg}`);
     saveToLocal();
   }catch(e){
