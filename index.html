@@ -414,20 +414,19 @@ async function getAttachmentImages(){
 function prepareCloneForPdf(clone){
   const style=document.createElement('style');
   style.textContent=`
-    /* A4 plus compact pour tenir sur 1 page */
+    /* Contexte A4 compact – pas de min-height pour éviter la 2e page fantôme */
     .pdf-a4{
       width:210mm!important;
-      min-height:297mm!important;
-      padding:8mm!important;                 /* 10 -> 8mm */
+      /* min-height:297mm!important; */
+      padding:8mm!important;
       box-shadow:none!important;
       border-radius:0!important;
+      background:#fff!important;
     }
     .pdf-a4 .header{ gap:8px; margin-bottom:4px; }
-    .pdf-a4 .header img{ width:38px!important; height:auto!important; } /* logo réduit */
+    .pdf-a4 .header img{ width:38px!important; height:auto!important; }
     .pdf-a4 .header strong{ font-size:13px!important; }
-    .pdf-a4 .title{
-      font-size:11.2px; padding:3px 5px; margin-top:0;
-    }
+    .pdf-a4 .title{ font-size:11.2px; padding:3px 5px; margin-top:0; }
     .pdf-a4 .grid{ font-size:11px; }
     .pdf-a4 input, .pdf-a4 textarea{ padding:5px 7px; font-size:11px; }
     .pdf-a4 textarea{ min-height:60px!important; }
@@ -437,18 +436,42 @@ function prepareCloneForPdf(clone){
     .pdf-a4 .sig-wrap{ height:72px!important; }
     .pdf-a4 .signature, .pdf-a4 img.signature-img{ height:72px!important; width:100%!important; object-fit:contain; background:#fff; }
   `;
-  clone.prepend(style); clone.classList.add('pdf-a4');
+  clone.prepend(style);
+  clone.classList.add('pdf-a4');
 }
 function replaceCanvasWithImg(clone, id, h=72){
-  const src=$(`#${id}`); const img=document.createElement('img');
-  img.src=canvasToSmallDataURL(src,500,"image/jpeg",0.9); img.className="signature-img"; img.style.width="100%"; img.style.height=h+"px"; img.style.objectFit="contain"; img.style.background="#fff";
-  const target=clone.querySelector("#"+id); if(target) target.replaceWith(img);
+  const src=document.getElementById(id);
+  const img=document.createElement('img');
+  img.src=canvasToSmallDataURL(src,500,"image/jpeg",0.9);
+  img.className="signature-img";
+  img.style.width="100%";
+  img.style.height=h+"px";
+  img.style.objectFit="contain";
+  img.style.background="#fff";
+  const target=clone.querySelector("#"+id);
+  if(target) target.replaceWith(img);
 }
 function fitCloneToOneA4Page(clone){
-  const A4_H=297/25.4*96, M=8/25.4*96, target=A4_H-2*M, h=clone.scrollHeight;
-  if(h>target){ const s=target/h; clone.style.transformOrigin="top left"; clone.style.transform=`scale(${s})`; clone.style.width=`calc(210mm / ${s})`; }
+  const A4_H = 297/25.4*96;
+  const M    = 8/25.4*96;
+  const EPS  = 2;                      // petite marge de sécu
+  const target = A4_H - 2*M - EPS;
+  const h = clone.scrollHeight;
+  if(h > target){
+    const s = target/h;
+    clone.style.transformOrigin = "top left";
+    clone.style.transform = `scale(${s})`;
+    clone.style.width = `calc(210mm / ${s})`;
+  }
 }
-function blobToBase64(blob){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(",")[1]||""); r.onerror=rej; r.readAsDataURL(blob); }); }
+function blobToBase64(blob){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>res(String(r.result).split(",")[1]||"");
+    r.onerror=rej;
+    r.readAsDataURL(blob);
+  });
+}
 
 /* ===== Envoi ===== */
 async function sendToServer(){
@@ -470,14 +493,15 @@ async function sendToServer(){
     const clone = original.cloneNode(true);
     const attachImgs = await getAttachmentImages();
 
-    // Si pas de PJ -> retirer la section du clone (ne pas l’imprimer)
+    // Si pas de PJ -> retirer la section du clone
     if(attachImgs.length === 0){
       const sec = clone.querySelector('#attachSection');
       if(sec) sec.remove();
     }
 
     prepareCloneForPdf(clone);
-    // Remplacer textareas par des div pour affichage complet
+
+    // Remplacer textareas par des blocs affichables
     clone.querySelectorAll('textarea').forEach(t=>{
       const div=document.createElement('div');
       div.style.whiteSpace='pre-wrap';
@@ -498,38 +522,48 @@ async function sendToServer(){
     off.appendChild(clone); document.body.appendChild(off);
     fitCloneToOneA4Page(clone);
 
-    // Options PDF avec marges 8mm
+    // ✅ Option marge la plus sûre
     const opt={
-      margin:[8,8],  // 8mm
+      margin: 8,  // ⬅️ uniforme (mm) – conforme html2pdf 0.10.1
       filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
       pagebreak:{ mode:['avoid-all'], avoid:['.no-break','.section-b','.signatures','textarea'] },
       html2canvas:{ scale:2, useCORS:true, backgroundColor:"#ffffff", scrollY:0, willReadFrequently:true },
       jsPDF:{ unit:"mm", format:"a4", orientation:"portrait", compress:true },
     };
-    const worker=html2pdf().set(opt).from(clone).toPdf();
-    const pdf=await worker.get('pdf');  // instance jsPDF
 
-    // Ajouter les pièces jointes (pleine page) à partir de la page 2
-    if(attachImgs.length){
-      const a4w=210, a4h=297, margin=5;
-      const innerW=a4w-2*margin, innerH=a4h-2*margin;
+    // IMPORTANT : pipeline worker
+    const worker = html2pdf().set(opt).from(clone).toPdf();
 
-      for(const durl of attachImgs){
-        const dims = await getImageSize(durl);
-        let wmm=innerW, hmm=innerH;
-        const ratio = dims.w/dims.h;
-        if(wmm/hmm > ratio){ wmm = hmm*ratio; } else { hmm = wmm/ratio; }
-        const x = (a4w - wmm)/2, y = (a4h - hmm)/2;
-        pdf.addPage('a4','p');
-        const fmt = durl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-        pdf.addImage(durl, fmt, x, y, wmm, hmm);
+    await worker.get('pdf').then(async (pdf) => {
+      // Ajouter les pièces jointes (pleine page)
+      if (attachImgs.length){
+        const A4W=210, A4H=297, M=5;
+        const innerW=A4W-2*M, innerH=A4H-2*M;
+        for (const durl of attachImgs){
+          const dims = await getImageSize(durl).catch(()=>null);
+          if (!dims || !dims.w || !dims.h) continue;
+          let wmm=innerW, hmm=innerH;
+          const ratio=dims.w/dims.h;
+          if(wmm/hmm > ratio) wmm = hmm*ratio; else hmm = wmm/ratio;
+          const x=(A4W-wmm)/2, y=(A4H-hmm)/2;
+          const fmt = durl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+          pdf.addPage('a4','p');
+          pdf.addImage(durl, fmt, x, y, wmm, hmm);
+        }
       }
-    }
 
-    const pdfBlob = pdf.output('blob');
+      // Purge de sécurité
+      const expected = 1 + attachImgs.length;
+      while (pdf.getNumberOfPages() > expected){
+        pdf.deletePage(pdf.getNumberOfPages());
+      }
+    });
+
+    // Sortie correcte
+    const pdfBlob = await worker.outputPdf('blob');
     off.remove();
 
-    // Envoi au serveur
+    // Envoi
     const b64 = await blobToBase64(pdfBlob);
     const payload={ meta, b64 };
     await fetch(WEBAPP_URL,{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(payload) });
@@ -547,7 +581,12 @@ async function sendToServer(){
 
 /* Helpers */
 function getImageSize(dataUrl){
-  return new Promise(res=>{ const img=new Image(); img.onload=()=>res({w:img.naturalWidth||img.width, h:img.naturalHeight||img.height}); img.src=dataUrl; });
+  return new Promise((res,rej)=>{
+    const img=new Image();
+    img.onload=()=>res({w:img.naturalWidth||img.width, h:img.naturalHeight||img.height});
+    img.onerror=rej;
+    img.src=dataUrl;
+  });
 }
 
 /* ===== Clear All (inclut PJ) ===== */
@@ -561,7 +600,7 @@ function clearAll(){
   });
   clearCanvas("signRespCanvas"); clearCanvas("signSalCanvas");
   localStorage.removeItem(STORAGE_KEY);
-  clearAllAttachments();                    // efface aussi les PJ
+  clearAllAttachments();
   syncToolbarPadding();
 }
 
