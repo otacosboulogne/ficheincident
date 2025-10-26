@@ -138,7 +138,7 @@
           <td class="label">Date :</td>
           <td><input type="date" id="date_fiche" autocomplete="off" placeholder="jj/mm/aaaa"></td>
           <td class="label" style="text-align:right;">Fiche ouverte pour :</td>
-          <td><input type="text" id="salarie" placeholder="Équipier" autocomplete="name"></td>
+          <td><input type="text" id="salarie" placeholder="Nom de l’équipier" autocomplete="name"></td>
         </tr>
         <tr>
           <td class="label">Responsable :</td>
@@ -181,11 +181,12 @@
         </div>
 
         <div class="row">
-  <input type="checkbox" id="autre"><label for="autre"><strong>Autre :</strong></label>
-  <div class="sub" id="autre_fields">
-    <textarea id="autre_detail" placeholder="Préciser…" rows="3"></textarea>
-  </div>
-</div>
+          <input type="checkbox" id="autre"><label for="autre"><strong>Autre :</strong></label>
+          <div class="sub" id="autre_fields">
+            <input type="text" id="autre_detail" placeholder="Préciser…" style="min-width:220px; flex:1">
+          </div>
+        </div>
+      </div>
 
       <div class="section-h no-break">ORIGINE DE L’INCIDENT</div>
       <div class="section-b no-break">
