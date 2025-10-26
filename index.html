@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+$<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
@@ -62,7 +62,12 @@
   .btn-mini{ font-size:13px; padding:7px 12px; border:none; background:#404b57; color:#fff; border-radius:10px; }
 
   .made-row{ display:flex; align-items:center; gap:10px; flex-wrap:nowrap; }
-  .made-row input[type="date"]{ max-width:220px; flex:0 0 auto; }
+  /* ▼▼▼ 3) champ date “Fait le” plus étroit */
+  .made-row input[type="date"]{
+    width:140px;          /* au lieu d'un énorme input */
+    max-width:40vw;
+    flex:0 0 auto;
+  }
   .made-row .city{ white-space:nowrap; }
 
   /* Pièces jointes + croix */
@@ -492,10 +497,17 @@ async function sendToServer(){
     replaceCanvasWithImg(clone,"signRespCanvas",72);
     replaceCanvasWithImg(clone,"signSalCanvas",72);
 
-    // Hors écran + ajustement pour tenir sur 1 page
+    /* ▼▼▼ 1) Conteneur off-screen sans offset négatif */
     const off=document.createElement("div");
-    off.style.position="fixed"; off.style.top="-10000px"; off.style.left="0";
-    off.appendChild(clone); document.body.appendChild(off);
+    off.style.position="fixed";
+    off.style.top="0";
+    off.style.left="0";
+    off.style.opacity="0";
+    off.style.pointerEvents="none";
+    off.style.zIndex="-1";
+    document.body.appendChild(off);
+
+    off.appendChild(clone);
     fitCloneToOneA4Page(clone);
 
     // Options PDF avec marges 8mm
@@ -503,7 +515,8 @@ async function sendToServer(){
       margin:[8,8],  // 8mm
       filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
       pagebreak:{ mode:['avoid-all'], avoid:['.no-break','.section-b','.signatures','textarea'] },
-      html2canvas:{ scale:2, useCORS:true, backgroundColor:"#ffffff", scrollY:0, willReadFrequently:true },
+      /* ▼▼▼ 2) Ajout scrollX:0 */
+      html2canvas:{ scale:2, useCORS:true, backgroundColor:"#ffffff", scrollY:0, scrollX:0, willReadFrequently:true },
       jsPDF:{ unit:"mm", format:"a4", orientation:"portrait", compress:true },
     };
     const worker=html2pdf().set(opt).from(clone).toPdf();
