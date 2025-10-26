@@ -417,7 +417,7 @@ function prepareCloneForPdf(clone){
     /* Contexte A4 compact – pas de min-height pour éviter la 2e page fantôme */
     .pdf-a4{
       width:210mm!important;
-      /* min-height:297mm!important;  <-- SUPPRIMÉ pour éviter les pages vides */
+      /* min-height:297mm!important; */
       padding:8mm!important;
       box-shadow:none!important;
       border-radius:0!important;
@@ -522,9 +522,9 @@ async function sendToServer(){
     off.appendChild(clone); document.body.appendChild(off);
     fitCloneToOneA4Page(clone);
 
-    // Options PDF avec marges 8mm (sur 4 côtés)
+    // ✅ Option marge la plus sûre
     const opt={
-      margin: { top:8, left:8, right:8, bottom:8 },
+      margin: 8,  // ⬅️ uniforme (mm) – conforme html2pdf 0.10.1
       filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
       pagebreak:{ mode:['avoid-all'], avoid:['.no-break','.section-b','.signatures','textarea'] },
       html2canvas:{ scale:2, useCORS:true, backgroundColor:"#ffffff", scrollY:0, willReadFrequently:true },
@@ -535,7 +535,7 @@ async function sendToServer(){
     const worker = html2pdf().set(opt).from(clone).toPdf();
 
     await worker.get('pdf').then(async (pdf) => {
-      // Ajouter les pièces jointes (pleine page) à partir de la page 2
+      // Ajouter les pièces jointes (pleine page)
       if (attachImgs.length){
         const A4W=210, A4H=297, M=5;
         const innerW=A4W-2*M, innerH=A4H-2*M;
@@ -552,18 +552,18 @@ async function sendToServer(){
         }
       }
 
-      // Sécurité : purge des pages fantômes
+      // Purge de sécurité
       const expected = 1 + attachImgs.length;
       while (pdf.getNumberOfPages() > expected){
         pdf.deletePage(pdf.getNumberOfPages());
       }
     });
 
-    // Laisser html2pdf finaliser la sortie
+    // Sortie correcte
     const pdfBlob = await worker.outputPdf('blob');
     off.remove();
 
-    // Envoi au serveur
+    // Envoi
     const b64 = await blobToBase64(pdfBlob);
     const payload={ meta, b64 };
     await fetch(WEBAPP_URL,{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(payload) });
@@ -600,7 +600,7 @@ function clearAll(){
   });
   clearCanvas("signRespCanvas"); clearCanvas("signSalCanvas");
   localStorage.removeItem(STORAGE_KEY);
-  clearAllAttachments();                    // efface aussi les PJ
+  clearAllAttachments();
   syncToolbarPadding();
 }
 
