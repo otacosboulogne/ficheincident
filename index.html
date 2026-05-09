@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes" />
 <title>FICHE INCIDENTS - HITS BOULOGNE</title>
 
 <!-- html2pdf (inclut jsPDF + html2canvas) -->
@@ -18,118 +18,287 @@
 <style>
   :root{
     --page-w: 210mm;
-    --pad: 14mm;
-    --theme:#1a2d4a; --txt:#0b1320; --bg:#e9ebee; --radius:12px;
+    --pad: 9mm;
+    --theme:#1a2d4a; --txt:#0b1320; --bg:#e9ebee; --radius:8px;
     --toolbar-h:0px;
   }
   *{ box-sizing:border-box; }
   html { -webkit-text-size-adjust: 100%; }
-  html,body{ margin:0; background:var(--bg); color:var(--txt); font-family:Arial, Helvetica, sans-serif; }
+  html,body{ margin:0; background:var(--bg); color:var(--txt); font-family:'Segoe UI', Arial, Helvetica, sans-serif; font-size:15px; -webkit-font-smoothing:antialiased; }
 
-  .page-wrapper{ display:flex; justify-content:center; padding:16px; padding-bottom:calc(16px + var(--toolbar-h) + env(safe-area-inset-bottom)); }
-  .page{ width:min(100%, var(--page-w)); background:#fff; border-radius:var(--radius); box-shadow:0 10px 28px rgba(0,0,0,.1); padding:var(--pad); display:flex; flex-direction:column; gap:12px; }
+  body { padding-bottom: var(--toolbar-h); }
+
+  .page-wrapper{ display:flex; justify-content:center; padding:10px; }
+  .page{ 
+    width:min(100%, var(--page-w)); 
+    background:#fff; 
+    border-radius:var(--radius); 
+    box-shadow:0 8px 24px rgba(0,0,0,.1); 
+    padding:var(--pad); 
+    display:flex; 
+    flex-direction:column; 
+    gap:8px; 
+    min-height:auto;
+    page-break-after: always;
+  }
+  
   .no-break{ break-inside:avoid; page-break-inside:avoid; }
 
-  .header{ display:flex; align-items:center; gap:12px; }
-  .header img{ width:54px; height:auto; }
-  .header strong{ display:block; font-size:16px; }
+  .header{ display:flex; align-items:center; gap:8px; margin-bottom:2px; }
+  .header img{ width:44px; height:auto; }
+  .header strong{ display:block; font-size:14px; font-weight:700; line-height:1.1; }
+  .header small{ display:block; font-size:12px; color:#666; line-height:1.1; }
 
-  .title{ border:2px solid #0f1a2d20; border-radius:10px; text-align:center; font-weight:800; letter-spacing:.4px; padding:8px 10px; margin-top:2px; }
+  .title{ border:2px solid #0f1a2d20; border-radius:6px; text-align:center; font-weight:800; letter-spacing:0; padding:5px 6px; font-size:14px; }
 
-  table.grid{ width:100%; border-collapse:collapse; font-size:14px; table-layout:auto; }
-  .grid td{ padding:6px 6px; vertical-align:middle; min-width:0; }
-  .label{ font-weight:700; white-space:nowrap; }
+  table.grid{ width:100%; border-collapse:collapse; font-size:12px; table-layout:auto; }
+  .grid td{ padding:4px 3px; vertical-align:middle; min-width:0; }
+  .label{ font-weight:700; white-space:nowrap; font-size:12px; }
 
   input[type="text"], input[type="date"], textarea{
-    width:100%; border:1.5px solid #c9ced6; border-radius:10px; padding:10px 12px; font-size:15px;
+    width:100%; border:1px solid #c9ced6; border-radius:4px; padding:6px 8px; font-size:13px; font-family:inherit; background:#fafbfc;
   }
-  input::placeholder, textarea::placeholder{ color:#9aa3ad; }
-  textarea{ min-height:110px; resize:vertical; overflow-wrap:anywhere; word-break:break-word; line-height:1.35; }
-  textarea.autogrow{ overflow:hidden; }
+  input::placeholder, textarea::placeholder{ color:#9aa3ad; font-size:12px; }
+  
+  textarea{ 
+    min-height:70px; 
+    max-height:150px;
+    resize:vertical; 
+    overflow-wrap:anywhere; 
+    word-break:break-word; 
+    line-height:1.3;
+    overflow:auto;
+  }
+  textarea.autogrow{ overflow:hidden; resize:none; }
 
-  .section-h{ background:var(--theme); color:#fff; font-weight:800; letter-spacing:.3px; padding:8px 10px; border-radius:10px; }
-  .section-b{ border:1.5px solid #c9ced6; border-radius:12px; padding:12px; }
+  .section-h{ background:var(--theme); color:#fff; font-weight:700; letter-spacing:0; padding:5px 6px; border-radius:4px; font-size:12px; }
+  .section-b{ border:1px solid #c9ced6; border-radius:6px; padding:8px; }
 
-  .row{ display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px; }
-  .sub{ display:none; gap:8px; align-items:center; }
+  .row{ display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:4px; }
+  .row input[type="checkbox"]{ width:16px; height:16px; cursor:pointer; flex-shrink:0; }
+  .row label{ font-size:12px; margin:0; cursor:pointer; flex:1; min-width:140px; }
+  .sub{ display:none; gap:4px; align-items:center; flex-wrap:wrap; width:100%; }
 
-  .signatures{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  .sig-box label{ font-weight:700; display:block; margin-bottom:6px; }
-  .sig-wrap{ position:relative; width:100%; height:140px; border:1.5px dashed #b6bcc6; border-radius:12px; background:#fff; touch-action:none; }
-  canvas.signature{ width:100%; height:140px; display:block; touch-action:none; }
-  .sig-hint{ position:absolute; top:8px; right:12px; font-size:12px; color:#7a8592; }
-  .sig-actions{ text-align:right; margin-top:6px; }
-  .btn-mini{ font-size:13px; padding:7px 12px; border:none; background:#404b57; color:#fff; border-radius:10px; }
+  .signatures{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px; }
+  .sig-box{ border:1px solid #ddd; border-radius:6px; padding:8px; background:#f9f9f9; cursor:pointer; transition:all 0.2s; }
+  .sig-box:hover{ background:#f0f0f0; border-color:#999; box-shadow:0 2px 8px rgba(0,0,0,.1); }
+  .sig-box label{ font-weight:700; display:block; margin-bottom:3px; font-size:11px; }
+  .sig-wrap{ position:relative; width:100%; height:80px; border:2px dashed #b6bcc6; border-radius:6px; background:#fff; touch-action:none; }
+  .sig-preview{ width:100%; height:80px; display:block; border-radius:4px; }
+  .sig-hint{ position:absolute; top:4px; right:6px; font-size:10px; color:#7a8592; }
+  .sig-status{ font-size:10px; color:#666; margin-top:2px; }
+  .sig-status.signed{ color:#22a122; font-weight:700; }
 
-  .made-row{ display:flex; align-items:center; gap:10px; flex-wrap:nowrap; }
-  /* Champ "Fait le" plus étroit */
-  .made-row input[type="date"]{ width:140px; max-width:40vw; flex:0 0 auto; }
+  .made-row{ display:flex; align-items:center; gap:6px; flex-wrap:nowrap; font-size:12px; margin-top:6px; }
+  .made-row input[type="date"]{ width:110px; flex:0 0 auto; }
   .made-row .city{ white-space:nowrap; }
 
-  /* Pièces jointes + croix */
-  .attach-box{ border:1.5px dashed #b6bcc6; border-radius:12px; padding:12px; background:#fafbfc; }
-  .attach-previews{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+  /* Pièces jointes */
+  .attach-box{ border:1px dashed #b6bcc6; border-radius:6px; padding:8px; background:#fafbfc; }
+  .attach-box label{ font-weight:700; display:block; margin-bottom:2px; font-size:12px; }
+  .attach-info{ font-size:11px; color:#666; margin-bottom:4px; }
+  .attach-input{ width:100%; padding:6px; border:1px solid #ddd; border-radius:4px; font-size:12px; }
+  .attach-previews{ display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
   .attach-previews .thumb{
-    position:relative; width:120px; height:90px; border:1px solid #cbd3db; border-radius:10px;
+    position:relative; width:70px; height:50px; border:1px solid #cbd3db; border-radius:4px;
     overflow:hidden; background:#fff; display:flex; align-items:center; justify-content:center;
   }
   .attach-previews .thumb img{ max-width:100%; max-height:100%; display:block; }
-  .attach-previews .pdfbadge{ font-size:12px; font-weight:700; color:#c12222; }
+  .attach-previews .pdfbadge{ font-size:9px; font-weight:700; color:#c12222; }
   .attach-previews .remove{
-    position:absolute; top:6px; right:6px; width:22px; height:22px; border-radius:50%;
-    border:none; background:#000; color:#fff; font-weight:800; line-height:22px; text-align:center; cursor:pointer;
+    position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%;
+    border:none; background:#000; color:#fff; font-weight:800; line-height:16px; text-align:center; cursor:pointer; font-size:10px;
+  }
+
+  /* ✅ Modal Signature */
+  .sig-modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.95);
+    z-index:10002;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:12px;
+  }
+  .sig-modal.open{ display:flex; }
+  .sig-modal-content{
+    width:100%;
+    max-width:500px;
+    background:#fff;
+    border-radius:10px;
+    padding:16px;
+    box-shadow:0 10px 40px rgba(0,0,0,.3);
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .sig-modal-title{
+    font-size:16px;
+    font-weight:700;
+    color:var(--theme);
+    text-align:center;
+    margin:0;
+  }
+  .sig-modal-canvas-wrap{
+    position:relative;
+    width:100%;
+    height:280px;
+    border:3px dashed var(--theme);
+    border-radius:6px;
+    background:#fff;
+    touch-action:none;
+    overflow:hidden;
+  }
+  .sig-modal-canvas{
+    width:100%;
+    height:280px;
+    display:block;
+    touch-action:none;
+    cursor:crosshair;
+  }
+  .sig-modal-hint{
+    position:absolute;
+    top:8px;
+    right:8px;
+    font-size:12px;
+    color:#999;
+    background:#f5f5f5;
+    padding:4px 8px;
+    border-radius:4px;
+  }
+  .sig-modal-buttons{
+    display:flex;
+    gap:8px;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+  .sig-modal-buttons button{
+    padding:10px 16px;
+    border:none;
+    border-radius:6px;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+    min-width:100px;
+  }
+  .btn-save-sig{
+    background:var(--theme);
+    color:#fff;
+  }
+  .btn-clear-sig{
+    background:#ddd;
+    color:#333;
+  }
+  .btn-skip-sig{
+    background:#999;
+    color:#fff;
   }
 
   /* Toolbar */
   .toolbar{ position:fixed; left:0; right:0; bottom:0; z-index:9999; }
-  .toolbar-inner{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; background:#fff; border-top:1px solid #0001; padding:10px; padding-bottom:calc(10px + env(safe-area-inset-bottom)); box-shadow:0 -8px 22px rgba(0,0,0,.06); }
-  .btn{ background:#000; color:#fff; border:none; border-radius:12px; padding:12px 16px; font-weight:800; cursor:pointer; font-size:15px; box-shadow:0 4px 10px rgba(0,0,0,.2); }
+  .toolbar-inner{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; background:#fff; border-top:1px solid #0001; padding:6px; padding-bottom:calc(6px + env(safe-area-inset-bottom)); box-shadow:0 -8px 22px rgba(0,0,0,.06); }
+  .btn{ background:#000; color:#fff; border:none; border-radius:6px; padding:8px 12px; font-weight:700; cursor:pointer; font-size:12px; box-shadow:0 4px 10px rgba(0,0,0,.2); }
   .btn.link{ background:transparent; color:#000; border:1.5px dashed #111; }
   .btn[disabled]{ opacity:.55; cursor:not-allowed; }
-  @media (max-width:768px), (max-device-width:768px){ .btn-print{ display:none!important; } }
+  
+  #loader{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35); z-index:10000; color:#fff; font:600 14px/1.2 Arial, sans-serif; }
+  #loader .box{ background:#111; padding:12px 14px; border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,.4); text-align:center; }
 
-  #loader{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35); z-index:10000; color:#fff; font:600 16px/1.2 Arial, sans-serif; }
-  #loader .box{ background:#111; padding:14px 18px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,.4); }
+  #toast{ position:fixed; left:50%; bottom:calc(var(--toolbar-h) + 10px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:#111; color:#fff; padding:8px 12px; border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,.25); display:none; z-index:10001; font-weight:700; white-space:pre-line; font-size:12px; max-width:85vw; text-align:center; }
 
-  #toast{ position:fixed; left:50%; bottom:calc(var(--toolbar-h) + 16px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:#111; color:#fff; padding:12px 16px; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.25); display:none; z-index:10001; font-weight:700; white-space:pre-line; }
-
-  @media (max-width:768px){
-    .grid tr{ display:block; }
-    .grid td{ display:block; width:100%; padding:6px 4px; }
-    .grid .label{ margin-bottom:4px; white-space:normal; line-height:1.25; word-break:break-word; }
-    .grid tr:first-child{ display:grid!important; grid-template-columns:minmax(0,1fr) minmax(0,1fr); column-gap:12px; align-items:end; }
-    .grid tr:first-child td:nth-child(1), .grid tr:first-child td:nth-child(2){ grid-column:1; }
-    .grid tr:first-child td:nth-child(3), .grid tr:first-child td:nth-child(4){ grid-column:2; }
-    .grid tr:first-child td{ min-width:0; }
-    .grid tr:first-child td:nth-child(3){ font-size:15px; }
-    #salarie, #salarie::placeholder{ font-size:16px; }
-    input[type="text"], input[type="date"], textarea{ width:100%; min-height:42px; font-size:15px; padding:10px 12px; }
-    .signatures{ grid-template-columns:1fr 1fr; }
+  /* CSS pour les éléments remplacés dans le PDF */
+  .input-like {
+    word-break: break-word;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    line-height: 1.3;
+    padding: 4px 0;
+    font-size: 12px;
+    min-height: 12px;
   }
 
-  @media print{ .toolbar{ display:none!important; } body{ background:#fff; } }
+  .signature-img {
+    display: block;
+    max-width: 100%;
+    max-height: 50px;
+  }
+
+  @media (max-width:768px){
+    :root{ --pad: 7mm; }
+    
+    .grid tr{ display:block; margin-bottom:6px; }
+    .grid td{ display:block; width:100%; padding:3px 0; }
+    .grid .label{ margin-bottom:2px; white-space:normal; line-height:1.2; word-break:break-word; }
+    .grid tr:first-child{ display:grid!important; grid-template-columns:1fr 1fr; column-gap:6px; align-items:end; margin-bottom:0; }
+    .grid tr:first-child td{ min-width:0; padding:3px 0; }
+    
+    input[type="text"], input[type="date"], textarea{ width:100%; min-height:34px; font-size:16px; padding:6px 8px; }
+    textarea { min-height:90px; }
+    
+    .signatures{ grid-template-columns:1fr 1fr; gap:6px; }
+    .sig-box { padding:6px; }
+    
+    .row { gap:4px; }
+    .row label { min-width:100%; }
+    .sub { width:100%; }
+    
+    .made-row { flex-wrap:wrap; }
+    .made-row input[type="date"]{ width:100%; max-width:100%; }
+
+    .sig-modal-content { max-width:92vw; padding:12px; }
+    .sig-modal-canvas-wrap { height:220px; }
+    .sig-modal-canvas { height:220px; }
+    .sig-modal-buttons button { min-width:80px; padding:8px 12px; font-size:12px; }
+  }
+
+  @media print{ 
+    .toolbar{ display:none!important; } 
+    body{ background:#fff; padding-bottom:0; } 
+    .page-wrapper { padding: 0; }
+    .page { box-shadow:none; border-radius:0; page-break-after:auto; }
+    .sig-modal { display:none!important; }
+    .page-break-force { page-break-after:always; }
+  }
 </style>
 </head>
 <body>
   <!-- Toolbar -->
-  <div class="toolbar no-print" id="toolbar">
+  <div class="toolbar" id="toolbar">
     <div class="toolbar-inner">
-      <button id="btnPrint" class="btn btn-print" onclick="window.print()">🖨️ Imprimer manuellement ordi</button>
-      <button id="sendBtn" class="btn" onclick="sendToServer()">📨 Envoyer</button>
-      <button id="autoSaveBtn" class="btn link" style="display:none">💾 Sauvegarde auto : ON</button>
-      <button class="btn link" onclick="clearAll()">🧹 Effacer tout</button>
+      <button id="btnPrint" class="btn" style="flex:1; min-width:100px;" onclick="window.print()">🖨️ Imprimer</button>
+      <button id="sendBtn" class="btn" style="flex:1; min-width:100px;" onclick="previewAndSend()">👁️ Aperçu</button>
+      <button id="sendBtn2" class="btn" style="flex:1; min-width:100px;" onclick="sendToServer()">📨 Envoyer</button>
+      <button class="btn link" style="flex:1; min-width:80px;" onclick="clearAll()">🧹 Effacer</button>
     </div>
   </div>
 
-  <div id="loader"><div class="box">⏳ Génération & envoi en cours…</div></div>
+  <div id="loader"><div class="box">⏳ Génération en cours…<br><small id="loaderMsg"></small></div></div>
   <div id="toast"></div>
+
+  <!-- ✅ Modal Signature -->
+  <div class="sig-modal" id="sigModal">
+    <div class="sig-modal-content">
+      <h2 class="sig-modal-title" id="sigModalTitle">Signature Responsable</h2>
+      <div class="sig-modal-canvas-wrap">
+        <canvas id="sigModalCanvas" class="sig-modal-canvas"></canvas>
+        <div class="sig-modal-hint">✍️ Signez</div>
+      </div>
+      <div class="sig-modal-buttons">
+        <button class="btn-clear-sig" onclick="clearModalCanvas()">🧹 Effacer</button>
+        <button class="btn-skip-sig" onclick="skipSignature()">⏭️ Passer</button>
+        <button class="btn-save-sig" onclick="saveModalSignature()">✅ Confirmer</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Page -->
   <div class="page-wrapper">
     <div class="page" id="pageContent">
       <div class="header no-break">
         <img src="logo_otacos.png" alt="O'Tacos">
-        <div><strong>HITS BOULOGNE</strong>O’tacos Boulogne</div>
+        <div><strong>HITS BOULOGNE</strong><small>O'tacos Boulogne</small></div>
       </div>
 
       <div class="title no-break">FICHE INCIDENTS</div>
@@ -137,525 +306,647 @@
       <table class="grid no-break" role="presentation">
         <tr>
           <td class="label">Date :</td>
-          <td><input type="date" id="date_fiche" autocomplete="off" placeholder="jj/mm/aaaa"></td>
-          <td class="label" style="text-align:right;">Fiche ouverte pour :</td>
-          <td><input type="text" id="salarie" placeholder="Nom de l’équipier" autocomplete="name"></td>
+          <td><input type="date" id="date_fiche" autocomplete="off"></td>
+          <td class="label" style="text-align:right;">Pour :</td>
+          <td><input type="text" id="salarie" placeholder="Nom" autocomplete="name"></td>
         </tr>
         <tr>
           <td class="label">Responsable :</td>
-          <td colspan="3"><input type="text" id="responsable" placeholder="Responsable" autocomplete="name"></td>
+          <td colspan="3"><input type="text" id="responsable" placeholder="Nom responsable" autocomplete="name"></td>
         </tr>
       </table>
 
-      <div class="section-h no-break">DESCRIPTIF DE L’INCIDENT</div>
+      <div class="section-h no-break">DESCRIPTIF DE L'INCIDENT</div>
       <div class="section-b no-break">
         <div class="row">
           <input type="checkbox" id="abs_prev"><label for="abs_prev"><strong>Absence prévue le :</strong></label>
           <div class="sub" id="abs_prev_fields">
-            <input type="date" id="abs_prev_date" placeholder="jj/mm/aaaa" />
-            <span>Shift prévu à :</span>
-            <input type="text" id="abs_prev_shift" placeholder="ex: 18h" inputmode="text" style="width:100px">
+            <input type="date" id="abs_prev_date" />
+            <span style="font-size:11px; min-width:max-content;">Shift à :</span>
+            <input type="text" id="abs_prev_shift" placeholder="18h" style="width:70px">
           </div>
         </div>
 
         <div class="row">
           <input type="checkbox" id="abs_np"><label for="abs_np"><strong>Absence non prévue le :</strong></label>
           <div class="sub" id="abs_np_fields">
-            <input type="date" id="abs_np_date" placeholder="jj/mm/aaaa" />
-            <span>Shift prévu à :</span>
-            <input type="text" id="abs_np_shift" placeholder="ex: 18h" inputmode="text" style="width:100px">
+            <input type="date" id="abs_np_date" />
+            <span style="font-size:11px; min-width:max-content;">Shift à :</span>
+            <input type="text" id="abs_np_shift" placeholder="18h" style="width:70px">
           </div>
         </div>
 
         <div class="row">
           <input type="checkbox" id="ret_prev"><label for="ret_prev"><strong>Retard prévu de :</strong></label>
           <div class="sub" id="ret_prev_fields">
-            <input type="text" id="ret_prev_duree" placeholder="ex: 30 min" inputmode="text" style="width:120px">
+            <input type="text" id="ret_prev_duree" placeholder="30 min" style="width:90px">
           </div>
         </div>
 
         <div class="row">
           <input type="checkbox" id="ret_np"><label for="ret_np"><strong>Retard non prévu de :</strong></label>
           <div class="sub" id="ret_np_fields">
-            <input type="text" id="ret_np_duree" placeholder="ex: 20 min" inputmode="text" style="width:120px">
+            <input type="text" id="ret_np_duree" placeholder="ex: 36 min" style="width:90px">
           </div>
         </div>
 
         <div class="row">
           <input type="checkbox" id="autre"><label for="autre"><strong>Autre :</strong></label>
           <div class="sub" id="autre_fields">
-            <input type="text" id="autre_detail" placeholder="Préciser…" style="min-width:220px; flex:1">
+            <input type="text" id="autre_desc" placeholder="Décrire" style="flex:1; min-width:120px;">
           </div>
         </div>
       </div>
 
-      <div class="section-h no-break">ORIGINE DE L’INCIDENT</div>
+      <div class="section-h no-break">ORIGINE DE L'INCIDENT</div>
       <div class="section-b no-break">
         <textarea id="origine" placeholder="Décrire l'origine…"></textarea>
       </div>
 
       <div class="section-h no-break">ACTION CURATIVE</div>
       <div class="section-b no-break">
-        <textarea id="action" placeholder="Décrire l'action corrective…"></textarea>
+        <textarea id="action" placeholder="Actions prises…"></textarea>
       </div>
 
-      <div class="no-break made-row" style="font-size:14px;">
+      <div class="made-row no-break">
         <strong>Fait le :</strong>
-        <input type="date" id="fait_le" placeholder="jj/mm/aaaa">
+        <input type="date" id="date_signature">
         <span class="city">, à Boulogne</span>
       </div>
 
+      <!-- ✅ Signatures cliquables -->
       <div class="signatures no-break">
-        <div class="sig-box">
-          <label for="signRespCanvas">Signature Responsable</label>
+        <div class="sig-box" onclick="openSignatureModal('signRespCanvas', 'Signature Responsable')">
+          <label>Signature Responsable</label>
           <div class="sig-wrap">
-            <canvas id="signRespCanvas" class="signature"></canvas>
-            <span class="sig-hint">Signez ici</span>
+            <canvas id="signRespCanvas" class="sig-preview"></canvas>
+            <div class="sig-hint">Cliquer pour signer</div>
           </div>
-          <div class="sig-actions"><button class="btn-mini" type="button" onclick="clearCanvas('signRespCanvas'); saveToLocal()">Effacer</button></div>
+          <div class="sig-status" id="signRespStatus">À signer</div>
         </div>
-        <div class="sig-box">
-          <label for="signSalCanvas">Signature Salarié</label>
+
+        <div class="sig-box" onclick="openSignatureModal('signSalCanvas', 'Signature Salarié')">
+          <label>Signature Salarié</label>
           <div class="sig-wrap">
-            <canvas id="signSalCanvas" class="signature"></canvas>
-            <span class="sig-hint">Signez ici</span>
+            <canvas id="signSalCanvas" class="sig-preview"></canvas>
+            <div class="sig-hint">Cliquer pour signer</div>
           </div>
-          <div class="sig-actions"><button class="btn-mini" type="button" onclick="clearCanvas('signSalCanvas'); saveToLocal()">Effacer</button></div>
+          <div class="sig-status" id="signSalStatus">À signer</div>
         </div>
       </div>
 
-      <!-- Pièce jointe -->
-      <div id="attachSection" class="no-break">
-        <div class="section-h">PIÈCE JOINTE (photo ou PDF)</div>
+      <div id="attachSection" class="no-break" style="margin-top:6px;">
+        <div class="section-h">PIÈCE JOINTE (optionnel)</div>
         <div class="attach-box">
-          <input id="attachment" type="file" accept="image/*,.pdf" multiple />
+          <label>📎 Photo ou PDF (max 10 Mo)</label>
+          <div class="attach-info">JPG, PNG, PDF</div>
+          <input type="file" id="fileInput" multiple accept=".jpg,.jpeg,.png,.pdf" class="attach-input">
           <div class="attach-previews" id="attachPreviews"></div>
         </div>
       </div>
     </div>
   </div>
 
-<script>
-/* ===== Utils ===== */
-const $ = s => document.querySelector(s);
-const ALL_FIELDS_SELECTOR = "input[type='text'], input[type='date'], input[type='checkbox'], textarea";
-function showToast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display="block"; t.style.opacity="1"; setTimeout(()=>{ t.style.opacity="0"; setTimeout(()=>t.style.display="none",300); },3500); }
-function todayStr(){ const d=new Date(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${d.getFullYear()}-${m}-${day}`; }
+  <script>
+    /* ===== STATE & HELPERS ===== */
+    const $ = id => document.getElementById(id);
+    const ALL_FIELDS_SELECTOR = 'input[type="text"], input[type="date"], input[type="checkbox"], textarea';
+    const STORAGE_KEY = 'fiche_incident_autosave';
+    const attachedFiles = [];
+    let currentSignatureCanvas = null;
+    let pdfPreviewBlob = null;
 
-/* ===== Textareas autogrow (UX) ===== */
-function autoGrow(el){ el.classList.add('autogrow'); el.style.height='auto'; el.style.height = el.scrollHeight + 'px'; }
-function bindAutoGrow(){ document.querySelectorAll('textarea').forEach(t=>{ autoGrow(t); t.addEventListener('input', ()=>autoGrow(t)); }); }
+    function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+    function showToast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display="block"; setTimeout(()=>t.style.display="none",3500); }
+    function updateLoader(msg){ const m=$("#loaderMsg"); if(m) m.textContent=msg; }
 
-/* ===== Affichage conditionnel ===== */
-["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
-  const box=$(`#${id}`), sub=$(`#${id}_fields`); if(!box||!sub) return;
-  const sync=()=>{ sub.style.display=box.checked?"inline-flex":"none"; };
-  box.addEventListener("change",()=>{ sync(); saveToLocal(); }); sync();
-});
-
-/* ===== Signatures (HiDPI) ===== */
-function setupCanvas(id){
-  const c=$(`#${id}`), ctx=c.getContext("2d");
-  function fit(){
-    let backup=null; try{ backup=c.toDataURL("image/png"); }catch(e){}
-    const r=c.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
-    c.width=Math.max(1,Math.round(r.width*dpr)); c.height=Math.max(1,Math.round(r.height*dpr));
-    ctx.setTransform(1,0,0,1,0,0); ctx.scale(dpr,dpr);
-    ctx.fillStyle="#fff"; ctx.fillRect(0,0,r.width,r.height);
-    if(backup){ const img=new Image(); img.onload=()=>ctx.drawImage(img,0,0,r.width,r.height); img.src=backup; }
-    ctx.lineWidth=2; ctx.lineCap="round"; ctx.strokeStyle="#000";
-  }
-  function sizeCss(){ const p=c.closest('.sig-wrap'); c.style.width=p.clientWidth+"px"; c.style.height=p.clientHeight+"px"; }
-  sizeCss(); fit(); window.addEventListener("resize",()=>{sizeCss();fit();});
-  window.addEventListener("orientationchange",()=>setTimeout(()=>{sizeCss();fit();},250));
-  let drawing=false, prev=null; const hint=c.parentElement.querySelector('.sig-hint');
-  const start=(x,y)=>{ drawing=true; prev={x,y}; if(hint) hint.style.opacity='0'; };
-  const move=(x,y)=>{ if(!drawing) return; ctx.beginPath(); ctx.moveTo(prev.x,prev.y); ctx.lineTo(x,y); ctx.stroke(); prev={x,y}; saveToLocalThrottled(); };
-  const stop=()=>{ drawing=false; prev=null; };
-  c.addEventListener("mousedown",e=>start(e.offsetX,e.offsetY));
-  c.addEventListener("mousemove",e=>move(e.offsetX,e.offsetY));
-  ["mouseup","mouseleave"].forEach(ev=>c.addEventListener(ev,stop));
-  c.addEventListener("touchstart",e=>{ e.preventDefault(); const r=c.getBoundingClientRect(), t=e.touches[0]; start(t.clientX-r.left,t.clientY-r.top); },{passive:false});
-  c.addEventListener("touchmove",e=>{ e.preventDefault(); const r=c.getBoundingClientRect(), t=e.touches[0]; move(t.clientX-r.left,t.clientY-r.top); },{passive:false});
-  c.addEventListener("touchend",stop);
-}
-setupCanvas("signRespCanvas"); setupCanvas("signSalCanvas");
-
-function canvasToSmallDataURL(srcCanvas,maxCssW=360,mime='image/jpeg',quality=0.9){
-  const rect=srcCanvas.getBoundingClientRect();
-  const src=document.createElement('canvas'); src.width=Math.max(1,Math.round(rect.width)); src.height=Math.max(1,Math.round(rect.height));
-  const sctx=src.getContext('2d'); sctx.fillStyle="#fff"; sctx.fillRect(0,0,src.width,src.height); sctx.drawImage(srcCanvas,0,0,src.width,src.height);
-  const ratio=Math.min(1,maxCssW/src.width), dw=Math.round(src.width*ratio), dh=Math.round(src.height*ratio);
-  const off=document.createElement('canvas'); off.width=dw; off.height=dh;
-  const ctx=off.getContext('2d'); ctx.fillStyle="#fff"; ctx.fillRect(0,0,dw,dh); ctx.drawImage(src,0,0,dw,dh); return off.toDataURL(mime,quality);
-}
-
-/* ===== Auto-save ===== */
-const STORAGE_KEY="ficheIncidentBSM";
-function collectData(includeSigs=true){
-  const data={}; document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{ data[el.id]=(el.type==="checkbox")?el.checked:el.value; });
-  if(includeSigs){ data.sign_resp=canvasToSmallDataURL($("#signRespCanvas")); data.sign_sal=canvasToSmallDataURL($("#signSalCanvas")); }
-  return data;
-}
-function applyData(data){
-  if(!data) return; document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{ if(!(el.id in data)) return; if(el.type==="checkbox") el.checked=!!data[el.id]; else el.value=data[el.id]||""; });
-  ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{ const b=$(`#${id}`), s=$(`#${id}_fields`); if(b&&s) s.style.display=b.checked?"inline-flex":"none"; });
-  if(data.sign_resp) restoreSignature("signRespCanvas",data.sign_resp); if(data.sign_sal) restoreSignature("signSalCanvas",data.sign_sal);
-}
-function restoreSignature(id,dataUrl){
-  if(!dataUrl) return; const c=$(`#${id}`), ctx=c.getContext("2d"); const img=new Image();
-  img.onload=()=>{ const r=c.getBoundingClientRect(); ctx.fillStyle="#fff"; ctx.fillRect(0,0,r.width,r.height); ctx.drawImage(img,0,0,r.width,r.height); const h=c.parentElement.querySelector('.sig-hint'); if(h) h.style.opacity='0'; };
-  img.src=dataUrl;
-}
-function saveToLocal(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData(true))); syncToolbarPadding(); }catch(e){} }
-let _saveTimer=null; function saveToLocalThrottled(){ clearTimeout(_saveTimer); _saveTimer=setTimeout(saveToLocal,300); }
-function loadFromLocal(){ try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw) applyData(JSON.parse(raw)); }catch(e){} }
-function clearCanvas(id){ const c=document.getElementById(id), x=c.getContext("2d"); x.setTransform(1,0,0,1,0,0); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); const h=c.parentElement.querySelector('.sig-hint'); if(h) h.style.opacity='1'; }
-function bindAutoSaveEvents(){ document.addEventListener("input", saveToLocal); document.addEventListener("change", saveToLocal); }
-
-/* ===== Pièces jointes : mémoire + croix + clear ===== */
-let attachedFiles = [];
-const attachInput    = document.getElementById('attachment');
-const attachPreviews = document.getElementById('attachPreviews');
-
-if (attachInput) {
-  attachInput.addEventListener('change', () => {
-    const files = Array.from(attachInput.files || []);
-    if (!files.length) return;
-    attachedFiles = attachedFiles.concat(files);
-    attachInput.value = '';
-    renderAttachPreviews();
-    saveToLocal();
-  });
-}
-function renderAttachPreviews(){
-  if (!attachPreviews) return;
-  attachPreviews.innerHTML = '';
-  attachedFiles.forEach((f, idx) => {
-    const holder = document.createElement('div');
-    holder.className = 'thumb';
-    if (f.type.startsWith('image/')) {
-      const url = URL.createObjectURL(f);
-      const img = document.createElement('img'); img.src=url; holder.appendChild(img);
-    } else if (f.type === 'application/pdf') {
-      const span = document.createElement('span'); span.className='pdfbadge'; span.textContent='PDF joint'; holder.appendChild(span);
-    } else {
-      holder.textContent = f.name;
-    }
-    const rm=document.createElement('button'); rm.className='remove'; rm.type='button'; rm.textContent='×';
-    rm.onclick=()=>{ attachedFiles.splice(idx,1); renderAttachPreviews(); saveToLocal(); };
-    holder.appendChild(rm);
-    attachPreviews.appendChild(holder);
-  });
-}
-function clearAllAttachments(){
-  attachedFiles = [];
-  if (attachPreviews) attachPreviews.innerHTML = '';
-  if (attachInput)    attachInput.value = '';
-}
-
-/* ===== Validation ===== */
-function validateForm(){
-  const missing=[];
-  const responsable=($("#responsable").value||"").trim();
-  const salarie=($("#salarie").value||"").trim();
-  const origine=($("#origine").value||"").trim();
-  const action =($("#action").value||"").trim();
-
-  if(!responsable) missing.push("• Responsable");
-  if(!salarie)     missing.push("• Équipier (Fiche ouverte pour)");
-  if(!origine)     missing.push("• Origine de l'incident");
-  if(!action)      missing.push("• Action curative");
-
-  const anyDesc = ["abs_prev","abs_np","ret_prev","ret_np","autre"].some(id => $(`#${id}`).checked);
-  if(!anyDesc) missing.push("• Au moins un descriptif (cocher Absence/Retard/Autre)");
-
-  if(missing.length){
-    showToast("Champs à compléter :\n" + missing.join("\n"));
-    return false;
-  }
-  return true;
-}
-
-/* ===== PDF: helpers (PDF joints -> images, ignore page 2) ===== */
-async function pdfPagesToDataURLs(file, {scale=1.8}={}){
-  if(!window['pdfjsLib']) return [];
-  const ab = await file.arrayBuffer();
-  const doc = await pdfjsLib.getDocument({data:ab}).promise;
-  const total = doc.numPages;
-  const out = [];
-  for(let p=1; p<=total; p++){
-    if(p===2) continue;
-    const page = await doc.getPage(p);
-    const viewport = page.getViewport({ scale });
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = viewport.width; canvas.height = viewport.height;
-    await page.render({ canvasContext: ctx, viewport }).promise;
-    out.push(canvas.toDataURL('image/jpeg', 0.95));
-  }
-  return out;
-}
-function fileToDataURL(file){
-  return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
-}
-async function getAttachmentImages(){
-  const images = [];
-  for(const f of attachedFiles){
-    if(f.type.startsWith('image/')) images.push(await fileToDataURL(f));
-    else if(f.type === 'application/pdf'){
-      const pages = await pdfPagesToDataURLs(f);
-      if(pages.length) images.push(...pages);
-    }
-  }
-  return images;
-}
-
-/* ===== Pré-fix mobile avant capture ===== */
-function preCaptureMobileFixes(){
-  try{
-    if (document.activeElement && typeof document.activeElement.blur === 'function') {
-      document.activeElement.blur();
-    }
-    window.scrollTo(0,0);
-  }catch(e){}
-}
-
-/* ===== PDF (A4) : styles + anti-coupures + neutralise mobile ===== */
-function prepareCloneForPdf(clone){
-  const style=document.createElement('style');
-  style.textContent=`
-    .pdf-a4{
-      width:210mm!important;
-      min-height:297mm!important;
-      padding:8mm!important;
-      box-shadow:none!important;
-      border-radius:0!important;
-      transform: translateZ(0);
-    }
-    .pdf-a4 .header{ gap:8px; margin-bottom:4px; }
-    .pdf-a4 .header img{ width:38px!important; height:auto!important; }
-    .pdf-a4 .header strong{ font-size:13px!important; }
-    .pdf-a4 .title{ font-size:11.2px; padding:3px 5px; margin-top:0; }
-    .pdf-a4 .grid{ font-size:11px; }
-
-    /* ✅ Neutraliser le responsive mobile dans le PDF */
-    .pdf-a4 .grid tr{ display:table-row !important; }
-    .pdf-a4 .grid td{ display:table-cell !important; width:auto !important; padding:4px 6px !important; }
-    .pdf-a4 .grid tr:first-child{ display:table-row !important; grid-template-columns:none !important; }
-
-    .pdf-a4 input, .pdf-a4 textarea{ padding:5px 7px; font-size:11px; }
-    .pdf-a4 textarea{ min-height:60px!important; }
-    .pdf-a4 .section-h{ padding:5px 7px; font-size:11.5px; }
-    .pdf-a4 .section-b{ padding:7px; font-size:11.5px; }
-    .pdf-a4 .row{ gap:5px; margin-bottom:5px; }
-    .pdf-a4 .sig-wrap{ height:72px!important; }
-    .pdf-a4 .signature, .pdf-a4 img.signature-img{ height:72px!important; width:100%!important; object-fit:contain; background:#fff; }
-
-    /* Renfort anti-coupure */
-    .no-break{ break-inside:avoid; page-break-inside:avoid; break-after:avoid; page-break-after:avoid; }
-    .section-group, .intro-block{ break-inside:avoid; page-break-inside:avoid; }
-
-    /* Boîte simulant un input, qui retourne bien à la ligne */
-    .input-like{
-      border:1.5px solid #c9ced6; border-radius:10px; padding:6px 8px;
-      white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; line-height:1.25; min-height:26px;
-      font-size:11px; background:#fff;
-    }
-  `;
-  clone.prepend(style);
-  clone.classList.add('pdf-a4');
-
-  /* Grouper ENTÊTE + TITRE + TABLE infos (indivisible) */
-  const head = clone.querySelector('.header');
-  const title = clone.querySelector('.title');
-  const grid  = clone.querySelector('.grid');
-  if (head && title && grid){
-    const intro = document.createElement('div');
-    intro.className = 'intro-block no-break';
-    head.before(intro);
-    intro.append(head, title, grid);
-  }
-
-  /* Grouper chaque section: .section-h + .section-b */
-  clone.querySelectorAll('.section-h').forEach(h=>{
-    const b = h.nextElementSibling;
-    if(b && b.classList.contains('section-b')){
-      const wrap = document.createElement('div');
-      wrap.className = 'section-group no-break';
-      h.before(wrap);
-      wrap.append(h, b);
-    }
-  });
-
-  /* ✅ Remplacer tous les inputs texte & date par des blocs multi-lignes */
-  clone.querySelectorAll('input[type="text"], input[type="date"]').forEach(inp=>{
-    const box = document.createElement('div');
-    box.className = 'input-like';
-    const val = inp.value && String(inp.value).trim() ? inp.value : (inp.getAttribute('placeholder') || '');
-    box.textContent = val;
-    inp.replaceWith(box);
-  });
-
-  /* ✅ Remplacer les canvases signatures par images statiques (wrap safe) */
-  ["signRespCanvas","signSalCanvas"].forEach(id=>{
-    const src=document.getElementById(id);
-    if(!src) return;
-    const img=document.createElement('img');
-    img.src=canvasToSmallDataURL(src,500,"image/jpeg",0.9);
-    img.className="signature-img";
-    img.style.width="100%"; img.style.height="72px"; img.style.objectFit="contain"; img.style.background="#fff";
-    const target=clone.querySelector("#"+id);
-    if(target) target.replaceWith(img);
-  });
-}
-
-/* Ajustement pour tenir sur 1 seule page A4 (toujours scale down) */
-function fitCloneToOneA4Page(clone){
-  const A4_H = 297/25.4*96;        // px css @96dpi
-  const M    = 8/25.4*96;          // 8mm marges
-  const fudgePx = 1;               // sécurité mobile (arrondis)
-  const target = A4_H - 2*M - fudgePx;
-  const h = clone.scrollHeight;
-  if(h > target){
-    const s = target / h;
-    clone.style.transformOrigin = "top left";
-    clone.style.transform = `scale(${s})`;
-    clone.style.width = `calc(210mm / ${s})`;
-  }
-}
-function blobToBase64(blob){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(",")[1]||""); r.onerror=rej; r.readAsDataURL(blob); }); }
-
-/* ===== Envoi ===== */
-async function sendToServer(){
-  if(!validateForm()) return;
-
-  const WEBAPP_URL="https://bsmincident.reclamation-otacos.workers.dev/";
-  const loader=$("#loader"), btn=$("#sendBtn");
-  try{
-    btn.disabled=true; loader.style.display="flex";
-
-    const meta={
-      salarie:($("#salarie").value||"Inconnu").trim(),
-      responsable:($("#responsable").value||"N/A").trim(),
-      date_fiche:$("#date_fiche").value||todayStr(),
-    };
-
-    // Pré-fix mobile (clavier/scroll)
-    preCaptureMobileFixes();
-
-    // Clone + PJ
-    const original=$("#pageContent");
-    const clone = original.cloneNode(true);
-    const attachImgs = await getAttachmentImages();
-
-    // Si pas de PJ -> retirer la section du clone (ne pas l’imprimer)
-    if(attachImgs.length === 0){
-      const sec = clone.querySelector('#attachSection');
-      if(sec) sec.remove();
+    /* ===== Validation ===== */
+    function validateForm(){
+      const sal=($("#salarie").value||"").trim(), resp=($("#responsable").value||"").trim();
+      if(!sal){ showToast("❌ Nom de l'équipier requis"); return false; }
+      if(!resp){ showToast("❌ Nom du responsable requis"); return false; }
+      return true;
     }
 
-    // Styles PDF + regroupements + remplacements pour WRAP
-    prepareCloneForPdf(clone);
+    /* ===== Checkbox Logic ===== */
+    ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
+      const cb=$(id), sub=$(`${id}_fields`);
+      if(cb) cb.addEventListener('change',()=>{ if(sub) sub.style.display=cb.checked?"flex":"none"; });
+    });
 
-    // Hors écran sans offset négatif (évite vides)
-    const off=document.createElement("div");
-    off.style.position="fixed";
-    off.style.top="0";
-    off.style.left="0";
-    off.style.opacity="0";
-    off.style.pointerEvents="none";
-    off.style.zIndex="-1";
-    document.body.appendChild(off);
+    /* ===== Modal Signature ===== */
+    let isDrawing = false;
 
-    off.appendChild(clone);
-    fitCloneToOneA4Page(clone);   // ✅ force 1 page (scale down si nécessaire)
+    function openSignatureModal(canvasId, title){
+      currentSignatureCanvas = canvasId;
+      const modal = $("#sigModal");
+      const modalTitle = $("#sigModalTitle");
+      const modalCanvas = $("#sigModalCanvas");
+      
+      modalTitle.textContent = title;
+      
+      // Copier le contenu du canvas original au modal canvas
+      const originalCanvas = $(canvasId);
+      const ctx = modalCanvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, modalCanvas.width, modalCanvas.height);
+      if(originalCanvas.width > 0){
+        ctx.drawImage(originalCanvas, 0, 0, originalCanvas.width, originalCanvas.height, 0, 0, modalCanvas.width, modalCanvas.height);
+      }
+      
+      modal.classList.add('open');
+      
+      // Initialiser le dessin
+      initModalCanvasDrawing(modalCanvas);
+    }
 
-    // Options PDF
-    const opt={
-      margin:[8,8],  // 8mm
-      filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
-      pagebreak:{ mode:['avoid-all'], avoid:['.no-break','.section-group','.intro-block','.section-b','.signatures','textarea'] },
-      html2canvas:{ scale:2, useCORS:true, backgroundColor:"#ffffff", scrollY:0, scrollX:0, willReadFrequently:true },
-      jsPDF:{ unit:"mm", format:"a4", orientation:"portrait", compress:true },
-    };
-    const worker=html2pdf().set(opt).from(clone).toPdf();
-    const pdf=await worker.get('pdf');  // instance jsPDF
+    function initModalCanvasDrawing(canvas){
+      const ctx = canvas.getContext('2d');
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#000';
+      
+      isDrawing = false;
+      
+      const getCoords = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        let x, y;
+        if(e.touches){
+          x = e.touches[0].clientX - rect.left;
+          y = e.touches[0].clientY - rect.top;
+        } else {
+          x = e.clientX - rect.left;
+          y = e.clientY - rect.top;
+        }
+        return {x, y};
+      };
+      
+      const start = (e) => {
+        isDrawing = true;
+        const {x, y} = getCoords(e);
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        e.preventDefault();
+      };
+      
+      const move = (e) => {
+        if(!isDrawing) return;
+        const {x, y} = getCoords(e);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        e.preventDefault();
+      };
+      
+      const end = () => {
+        isDrawing = false;
+        ctx.closePath();
+      };
+      
+      // Cloner le canvas pour éviter les listeners multiples
+      const newCanvas = canvas.cloneNode(true);
+      canvas.parentNode.replaceChild(newCanvas, canvas);
+      const finalCanvas = $("#sigModalCanvas");
+      
+      finalCanvas.addEventListener('mousedown', start);
+      finalCanvas.addEventListener('mousemove', move);
+      finalCanvas.addEventListener('mouseup', end);
+      finalCanvas.addEventListener('mouseleave', end);
+      
+      finalCanvas.addEventListener('touchstart', start);
+      finalCanvas.addEventListener('touchmove', move);
+      finalCanvas.addEventListener('touchend', end);
+    }
 
-    // Ajouter les pièces jointes (pleine page) à partir de la page 2
-    if(attachImgs.length){
-      const a4w=210, a4h=297, margin=5;
-      const innerW=a4w-2*margin, innerH=a4h-2*margin;
+    function clearModalCanvas(){
+      const canvas = $("#sigModalCanvas");
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      showToast("🧹 Signature effacée");
+    }
 
-      for(const durl of attachImgs){
-        const dims = await getImageSize(durl);
-        let wmm=innerW, hmm=innerH;
-        const ratio = dims.w/dims.h;
-        if(wmm/hmm > ratio){ wmm = hmm*ratio; } else { hmm = wmm/ratio; }
-        const x = (a4w - wmm)/2, y = (a4h - hmm)/2;
-        pdf.addPage('a4','p');
-        const fmt = durl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-        pdf.addImage(durl, fmt, x, y, wmm, hmm);
+    function saveModalSignature(){
+      const modalCanvas = $("#sigModalCanvas");
+      const originalCanvas = $(currentSignatureCanvas);
+      
+      // Copier du modal au canvas original
+      const ctx = originalCanvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, originalCanvas.width, originalCanvas.height);
+      ctx.drawImage(modalCanvas, 0, 0, modalCanvas.width, modalCanvas.height, 0, 0, originalCanvas.width, originalCanvas.height);
+      
+      // Mettre à jour le statut
+      const statusId = currentSignatureCanvas === 'signRespCanvas' ? 'signRespStatus' : 'signSalStatus';
+      const status = $(statusId);
+      status.textContent = '✅ Signé';
+      status.classList.add('signed');
+      
+      // Fermer le modal
+      closeSignatureModal();
+      
+      // Aller à la prochaine signature
+      const nextCanvas = currentSignatureCanvas === 'signRespCanvas' ? 'signSalCanvas' : null;
+      if(nextCanvas){
+        showToast("✅ Signature enregistrée ! À votre tour.");
+        setTimeout(()=>{ openSignatureModal(nextCanvas, 'Signature Salarié'); }, 500);
+      } else {
+        showToast("✅ Toutes les signatures sont enregistrées !");
+      }
+      
+      saveToLocal();
+    }
+
+    function skipSignature(){
+      closeSignatureModal();
+      const nextCanvas = currentSignatureCanvas === 'signRespCanvas' ? 'signSalCanvas' : null;
+      if(nextCanvas){
+        setTimeout(()=>{ openSignatureModal(nextCanvas, 'Signature Salarié'); }, 300);
       }
     }
 
-    const pdfBlob = pdf.output('blob');
-    off.remove();
+    function closeSignatureModal(){
+      const modal = $("#sigModal");
+      modal.classList.remove('open');
+      currentSignatureCanvas = null;
+    }
 
-    // Envoi au serveur
-    const b64 = await blobToBase64(pdfBlob);
-    const payload={ meta, b64 };
-    await fetch(WEBAPP_URL,{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(payload) });
+    // Fermer modal au clic sur le fond
+    $("#sigModal").addEventListener('click', (e)=>{
+      if(e.target === $("#sigModal")){
+        closeSignatureModal();
+      }
+    });
 
-    const extra = attachedFiles.length ? " Les pièces jointes ont été intégrées." : "";
-    showToast(`✅ Merci ${meta.responsable}, la fiche incident tient sur 1 page et a été envoyée.${extra}`);
-    saveToLocal();
-  }catch(e){
-    console.error(e);
-    showToast("❌ Erreur inattendue lors de l'envoi.");
-  }finally{
-    loader.style.display="none"; btn.disabled=false;
-  }
-}
+    /* ===== File Attachments ===== */
+    async function getAttachmentImages(){
+      const imgs=[];
+      for(const f of attachedFiles){
+        if(f.type.startsWith('image/')) imgs.push(f.dataurl);
+        else if(f.type==='application/pdf') imgs.push(f.dataurl);
+      }
+      return imgs;
+    }
+    
+    function clearAllAttachments(){
+      attachedFiles.length=0; $("#fileInput").value=""; $("#attachPreviews").innerHTML="";
+    }
+    
+    function canvasToSmallDataURL(c, maxW, fmt, qual){
+      const cvt=document.createElement('canvas'); 
+      const ratio = c.width / c.height;
+      cvt.width = Math.min(c.width, maxW);
+      cvt.height = cvt.width / ratio;
+      cvt.getContext('2d').drawImage(c, 0, 0, cvt.width, cvt.height);
+      return cvt.toDataURL(fmt, qual);
+    }
 
-/* Helpers */
-function getImageSize(dataUrl){
-  return new Promise(res=>{ const img=new Image(); img.onload=()=>res({w:img.naturalWidth||img.width, h:img.naturalHeight||img.height}); img.src=dataUrl; });
-}
+    /* ===== Auto-save ===== */
+    function bindAutoSaveEvents(){
+      document.addEventListener('input',()=>{ clearTimeout(window.asTimeout); window.asTimeout=setTimeout(saveToLocal,1000); });
+      document.addEventListener('change',()=>{ saveToLocal(); });
+    }
+    
+    function saveToLocal(){
+      const data={};
+      document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{
+        if(el.type==='checkbox') data[el.id]=el.checked;
+        else if(el.type==='textarea'||el.type==='text'||el.type==='date') data[el.id]=el.value||"";
+      });
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e){}
+    }
+    
+    function loadFromLocal(){
+      try {
+        const data=localStorage.getItem(STORAGE_KEY);
+        if(!data) return;
+        const obj=JSON.parse(data);
+        Object.entries(obj).forEach(([id,val])=>{
+          const el=$(id);
+          if(!el) return;
+          if(el.type==='checkbox') el.checked=!!val;
+          else el.value=val||"";
+          if(el.type==='checkbox') el.dispatchEvent(new Event('change'));
+        });
+      } catch(e){}
+    }
 
-/* ===== Clear All (inclut PJ) ===== */
-function clearAll(){
-  if(!confirm("Effacer tous les champs, signatures, la sauvegarde et les pièces jointes ?")) return;
-  document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{
-    if(el.type==="checkbox") el.checked=false; else el.value="";
-  });
-  ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
-    const s=$(`#${id}_fields`); if(s) s.style.display="none";
-  });
-  clearCanvas("signRespCanvas"); clearCanvas("signSalCanvas");
-  localStorage.removeItem(STORAGE_KEY);
-  clearAllAttachments();                    // efface aussi les PJ
-  syncToolbarPadding();
-}
+    /* ===== Auto-grow Textarea ===== */
+    function bindAutoGrow(){
+      document.querySelectorAll('textarea').forEach(ta=>{
+        const adjust=()=>{ 
+          ta.style.height='auto'; 
+          const h = Math.min(ta.scrollHeight, 150);
+          ta.style.height = h + 'px'; 
+        };
+        ta.addEventListener('input',adjust);
+        ta.addEventListener('change',adjust);
+        adjust();
+      });
+    }
 
-/* ===== Anti-recouvrement toolbar ===== */
-function syncToolbarPadding(){
-  const tb=$("#toolbar");
-  const h=(tb&&getComputedStyle(tb).display!=='none')?tb.offsetHeight:0;
-  document.documentElement.style.setProperty('--toolbar-h', h+'px');
-}
-if(window.visualViewport){
-  visualViewport.addEventListener('resize', syncToolbarPadding);
-  visualViewport.addEventListener('scroll', syncToolbarPadding);
-}
+    /* ===== Attachments ===== */
+    $("#fileInput").addEventListener('change', async e=>{
+      const files=Array.from(e.target.files);
+      for(const file of files){
+        if(file.size>10*1024*1024){
+          showToast(`❌ ${file.name} > 10 Mo`); continue;
+        }
+        const reader=new FileReader();
+        reader.onload=async ev=>{
+          const durl=ev.target.result;
+          attachedFiles.push({name:file.name,type:file.type,dataurl:durl});
+          const container=$("#attachPreviews"), idx=attachedFiles.length-1;
+          const thumb=document.createElement('div'); thumb.className='thumb';
+          if(file.type.startsWith('image/')){
+            const img=document.createElement('img'); img.src=durl; thumb.appendChild(img);
+          } else {
+            const badge=document.createElement('div'); badge.className='pdfbadge'; badge.textContent='PDF'; thumb.appendChild(badge);
+          }
+          const rmBtn=document.createElement('button'); rmBtn.className='remove'; rmBtn.textContent='×';
+          rmBtn.onclick=()=>{ attachedFiles.splice(idx,1); thumb.remove(); };
+          thumb.appendChild(rmBtn);
+          container.appendChild(thumb);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
 
-/* ===== Init ===== */
-(function init(){
-  bindAutoGrow();
-  bindAutoSaveEvents(); loadFromLocal(); syncToolbarPadding();
-  window.addEventListener('resize', syncToolbarPadding);
-  window.addEventListener('orientationchange', ()=>setTimeout(syncToolbarPadding,250));
-})();
-</script>
+    /* ===== Fit Text with smart compression ===== */
+    function fitTextToContainer(text, maxWidth, maxHeight, baseFontSize = 12) {
+      let fontSize = baseFontSize;
+      let lines = text.split('\n');
+      let measuredHeight = lines.length * fontSize * 1.3;
+      
+      // Réduire la taille si nécessaire
+      while (measuredHeight > maxHeight && fontSize > 8) {
+        fontSize -= 0.5;
+        measuredHeight = lines.length * fontSize * 1.3;
+      }
+      
+      // Si encore trop grand, compresser en supprimant les espaces superflus
+      if(fontSize <= 8 && measuredHeight > maxHeight){
+        text = text.replace(/\n{2,}/g, '\n'); // Supprimer lignes vides
+      }
+      
+      return { fontSize: Math.max(8, fontSize), text };
+    }
+
+    /* ===== PDF Generation - Version optimisée ===== */
+    function prepareCloneForPdf(clone){
+      // ✅ Remplacer textareas avec compression intelligente
+      clone.querySelectorAll('textarea').forEach(ta=>{
+        const box=document.createElement('div');
+        box.className='input-like';
+        let val=(ta.value||"").trim();
+        
+        if(val) {
+          const result = fitTextToContainer(val, 170, 150, 12);
+          box.style.fontSize = result.fontSize + 'px';
+          val = result.text;
+        }
+        
+        box.textContent=val||ta.getAttribute('placeholder')||'';
+        box.style.overflow='hidden';
+        box.style.maxHeight='150px';
+        ta.replaceWith(box);
+      });
+
+      // ✅ Remplacer checkboxes
+      clone.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+        const box=document.createElement('span');
+        box.textContent=cb.checked?'☑':'☐';
+        cb.replaceWith(box);
+      });
+
+      // ✅ Remplacer inputs texte & date avec compression
+      clone.querySelectorAll('input[type="text"], input[type="date"]').forEach(inp=>{
+        const box=document.createElement('div');
+        box.className='input-like';
+        let val=inp.value&&String(inp.value).trim()?inp.value:(inp.getAttribute('placeholder')||'');
+        
+        if(val && inp.type === 'text' && val.length > 50) {
+          const result = fitTextToContainer(val, 170, 80, 12);
+          box.style.fontSize = result.fontSize + 'px';
+          val = result.text;
+        }
+        
+        box.textContent=val;
+        inp.replaceWith(box);
+      });
+
+      // ✅ Remplacer signatures
+      ["signRespCanvas","signSalCanvas"].forEach(id=>{
+        const src=$(id);
+        if(!src || src.width===0) return;
+        const img=document.createElement('img');
+        img.src=canvasToSmallDataURL(src,300,"image/jpeg",0.8);
+        img.className="signature-img";
+        img.style.width="100%";
+        img.style.maxHeight="45px";
+        img.style.objectFit="contain";
+        const target=clone.querySelector("#"+id);
+        if(target) target.replaceWith(img);
+      });
+
+      // ✅ Supprimer les statuts de signature
+      clone.querySelectorAll('.sig-status').forEach(el=>el.remove());
+    }
+
+    /* ===== Preview Avant Envoi ===== */
+    async function previewAndSend(){
+      if(!validateForm()) return;
+      
+      const loader=$("#loader"), btn=$("#sendBtn");
+      try{
+        btn.disabled=true; loader.style.display="flex"; updateLoader("📋 Génération aperçu...");
+
+        const meta={
+          salarie:($("#salarie").value||"Inconnu").trim(),
+          responsable:($("#responsable").value||"N/A").trim(),
+          date_fiche:$("#date_fiche").value||todayStr(),
+        };
+
+        const original=$("#pageContent");
+        const clone=original.cloneNode(true);
+        const attachImgs=await getAttachmentImages();
+
+        if(attachImgs.length===0){
+          const sec=clone.querySelector('#attachSection');
+          if(sec) sec.remove();
+        }
+
+        prepareCloneForPdf(clone);
+
+        const off=document.createElement("div");
+        off.style.position="absolute";
+        off.style.top="-10000px";
+        off.style.left="-10000px";
+        off.style.width="210mm";
+        off.style.visibility="hidden";
+        document.body.appendChild(off);
+        off.appendChild(clone);
+
+        const opt={
+          margin:[5,5],
+          filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
+          pagebreak:{ mode:'avoid-all' },
+          html2canvas:{ 
+            scale:2,
+            useCORS:true,
+            backgroundColor:"#ffffff",
+            scrollY:0,
+            scrollX:0,
+            allowTaint:true,
+            logging:false,
+            windowHeight: clone.scrollHeight,
+            windowWidth: 210*96/25.4
+          },
+          jsPDF:{ 
+            unit:"mm",
+            format:"a4",
+            orientation:"portrait",
+            compress:true
+          },
+        };
+
+        updateLoader("⚙️ Compression PDF...");
+        const worker=html2pdf().set(opt).from(clone).toPdf();
+        const pdf=await worker.get('pdf');
+
+        if(attachImgs.length){
+          const a4w=210, a4h=297, margin=8;
+          const innerW=a4w-2*margin, innerH=a4h-2*margin;
+          for(const durl of attachImgs){
+            const dims=await getImageSize(durl);
+            let wmm=innerW, hmm=innerH;
+            const ratio=dims.w/dims.h;
+            if(wmm/hmm>ratio) wmm=hmm*ratio; else hmm=wmm/ratio;
+            const x=(a4w-wmm)/2, y=(a4h-hmm)/2;
+            pdf.addPage('a4','p');
+            const fmt=durl.startsWith('data:image/png')?'PNG':'JPEG';
+            pdf.addImage(durl,fmt,x,y,wmm,hmm);
+          }
+        }
+
+        pdfPreviewBlob = pdf.output('blob');
+        const pageCount = pdf.getNumberOfPages ? pdf.getNumberOfPages() : 1;
+        off.remove();
+
+        showToast(`✅ PDF prêt ! ${pageCount} page(s). Cliquez sur "Envoyer"`);
+        updateLoader("");
+      }catch(e){
+        console.error(e);
+        showToast("❌ Erreur lors de la génération.");
+        updateLoader("");
+      }finally{
+        loader.style.display="none";
+        btn.disabled=false;
+      }
+    }
+
+    async function sendToServer(){
+      if(!pdfPreviewBlob){
+        showToast("⚠️ Cliquez d'abord sur Aperçu");
+        return;
+      }
+
+      const WEBAPP_URL="https://bsmincident.reclamation-otacos.workers.dev/";
+      const loader=$("#loader"), btn=$("#sendBtn2");
+      try{
+        btn.disabled=true; loader.style.display="flex"; updateLoader("📤 Envoi en cours...");
+
+        const meta={
+          salarie:($("#salarie").value||"Inconnu").trim(),
+          responsable:($("#responsable").value||"N/A").trim(),
+          date_fiche:$("#date_fiche").value||todayStr(),
+        };
+
+        const b64=await blobToBase64(pdfPreviewBlob);
+        const payload={meta,b64};
+        await fetch(WEBAPP_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+
+        showToast(`✅ Fiche envoyée avec succès !`);
+        saveToLocal();
+        pdfPreviewBlob = null;
+      }catch(e){
+        console.error(e);
+        showToast("❌ Erreur lors de l'envoi.");
+      }finally{
+        loader.style.display="none";
+        btn.disabled=false;
+        updateLoader("");
+      }
+    }
+
+    function getImageSize(dataUrl){
+      return new Promise(res=>{
+        const img=new Image();
+        img.onload=()=>res({w:img.naturalWidth||img.width, h:img.naturalHeight||img.height});
+        img.src=dataUrl;
+      });
+    }
+
+    function blobToBase64(blob){
+      return new Promise((res,rej)=>{
+        const r=new FileReader();
+        r.onload=()=>res(String(r.result).split(",")[1]||"");
+        r.onerror=rej;
+        r.readAsDataURL(blob);
+      });
+    }
+
+    /* ===== Clear All ===== */
+    function clearAll(){
+      if(!confirm("Effacer tous les champs ?")) return;
+      document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{
+        if(el.type==="checkbox") el.checked=false; else el.value="";
+      });
+      ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
+        const s=$(`${id}_fields`); if(s) s.style.display="none";
+      });
+      ["signRespCanvas","signSalCanvas"].forEach(id=>{
+        const c=$(id);
+        if(c) {
+          c.getContext('2d').fillStyle='#fff';
+          c.getContext('2d').fillRect(0,0,c.width,c.height);
+        }
+      });
+      ["signRespStatus","signSalStatus"].forEach(id=>{
+        const el=$(id);
+        if(el) { el.textContent="À signer"; el.classList.remove('signed'); }
+      });
+      localStorage.removeItem(STORAGE_KEY);
+      clearAllAttachments();
+      pdfPreviewBlob = null;
+      syncToolbarPadding();
+    }
+
+    /* ===== Toolbar Padding ===== */
+    function syncToolbarPadding(){
+      const tb=$("#toolbar");
+      const h=(tb&&getComputedStyle(tb).display!=='none')?tb.offsetHeight:0;
+      document.documentElement.style.setProperty('--toolbar-h',h+'px');
+    }
+    
+    if(window.visualViewport){
+      visualViewport.addEventListener('resize',syncToolbarPadding);
+      visualViewport.addEventListener('scroll',syncToolbarPadding);
+    }
+
+    /* ===== Init ===== */
+    window.addEventListener('DOMContentLoaded',()=>{
+      bindAutoGrow();
+      bindAutoSaveEvents();
+      loadFromLocal();
+      syncToolbarPadding();
+      const today = todayStr();
+      if(!$("#date_fiche").value) $("#date_fiche").value = today;
+      if(!$("#date_signature").value) $("#date_signature").value = today;
+    });
+    
+    window.addEventListener('resize',syncToolbarPadding);
+    window.addEventListener('orientationchange',()=>setTimeout(syncToolbarPadding,250));
+  </script>
 </body>
 </html>
