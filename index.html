@@ -7,13 +7,6 @@
 
 <!-- html2pdf (inclut jsPDF + html2canvas) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
-<!-- PDF.js pour convertir les PDF joints en images -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-<script>
-  if (window['pdfjsLib']) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
-  }
-</script>
 
 <style>
   :root{
@@ -24,7 +17,7 @@
   }
   *{ box-sizing:border-box; }
   html { -webkit-text-size-adjust: 100%; }
-  html,body{ margin:0; background:var(--bg); color:var(--txt); font-family:'Segoe UI', Arial, Helvetica, sans-serif; font-size:15px; -webkit-font-smoothing:antialiased; }
+  html,body{ margin:0; background:var(--bg); color:var(--txt); font-family:'Segoe UI', Arial, Helvetica, sans-serif; font-size:15px; }
 
   body { padding-bottom: var(--toolbar-h); }
 
@@ -38,8 +31,6 @@
     display:flex; 
     flex-direction:column; 
     gap:8px; 
-    min-height:auto;
-    page-break-after: always;
   }
   
   .no-break{ break-inside:avoid; page-break-inside:avoid; }
@@ -49,7 +40,7 @@
   .header strong{ display:block; font-size:14px; font-weight:700; line-height:1.1; }
   .header small{ display:block; font-size:12px; color:#666; line-height:1.1; }
 
-  .title{ border:2px solid #0f1a2d20; border-radius:6px; text-align:center; font-weight:800; letter-spacing:0; padding:5px 6px; font-size:14px; }
+  .title{ border:2px solid #0f1a2d20; border-radius:6px; text-align:center; font-weight:800; padding:5px 6px; font-size:14px; }
 
   table.grid{ width:100%; border-collapse:collapse; font-size:12px; table-layout:auto; }
   .grid td{ padding:4px 3px; vertical-align:middle; min-width:0; }
@@ -69,9 +60,8 @@
     line-height:1.3;
     overflow:auto;
   }
-  textarea.autogrow{ overflow:hidden; resize:none; }
 
-  .section-h{ background:var(--theme); color:#fff; font-weight:700; letter-spacing:0; padding:5px 6px; border-radius:4px; font-size:12px; }
+  .section-h{ background:var(--theme); color:#fff; font-weight:700; padding:5px 6px; border-radius:4px; font-size:12px; }
   .section-b{ border:1px solid #c9ced6; border-radius:6px; padding:8px; }
 
   .row{ display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:4px; }
@@ -83,17 +73,15 @@
   .sig-box{ border:1px solid #ddd; border-radius:6px; padding:8px; background:#f9f9f9; cursor:pointer; transition:all 0.2s; }
   .sig-box:hover{ background:#f0f0f0; border-color:#999; box-shadow:0 2px 8px rgba(0,0,0,.1); }
   .sig-box label{ font-weight:700; display:block; margin-bottom:3px; font-size:11px; }
-  .sig-wrap{ position:relative; width:100%; height:80px; border:2px dashed #b6bcc6; border-radius:6px; background:#fff; touch-action:none; }
-  .sig-preview{ width:100%; height:80px; display:block; border-radius:4px; }
+  .sig-wrap{ position:relative; width:100%; height:80px; border:2px solid #b6bcc6; border-radius:6px; background:#fff; touch-action:none; }
+  #signRespCanvas, #signSalCanvas{ width:100%; height:80px; display:block; border-radius:4px; cursor:crosshair; touch-action:none; }
   .sig-hint{ position:absolute; top:4px; right:6px; font-size:10px; color:#7a8592; }
   .sig-status{ font-size:10px; color:#666; margin-top:2px; }
   .sig-status.signed{ color:#22a122; font-weight:700; }
 
   .made-row{ display:flex; align-items:center; gap:6px; flex-wrap:nowrap; font-size:12px; margin-top:6px; }
   .made-row input[type="date"]{ width:110px; flex:0 0 auto; }
-  .made-row .city{ white-space:nowrap; }
 
-  /* Pièces jointes */
   .attach-box{ border:1px dashed #b6bcc6; border-radius:6px; padding:8px; background:#fafbfc; }
   .attach-box label{ font-weight:700; display:block; margin-bottom:2px; font-size:12px; }
   .attach-info{ font-size:11px; color:#666; margin-bottom:4px; }
@@ -104,20 +92,18 @@
     overflow:hidden; background:#fff; display:flex; align-items:center; justify-content:center;
   }
   .attach-previews .thumb img{ max-width:100%; max-height:100%; display:block; }
-  .attach-previews .pdfbadge{ font-size:9px; font-weight:700; color:#c12222; }
   .attach-previews .remove{
     position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%;
-    border:none; background:#000; color:#fff; font-weight:800; line-height:16px; text-align:center; cursor:pointer; font-size:10px;
+    border:none; background:#000; color:#fff; font-weight:800; cursor:pointer; font-size:10px;
   }
 
-  /* ✅ Modal Signature */
+  /* ✅ MODAL SIGNATURE - CORRECTED */
   .sig-modal{
     display:none;
     position:fixed;
     inset:0;
     background:rgba(0,0,0,.95);
     z-index:10002;
-    flex-direction:column;
     align-items:center;
     justify-content:center;
     padding:12px;
@@ -151,7 +137,7 @@
     touch-action:none;
     overflow:hidden;
   }
-  .sig-modal-canvas{
+  #sigModalCanvas{
     width:100%;
     height:280px;
     display:block;
@@ -206,60 +192,22 @@
   #loader{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35); z-index:10000; color:#fff; font:600 14px/1.2 Arial, sans-serif; }
   #loader .box{ background:#111; padding:12px 14px; border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,.4); text-align:center; }
 
-  #toast{ position:fixed; left:50%; bottom:calc(var(--toolbar-h) + 10px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:#111; color:#fff; padding:8px 12px; border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,.25); display:none; z-index:10001; font-weight:700; white-space:pre-line; font-size:12px; max-width:85vw; text-align:center; }
-
-  /* CSS pour les éléments remplacés dans le PDF */
-  .input-like {
-    word-break: break-word;
-    white-space: pre-wrap;
-    overflow-wrap: break-word;
-    line-height: 1.3;
-    padding: 4px 0;
-    font-size: 12px;
-    min-height: 12px;
-  }
-
-  .signature-img {
-    display: block;
-    max-width: 100%;
-    max-height: 50px;
-  }
+  #toast{ position:fixed; left:50%; bottom:calc(var(--toolbar-h) + 10px); transform:translateX(-50%); background:#111; color:#fff; padding:8px 12px; border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,.25); display:none; z-index:10001; font-weight:700; font-size:12px; max-width:85vw; text-align:center; }
 
   @media (max-width:768px){
     :root{ --pad: 7mm; }
-    
-    .grid tr{ display:block; margin-bottom:6px; }
-    .grid td{ display:block; width:100%; padding:3px 0; }
-    .grid .label{ margin-bottom:2px; white-space:normal; line-height:1.2; word-break:break-word; }
-    .grid tr:first-child{ display:grid!important; grid-template-columns:1fr 1fr; column-gap:6px; align-items:end; margin-bottom:0; }
-    .grid tr:first-child td{ min-width:0; padding:3px 0; }
-    
     input[type="text"], input[type="date"], textarea{ width:100%; min-height:34px; font-size:16px; padding:6px 8px; }
     textarea { min-height:90px; }
-    
-    .signatures{ grid-template-columns:1fr 1fr; gap:6px; }
-    .sig-box { padding:6px; }
-    
-    .row { gap:4px; }
-    .row label { min-width:100%; }
-    .sub { width:100%; }
-    
-    .made-row { flex-wrap:wrap; }
-    .made-row input[type="date"]{ width:100%; max-width:100%; }
-
-    .sig-modal-content { max-width:92vw; padding:12px; }
     .sig-modal-canvas-wrap { height:220px; }
-    .sig-modal-canvas { height:220px; }
-    .sig-modal-buttons button { min-width:80px; padding:8px 12px; font-size:12px; }
+    #sigModalCanvas { height:220px; }
   }
 
   @media print{ 
     .toolbar{ display:none!important; } 
     body{ background:#fff; padding-bottom:0; } 
     .page-wrapper { padding: 0; }
-    .page { box-shadow:none; border-radius:0; page-break-after:auto; }
+    .page { box-shadow:none; border-radius:0; }
     .sig-modal { display:none!important; }
-    .page-break-force { page-break-after:always; }
   }
 </style>
 </head>
@@ -268,27 +216,27 @@
   <div class="toolbar" id="toolbar">
     <div class="toolbar-inner">
       <button id="btnPrint" class="btn" style="flex:1; min-width:100px;" onclick="window.print()">🖨️ Imprimer</button>
-      <button id="sendBtn" class="btn" style="flex:1; min-width:100px;" onclick="previewAndSend()">👁️ Aperçu</button>
-      <button id="sendBtn2" class="btn" style="flex:1; min-width:100px;" onclick="sendToServer()">📨 Envoyer</button>
+      <button id="previewBtn" class="btn" style="flex:1; min-width:100px;" onclick="generatePDF()">👁️ Aperçu PDF</button>
+      <button id="sendBtn" class="btn" style="flex:1; min-width:100px;" onclick="sendToServer()">📨 Envoyer</button>
       <button class="btn link" style="flex:1; min-width:80px;" onclick="clearAll()">🧹 Effacer</button>
     </div>
   </div>
 
-  <div id="loader"><div class="box">⏳ Génération en cours…<br><small id="loaderMsg"></small></div></div>
+  <div id="loader"><div class="box">⏳ En cours…</div></div>
   <div id="toast"></div>
 
-  <!-- ✅ Modal Signature -->
+  <!-- ✅ MODAL SIGNATURE -->
   <div class="sig-modal" id="sigModal">
     <div class="sig-modal-content">
-      <h2 class="sig-modal-title" id="sigModalTitle">Signature Responsable</h2>
+      <h2 class="sig-modal-title" id="sigModalTitle">Signature</h2>
       <div class="sig-modal-canvas-wrap">
-        <canvas id="sigModalCanvas" class="sig-modal-canvas"></canvas>
+        <canvas id="sigModalCanvas"></canvas>
         <div class="sig-modal-hint">✍️ Signez</div>
       </div>
       <div class="sig-modal-buttons">
-        <button class="btn-clear-sig" onclick="clearModalCanvas()">🧹 Effacer</button>
-        <button class="btn-skip-sig" onclick="skipSignature()">⏭️ Passer</button>
-        <button class="btn-save-sig" onclick="saveModalSignature()">✅ Confirmer</button>
+        <button class="btn-clear-sig" onclick="clearModalCanvas()">Effacer</button>
+        <button class="btn-skip-sig" onclick="skipSignature()">Passer</button>
+        <button class="btn-save-sig" onclick="saveModalSignature()">Confirmer</button>
       </div>
     </div>
   </div>
@@ -306,13 +254,13 @@
       <table class="grid no-break" role="presentation">
         <tr>
           <td class="label">Date :</td>
-          <td><input type="date" id="date_fiche" autocomplete="off"></td>
+          <td><input type="date" id="date_fiche"></td>
           <td class="label" style="text-align:right;">Pour :</td>
-          <td><input type="text" id="salarie" placeholder="Nom" autocomplete="name"></td>
+          <td><input type="text" id="salarie" placeholder="Nom"></td>
         </tr>
         <tr>
           <td class="label">Responsable :</td>
-          <td colspan="3"><input type="text" id="responsable" placeholder="Nom responsable" autocomplete="name"></td>
+          <td colspan="3"><input type="text" id="responsable" placeholder="Nom responsable"></td>
         </tr>
       </table>
 
@@ -322,7 +270,7 @@
           <input type="checkbox" id="abs_prev"><label for="abs_prev"><strong>Absence prévue le :</strong></label>
           <div class="sub" id="abs_prev_fields">
             <input type="date" id="abs_prev_date" />
-            <span style="font-size:11px; min-width:max-content;">Shift à :</span>
+            <span style="font-size:11px;">Shift à :</span>
             <input type="text" id="abs_prev_shift" placeholder="18h" style="width:70px">
           </div>
         </div>
@@ -331,7 +279,7 @@
           <input type="checkbox" id="abs_np"><label for="abs_np"><strong>Absence non prévue le :</strong></label>
           <div class="sub" id="abs_np_fields">
             <input type="date" id="abs_np_date" />
-            <span style="font-size:11px; min-width:max-content;">Shift à :</span>
+            <span style="font-size:11px;">Shift à :</span>
             <input type="text" id="abs_np_shift" placeholder="18h" style="width:70px">
           </div>
         </div>
@@ -346,7 +294,7 @@
         <div class="row">
           <input type="checkbox" id="ret_np"><label for="ret_np"><strong>Retard non prévu de :</strong></label>
           <div class="sub" id="ret_np_fields">
-            <input type="text" id="ret_np_duree" placeholder="ex: 36 min" style="width:90px">
+            <input type="text" id="ret_np_duree" placeholder="36 min" style="width:90px">
           </div>
         </div>
 
@@ -371,15 +319,15 @@
       <div class="made-row no-break">
         <strong>Fait le :</strong>
         <input type="date" id="date_signature">
-        <span class="city">, à Boulogne</span>
+        <span>, à Boulogne</span>
       </div>
 
-      <!-- ✅ Signatures cliquables -->
+      <!-- ✅ SIGNATURES CORRIGÉES -->
       <div class="signatures no-break">
         <div class="sig-box" onclick="openSignatureModal('signRespCanvas', 'Signature Responsable')">
           <label>Signature Responsable</label>
           <div class="sig-wrap">
-            <canvas id="signRespCanvas" class="sig-preview"></canvas>
+            <canvas id="signRespCanvas"></canvas>
             <div class="sig-hint">Cliquer pour signer</div>
           </div>
           <div class="sig-status" id="signRespStatus">À signer</div>
@@ -388,7 +336,7 @@
         <div class="sig-box" onclick="openSignatureModal('signSalCanvas', 'Signature Salarié')">
           <label>Signature Salarié</label>
           <div class="sig-wrap">
-            <canvas id="signSalCanvas" class="sig-preview"></canvas>
+            <canvas id="signSalCanvas"></canvas>
             <div class="sig-hint">Cliquer pour signer</div>
           </div>
           <div class="sig-status" id="signSalStatus">À signer</div>
@@ -408,66 +356,59 @@
   </div>
 
   <script>
-    /* ===== STATE & HELPERS ===== */
     const $ = id => document.getElementById(id);
-    const ALL_FIELDS_SELECTOR = 'input[type="text"], input[type="date"], input[type="checkbox"], textarea';
     const STORAGE_KEY = 'fiche_incident_autosave';
     const attachedFiles = [];
     let currentSignatureCanvas = null;
-    let pdfPreviewBlob = null;
+    let pdfBlob = null;
 
-    function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-    function showToast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display="block"; setTimeout(()=>t.style.display="none",3500); }
-    function updateLoader(msg){ const m=$("#loaderMsg"); if(m) m.textContent=msg; }
-
-    /* ===== Validation ===== */
-    function validateForm(){
-      const sal=($("#salarie").value||"").trim(), resp=($("#responsable").value||"").trim();
-      if(!sal){ showToast("❌ Nom de l'équipier requis"); return false; }
-      if(!resp){ showToast("❌ Nom du responsable requis"); return false; }
-      return true;
+    function todayStr(){ 
+      const d=new Date(); 
+      return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); 
+    }
+    
+    function showToast(msg){ 
+      const t=$("#toast"); 
+      t.textContent=msg; 
+      t.style.display="block"; 
+      setTimeout(()=>t.style.display="none",3500); 
     }
 
-    /* ===== Checkbox Logic ===== */
-    ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
-      const cb=$(id), sub=$(`${id}_fields`);
-      if(cb) cb.addEventListener('change',()=>{ if(sub) sub.style.display=cb.checked?"flex":"none"; });
-    });
+    // ✅ INITIALISER LES CANVAS SIGNATURES
+    function initSignatureCanvases(){
+      ["signRespCanvas", "signSalCanvas"].forEach(id => {
+        const canvas = $(id);
+        if(!canvas) return;
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      });
+    }
 
-    /* ===== Modal Signature ===== */
-    let isDrawing = false;
-
-    function openSignatureModal(canvasId, title){
-      currentSignatureCanvas = canvasId;
-      const modal = $("#sigModal");
-      const modalTitle = $("#sigModalTitle");
-      const modalCanvas = $("#sigModalCanvas");
-      
-      modalTitle.textContent = title;
-      
-      // Copier le contenu du canvas original au modal canvas
-      const originalCanvas = $(canvasId);
-      const ctx = modalCanvas.getContext('2d');
+    // ✅ MODAL CANVAS INITIALIZATION
+    function initModalCanvas(){
+      const canvas = $("#sigModalCanvas");
+      if(!canvas) return;
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      const ctx = canvas.getContext('2d');
       ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, modalCanvas.width, modalCanvas.height);
-      if(originalCanvas.width > 0){
-        ctx.drawImage(originalCanvas, 0, 0, originalCanvas.width, originalCanvas.height, 0, 0, modalCanvas.width, modalCanvas.height);
-      }
-      
-      modal.classList.add('open');
-      
-      // Initialiser le dessin
-      initModalCanvasDrawing(modalCanvas);
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    function initModalCanvasDrawing(canvas){
+    // ✅ SETUP DRAWING
+    function setupCanvasDrawing(canvas){
+      if(!canvas) return;
+      
       const ctx = canvas.getContext('2d');
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2.5;
       ctx.strokeStyle = '#000';
       
-      isDrawing = false;
+      let isDrawing = false;
       
       const getCoords = (e) => {
         const rect = canvas.getBoundingClientRect();
@@ -482,40 +423,65 @@
         return {x, y};
       };
       
-      const start = (e) => {
+      canvas.addEventListener('mousedown', (e) => {
         isDrawing = true;
         const {x, y} = getCoords(e);
         ctx.beginPath();
         ctx.moveTo(x, y);
-        e.preventDefault();
-      };
+      });
       
-      const move = (e) => {
+      canvas.addEventListener('mousemove', (e) => {
         if(!isDrawing) return;
         const {x, y} = getCoords(e);
         ctx.lineTo(x, y);
         ctx.stroke();
+      });
+      
+      canvas.addEventListener('mouseup', () => { isDrawing = false; });
+      canvas.addEventListener('mouseleave', () => { isDrawing = false; });
+      
+      canvas.addEventListener('touchstart', (e) => {
         e.preventDefault();
-      };
+        isDrawing = true;
+        const {x, y} = getCoords(e);
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+      });
       
-      const end = () => {
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if(!isDrawing) return;
+        const {x, y} = getCoords(e);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      });
+      
+      canvas.addEventListener('touchend', (e) => {
+        e.preventDefault();
         isDrawing = false;
-        ctx.closePath();
-      };
+      });
+    }
+
+    // ✅ OPEN SIGNATURE MODAL
+    function openSignatureModal(canvasId, title){
+      currentSignatureCanvas = canvasId;
+      const modal = $("#sigModal");
+      const modalTitle = $("#sigModalTitle");
+      const modalCanvas = $("#sigModalCanvas");
       
-      // Cloner le canvas pour éviter les listeners multiples
-      const newCanvas = canvas.cloneNode(true);
-      canvas.parentNode.replaceChild(newCanvas, canvas);
-      const finalCanvas = $("#sigModalCanvas");
+      modalTitle.textContent = title;
       
-      finalCanvas.addEventListener('mousedown', start);
-      finalCanvas.addEventListener('mousemove', move);
-      finalCanvas.addEventListener('mouseup', end);
-      finalCanvas.addEventListener('mouseleave', end);
+      // Copy canvas content
+      const originalCanvas = $(canvasId);
+      const ctx = modalCanvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, modalCanvas.width, modalCanvas.height);
+      if(originalCanvas.width > 0){
+        ctx.drawImage(originalCanvas, 0, 0);
+      }
       
-      finalCanvas.addEventListener('touchstart', start);
-      finalCanvas.addEventListener('touchmove', move);
-      finalCanvas.addEventListener('touchend', end);
+      modal.classList.add('open');
+      setupCanvasDrawing(modalCanvas);
     }
 
     function clearModalCanvas(){
@@ -523,35 +489,29 @@
       const ctx = canvas.getContext('2d');
       ctx.fillStyle = '#fff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      showToast("🧹 Signature effacée");
+      showToast("🧹 Effacé");
     }
 
     function saveModalSignature(){
       const modalCanvas = $("#sigModalCanvas");
       const originalCanvas = $(currentSignatureCanvas);
       
-      // Copier du modal au canvas original
       const ctx = originalCanvas.getContext('2d');
       ctx.fillStyle = '#fff';
       ctx.fillRect(0, 0, originalCanvas.width, originalCanvas.height);
-      ctx.drawImage(modalCanvas, 0, 0, modalCanvas.width, modalCanvas.height, 0, 0, originalCanvas.width, originalCanvas.height);
+      ctx.drawImage(modalCanvas, 0, 0);
       
-      // Mettre à jour le statut
       const statusId = currentSignatureCanvas === 'signRespCanvas' ? 'signRespStatus' : 'signSalStatus';
-      const status = $(statusId);
-      status.textContent = '✅ Signé';
-      status.classList.add('signed');
+      $(statusId).textContent = '✅ Signé';
+      $(statusId).classList.add('signed');
       
-      // Fermer le modal
       closeSignatureModal();
       
-      // Aller à la prochaine signature
-      const nextCanvas = currentSignatureCanvas === 'signRespCanvas' ? 'signSalCanvas' : null;
-      if(nextCanvas){
-        showToast("✅ Signature enregistrée ! À votre tour.");
-        setTimeout(()=>{ openSignatureModal(nextCanvas, 'Signature Salarié'); }, 500);
+      if(currentSignatureCanvas === 'signRespCanvas'){
+        showToast("✅ À votre tour !");
+        setTimeout(() => openSignatureModal('signSalCanvas', 'Signature Salarié'), 500);
       } else {
-        showToast("✅ Toutes les signatures sont enregistrées !");
+        showToast("✅ Fait !");
       }
       
       saveToLocal();
@@ -559,63 +519,36 @@
 
     function skipSignature(){
       closeSignatureModal();
-      const nextCanvas = currentSignatureCanvas === 'signRespCanvas' ? 'signSalCanvas' : null;
-      if(nextCanvas){
-        setTimeout(()=>{ openSignatureModal(nextCanvas, 'Signature Salarié'); }, 300);
+      if(currentSignatureCanvas === 'signRespCanvas'){
+        setTimeout(() => openSignatureModal('signSalCanvas', 'Signature Salarié'), 300);
       }
     }
 
     function closeSignatureModal(){
-      const modal = $("#sigModal");
-      modal.classList.remove('open');
+      $("#sigModal").classList.remove('open');
       currentSignatureCanvas = null;
     }
 
-    // Fermer modal au clic sur le fond
     $("#sigModal").addEventListener('click', (e)=>{
-      if(e.target === $("#sigModal")){
-        closeSignatureModal();
-      }
+      if(e.target === $("#sigModal")) closeSignatureModal();
     });
 
-    /* ===== File Attachments ===== */
-    async function getAttachmentImages(){
-      const imgs=[];
-      for(const f of attachedFiles){
-        if(f.type.startsWith('image/')) imgs.push(f.dataurl);
-        else if(f.type==='application/pdf') imgs.push(f.dataurl);
-      }
-      return imgs;
-    }
-    
-    function clearAllAttachments(){
-      attachedFiles.length=0; $("#fileInput").value=""; $("#attachPreviews").innerHTML="";
-    }
-    
-    function canvasToSmallDataURL(c, maxW, fmt, qual){
-      const cvt=document.createElement('canvas'); 
-      const ratio = c.width / c.height;
-      cvt.width = Math.min(c.width, maxW);
-      cvt.height = cvt.width / ratio;
-      cvt.getContext('2d').drawImage(c, 0, 0, cvt.width, cvt.height);
-      return cvt.toDataURL(fmt, qual);
-    }
+    // ✅ CHECKBOXES
+    ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
+      const cb=$(id), sub=$(`${id}_fields`);
+      if(cb) cb.addEventListener('change',()=>{ if(sub) sub.style.display=cb.checked?"flex":"none"; });
+    });
 
-    /* ===== Auto-save ===== */
-    function bindAutoSaveEvents(){
-      document.addEventListener('input',()=>{ clearTimeout(window.asTimeout); window.asTimeout=setTimeout(saveToLocal,1000); });
-      document.addEventListener('change',()=>{ saveToLocal(); });
-    }
-    
+    // ✅ AUTO SAVE
     function saveToLocal(){
-      const data={};
-      document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{
+      const data = {};
+      document.querySelectorAll('input[type="text"], input[type="date"], input[type="checkbox"], textarea').forEach(el=>{
         if(el.type==='checkbox') data[el.id]=el.checked;
-        else if(el.type==='textarea'||el.type==='text'||el.type==='date') data[el.id]=el.value||"";
+        else data[el.id]=el.value||"";
       });
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e){}
     }
-    
+
     function loadFromLocal(){
       try {
         const data=localStorage.getItem(STORAGE_KEY);
@@ -631,21 +564,10 @@
       } catch(e){}
     }
 
-    /* ===== Auto-grow Textarea ===== */
-    function bindAutoGrow(){
-      document.querySelectorAll('textarea').forEach(ta=>{
-        const adjust=()=>{ 
-          ta.style.height='auto'; 
-          const h = Math.min(ta.scrollHeight, 150);
-          ta.style.height = h + 'px'; 
-        };
-        ta.addEventListener('input',adjust);
-        ta.addEventListener('change',adjust);
-        adjust();
-      });
-    }
+    document.addEventListener('input',()=>{ clearTimeout(window.asTimeout); window.asTimeout=setTimeout(saveToLocal,1000); });
+    document.addEventListener('change',()=>{ saveToLocal(); });
 
-    /* ===== Attachments ===== */
+    // ✅ ATTACHMENTS
     $("#fileInput").addEventListener('change', async e=>{
       const files=Array.from(e.target.files);
       for(const file of files){
@@ -661,7 +583,7 @@
           if(file.type.startsWith('image/')){
             const img=document.createElement('img'); img.src=durl; thumb.appendChild(img);
           } else {
-            const badge=document.createElement('div'); badge.className='pdfbadge'; badge.textContent='PDF'; thumb.appendChild(badge);
+            const badge=document.createElement('div'); badge.textContent='PDF'; thumb.appendChild(badge);
           }
           const rmBtn=document.createElement('button'); rmBtn.className='remove'; rmBtn.textContent='×';
           rmBtn.onclick=()=>{ attachedFiles.splice(idx,1); thumb.remove(); };
@@ -672,189 +594,125 @@
       }
     });
 
-    /* ===== Fit Text with smart compression ===== */
-    function fitTextToContainer(text, maxWidth, maxHeight, baseFontSize = 12) {
-      let fontSize = baseFontSize;
-      let lines = text.split('\n');
-      let measuredHeight = lines.length * fontSize * 1.3;
-      
-      // Réduire la taille si nécessaire
-      while (measuredHeight > maxHeight && fontSize > 8) {
-        fontSize -= 0.5;
-        measuredHeight = lines.length * fontSize * 1.3;
+    // ✅ GENERATE PDF
+    async function generatePDF(){
+      if(!$("#salarie").value.trim() || !$("#responsable").value.trim()){
+        showToast("❌ Remplir Nom et Responsable");
+        return;
       }
-      
-      // Si encore trop grand, compresser en supprimant les espaces superflus
-      if(fontSize <= 8 && measuredHeight > maxHeight){
-        text = text.replace(/\n{2,}/g, '\n'); // Supprimer lignes vides
-      }
-      
-      return { fontSize: Math.max(8, fontSize), text };
-    }
 
-    /* ===== PDF Generation - Version optimisée ===== */
-    function prepareCloneForPdf(clone){
-      // ✅ Remplacer textareas avec compression intelligente
-      clone.querySelectorAll('textarea').forEach(ta=>{
-        const box=document.createElement('div');
-        box.className='input-like';
-        let val=(ta.value||"").trim();
-        
-        if(val) {
-          const result = fitTextToContainer(val, 170, 150, 12);
-          box.style.fontSize = result.fontSize + 'px';
-          val = result.text;
-        }
-        
-        box.textContent=val||ta.getAttribute('placeholder')||'';
-        box.style.overflow='hidden';
-        box.style.maxHeight='150px';
-        ta.replaceWith(box);
-      });
-
-      // ✅ Remplacer checkboxes
-      clone.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
-        const box=document.createElement('span');
-        box.textContent=cb.checked?'☑':'☐';
-        cb.replaceWith(box);
-      });
-
-      // ✅ Remplacer inputs texte & date avec compression
-      clone.querySelectorAll('input[type="text"], input[type="date"]').forEach(inp=>{
-        const box=document.createElement('div');
-        box.className='input-like';
-        let val=inp.value&&String(inp.value).trim()?inp.value:(inp.getAttribute('placeholder')||'');
-        
-        if(val && inp.type === 'text' && val.length > 50) {
-          const result = fitTextToContainer(val, 170, 80, 12);
-          box.style.fontSize = result.fontSize + 'px';
-          val = result.text;
-        }
-        
-        box.textContent=val;
-        inp.replaceWith(box);
-      });
-
-      // ✅ Remplacer signatures
-      ["signRespCanvas","signSalCanvas"].forEach(id=>{
-        const src=$(id);
-        if(!src || src.width===0) return;
-        const img=document.createElement('img');
-        img.src=canvasToSmallDataURL(src,300,"image/jpeg",0.8);
-        img.className="signature-img";
-        img.style.width="100%";
-        img.style.maxHeight="45px";
-        img.style.objectFit="contain";
-        const target=clone.querySelector("#"+id);
-        if(target) target.replaceWith(img);
-      });
-
-      // ✅ Supprimer les statuts de signature
-      clone.querySelectorAll('.sig-status').forEach(el=>el.remove());
-    }
-
-    /* ===== Preview Avant Envoi ===== */
-    async function previewAndSend(){
-      if(!validateForm()) return;
-      
-      const loader=$("#loader"), btn=$("#sendBtn");
+      const loader = $("#loader");
       try{
-        btn.disabled=true; loader.style.display="flex"; updateLoader("📋 Génération aperçu...");
+        loader.style.display="flex";
+        
+        const clone = $("#pageContent").cloneNode(true);
+        
+        // Remplacer textareas
+        clone.querySelectorAll('textarea').forEach(ta=>{
+          const box=document.createElement('div');
+          box.textContent=(ta.value||"").trim()||ta.getAttribute('placeholder')||'';
+          box.style.whiteSpace='pre-wrap';
+          box.style.wordBreak='break-word';
+          box.style.fontSize='12px';
+          ta.replaceWith(box);
+        });
 
-        const meta={
-          salarie:($("#salarie").value||"Inconnu").trim(),
-          responsable:($("#responsable").value||"N/A").trim(),
-          date_fiche:$("#date_fiche").value||todayStr(),
-        };
+        // Remplacer checkboxes
+        clone.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+          const box=document.createElement('span');
+          box.textContent=cb.checked?'☑':'☐';
+          cb.replaceWith(box);
+        });
 
-        const original=$("#pageContent");
-        const clone=original.cloneNode(true);
-        const attachImgs=await getAttachmentImages();
+        // Remplacer inputs
+        clone.querySelectorAll('input[type="text"], input[type="date"]').forEach(inp=>{
+          const box=document.createElement('div');
+          box.textContent=inp.value||inp.getAttribute('placeholder')||'';
+          box.style.fontSize='12px';
+          inp.replaceWith(box);
+        });
 
-        if(attachImgs.length===0){
+        // Signatures
+        ["signRespCanvas","signSalCanvas"].forEach(id=>{
+          const src=$(id);
+          if(!src || src.width===0) return;
+          const img=document.createElement('img');
+          const cvt=document.createElement('canvas');
+          cvt.width=150;
+          cvt.height=cvt.width/src.width*src.height;
+          cvt.getContext('2d').drawImage(src, 0, 0, cvt.width, cvt.height);
+          img.src=cvt.toDataURL("image/jpeg", 0.8);
+          img.style.maxWidth="100%";
+          img.style.maxHeight="40px";
+          const target=clone.querySelector("#"+id);
+          if(target) target.replaceWith(img);
+        });
+
+        // Remove status
+        clone.querySelectorAll('.sig-status').forEach(el=>el.remove());
+
+        // Remove attachments section if empty
+        if(attachedFiles.length===0){
           const sec=clone.querySelector('#attachSection');
           if(sec) sec.remove();
         }
 
-        prepareCloneForPdf(clone);
-
         const off=document.createElement("div");
         off.style.position="absolute";
         off.style.top="-10000px";
-        off.style.left="-10000px";
         off.style.width="210mm";
-        off.style.visibility="hidden";
         document.body.appendChild(off);
         off.appendChild(clone);
 
         const opt={
           margin:[5,5],
-          filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
+          filename:`Fiche_Incident_${$("#salarie").value}_${todayStr()}.pdf`,
           pagebreak:{ mode:'avoid-all' },
-          html2canvas:{ 
-            scale:2,
-            useCORS:true,
-            backgroundColor:"#ffffff",
-            scrollY:0,
-            scrollX:0,
-            allowTaint:true,
-            logging:false,
-            windowHeight: clone.scrollHeight,
-            windowWidth: 210*96/25.4
-          },
-          jsPDF:{ 
-            unit:"mm",
-            format:"a4",
-            orientation:"portrait",
-            compress:true
-          },
+          html2canvas:{ scale:2, useCORS:true, backgroundColor:"#ffffff" },
+          jsPDF:{ unit:"mm", format:"a4", orientation:"portrait", compress:true },
         };
 
-        updateLoader("⚙️ Compression PDF...");
         const worker=html2pdf().set(opt).from(clone).toPdf();
         const pdf=await worker.get('pdf');
 
-        if(attachImgs.length){
-          const a4w=210, a4h=297, margin=8;
-          const innerW=a4w-2*margin, innerH=a4h-2*margin;
-          for(const durl of attachImgs){
-            const dims=await getImageSize(durl);
-            let wmm=innerW, hmm=innerH;
-            const ratio=dims.w/dims.h;
-            if(wmm/hmm>ratio) wmm=hmm*ratio; else hmm=wmm/ratio;
-            const x=(a4w-wmm)/2, y=(a4h-hmm)/2;
+        if(attachedFiles.length){
+          for(const f of attachedFiles){
+            if(!f.dataurl) continue;
             pdf.addPage('a4','p');
-            const fmt=durl.startsWith('data:image/png')?'PNG':'JPEG';
-            pdf.addImage(durl,fmt,x,y,wmm,hmm);
+            const img=new Image();
+            img.onload=()=>{
+              const w=210-16, h=297-16;
+              let imgW=w, imgH=h;
+              const r=img.width/img.height;
+              if(imgW/imgH>r) imgW=imgH*r; else imgH=imgW/r;
+              const x=(210-imgW)/2, y=(297-imgH)/2;
+              pdf.addImage(f.dataurl, 'JPEG', x, y, imgW, imgH);
+            };
+            img.src=f.dataurl;
           }
         }
 
-        pdfPreviewBlob = pdf.output('blob');
-        const pageCount = pdf.getNumberOfPages ? pdf.getNumberOfPages() : 1;
+        pdfBlob = pdf.output('blob');
+        showToast(`✅ PDF prêt ! ${pdf.getNumberOfPages()} page(s)`);
         off.remove();
-
-        showToast(`✅ PDF prêt ! ${pageCount} page(s). Cliquez sur "Envoyer"`);
-        updateLoader("");
       }catch(e){
         console.error(e);
-        showToast("❌ Erreur lors de la génération.");
-        updateLoader("");
+        showToast("❌ Erreur PDF");
       }finally{
         loader.style.display="none";
-        btn.disabled=false;
       }
     }
 
+    // ✅ SEND
     async function sendToServer(){
-      if(!pdfPreviewBlob){
-        showToast("⚠️ Cliquez d'abord sur Aperçu");
+      if(!pdfBlob){
+        showToast("⚠️ Cliquez Aperçu d'abord");
         return;
       }
 
-      const WEBAPP_URL="https://bsmincident.reclamation-otacos.workers.dev/";
-      const loader=$("#loader"), btn=$("#sendBtn2");
+      const loader=$("#loader");
       try{
-        btn.disabled=true; loader.style.display="flex"; updateLoader("📤 Envoi en cours...");
+        loader.style.display="flex";
 
         const meta={
           salarie:($("#salarie").value||"Inconnu").trim(),
@@ -862,44 +720,31 @@
           date_fiche:$("#date_fiche").value||todayStr(),
         };
 
-        const b64=await blobToBase64(pdfPreviewBlob);
-        const payload={meta,b64};
-        await fetch(WEBAPP_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-
-        showToast(`✅ Fiche envoyée avec succès !`);
-        saveToLocal();
-        pdfPreviewBlob = null;
+        const reader=new FileReader();
+        reader.onload=async ()=>{
+          const b64=String(reader.result).split(",")[1]||"";
+          const payload={meta,b64};
+          await fetch("https://bsmincident.reclamation-otacos.workers.dev/",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify(payload)
+          });
+          showToast("✅ Envoyé !");
+          pdfBlob=null;
+        };
+        reader.readAsDataURL(pdfBlob);
       }catch(e){
         console.error(e);
-        showToast("❌ Erreur lors de l'envoi.");
+        showToast("❌ Erreur envoi");
       }finally{
         loader.style.display="none";
-        btn.disabled=false;
-        updateLoader("");
       }
     }
 
-    function getImageSize(dataUrl){
-      return new Promise(res=>{
-        const img=new Image();
-        img.onload=()=>res({w:img.naturalWidth||img.width, h:img.naturalHeight||img.height});
-        img.src=dataUrl;
-      });
-    }
-
-    function blobToBase64(blob){
-      return new Promise((res,rej)=>{
-        const r=new FileReader();
-        r.onload=()=>res(String(r.result).split(",")[1]||"");
-        r.onerror=rej;
-        r.readAsDataURL(blob);
-      });
-    }
-
-    /* ===== Clear All ===== */
+    // ✅ CLEAR ALL
     function clearAll(){
-      if(!confirm("Effacer tous les champs ?")) return;
-      document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{
+      if(!confirm("Effacer tout ?")) return;
+      document.querySelectorAll('input[type="text"], input[type="date"], input[type="checkbox"], textarea').forEach(el=>{
         if(el.type==="checkbox") el.checked=false; else el.value="";
       });
       ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
@@ -908,8 +753,9 @@
       ["signRespCanvas","signSalCanvas"].forEach(id=>{
         const c=$(id);
         if(c) {
-          c.getContext('2d').fillStyle='#fff';
-          c.getContext('2d').fillRect(0,0,c.width,c.height);
+          const ctx=c.getContext('2d');
+          ctx.fillStyle='#fff';
+          ctx.fillRect(0,0,c.width,c.height);
         }
       });
       ["signRespStatus","signSalStatus"].forEach(id=>{
@@ -917,36 +763,23 @@
         if(el) { el.textContent="À signer"; el.classList.remove('signed'); }
       });
       localStorage.removeItem(STORAGE_KEY);
-      clearAllAttachments();
-      pdfPreviewBlob = null;
-      syncToolbarPadding();
+      attachedFiles.length=0;
+      $("#fileInput").value="";
+      $("#attachPreviews").innerHTML="";
+      showToast("🧹 Effacé");
     }
 
-    /* ===== Toolbar Padding ===== */
-    function syncToolbarPadding(){
-      const tb=$("#toolbar");
-      const h=(tb&&getComputedStyle(tb).display!=='none')?tb.offsetHeight:0;
-      document.documentElement.style.setProperty('--toolbar-h',h+'px');
-    }
-    
-    if(window.visualViewport){
-      visualViewport.addEventListener('resize',syncToolbarPadding);
-      visualViewport.addEventListener('scroll',syncToolbarPadding);
-    }
-
-    /* ===== Init ===== */
-    window.addEventListener('DOMContentLoaded',()=>{
-      bindAutoGrow();
-      bindAutoSaveEvents();
+    // ✅ INIT
+    window.addEventListener('load', ()=>{
+      initSignatureCanvases();
+      initModalCanvas();
+      setupCanvasDrawing($("#signRespCanvas"));
+      setupCanvasDrawing($("#signSalCanvas"));
       loadFromLocal();
-      syncToolbarPadding();
-      const today = todayStr();
-      if(!$("#date_fiche").value) $("#date_fiche").value = today;
-      if(!$("#date_signature").value) $("#date_signature").value = today;
+      const today=todayStr();
+      if(!$("#date_fiche").value) $("#date_fiche").value=today;
+      if(!$("#date_signature").value) $("#date_signature").value=today;
     });
-    
-    window.addEventListener('resize',syncToolbarPadding);
-    window.addEventListener('orientationchange',()=>setTimeout(syncToolbarPadding,250));
   </script>
 </body>
 </html>
