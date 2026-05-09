@@ -45,7 +45,7 @@
   }
   input::placeholder, textarea::placeholder{ color:#9aa3ad; }
   textarea{ min-height:110px; resize:vertical; overflow-wrap:anywhere; word-break:break-word; line-height:1.35; }
-  textarea.autogrow{ overflow:visible; }
+  textarea.autogrow{ overflow:hidden; }
 
   .section-h{ background:var(--theme); color:#fff; font-weight:800; letter-spacing:.3px; padding:8px 10px; border-radius:10px; }
   .section-b{ border:1.5px solid #c9ced6; border-radius:12px; padding:12px; }
@@ -88,22 +88,42 @@
   .btn[disabled]{ opacity:.55; cursor:not-allowed; }
   @media (max-width:768px), (max-device-width:768px){ .btn-print{ display:none!important; } }
 
-  /* Modal Signature Plein Écran */
-  /* Popup Signature HYBRID Simple (pas de flexbox complexe) */
-  .sign-popup{ position:fixed; inset:0; background:rgba(0,0,0,.8); z-index:10002; display:none; }
-  .sign-popup-box{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:90%; max-width:600px; height:70vh; background:#fff; border-radius:12px; display:flex; flex-direction:column; box-shadow:0 10px 40px rgba(0,0,0,.3); }
-  .sign-popup-header{ display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid #ddd; flex-shrink:0; }
-  .sign-popup-header h3{ margin:0; font-size:16px; }
-  .sign-popup-close{ background:none; border:none; font-size:24px; cursor:pointer; padding:0; width:30px; height:30px; display:flex; align-items:center; justify-content:center; }
-  .sign-popup-canvas{ flex:1; display:block; width:100%; height:100%; touch-action:none; cursor:crosshair; border:none; }
-  .sign-popup-footer{ display:flex; gap:8px; padding:12px 16px; border-top:1px solid #ddd; flex-shrink:0; justify-content:center; background:#f9f9f9; }
-  .sign-popup-footer .btn{ padding:10px 16px; font-size:13px; flex:1; max-width:120px; }
-
-
   #loader{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35); z-index:10000; color:#fff; font:600 16px/1.2 Arial, sans-serif; }
   #loader .box{ background:#111; padding:14px 18px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,.4); }
 
   #toast{ position:fixed; left:50%; bottom:calc(var(--toolbar-h) + 16px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:#111; color:#fff; padding:12px 16px; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.25); display:none; z-index:10001; font-weight:700; white-space:pre-line; }
+
+  /* CORRECTION 1: Styles pour les divs de remplacement en PDF */
+  .input-like{
+    color: #000; 
+    background: #f5f5f5; 
+    padding: 8px 10px; 
+    border-radius: 8px; 
+    word-wrap: break-word; 
+    white-space: pre-wrap;
+    min-height: 20px;
+    font-size: 14px;
+  }
+
+  .textarea-like{
+    color: #000; 
+    background: #f5f5f5; 
+    padding: 8px 10px; 
+    border-radius: 8px; 
+    word-wrap: break-word; 
+    white-space: pre-wrap;
+    min-height: 80px;
+    font-size: 14px;
+    line-height: 1.4;
+    display: block;
+    overflow: visible !important;
+  }
+
+  .signature-img{
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
 
   @media (max-width:768px){
     .grid tr{ display:block; }
@@ -141,7 +161,7 @@
     <div class="page" id="pageContent">
       <div class="header no-break">
         <img src="logo_otacos.png" alt="O'Tacos">
-        <div><strong>HITS BOULOGNE</strong>O’tacos Boulogne</div>
+        <div><strong>HITS BOULOGNE</strong>O'tacos Boulogne</div>
       </div>
 
       <div class="title no-break">FICHE INCIDENTS</div>
@@ -151,7 +171,7 @@
           <td class="label">Date :</td>
           <td><input type="date" id="date_fiche" autocomplete="off" placeholder="jj/mm/aaaa"></td>
           <td class="label" style="text-align:right;">Fiche ouverte pour :</td>
-          <td><input type="text" id="salarie" placeholder="Nom de l’équipier" autocomplete="name"></td>
+          <td><input type="text" id="salarie" placeholder="Nom de l'équipier" autocomplete="name"></td>
         </tr>
         <tr>
           <td class="label">Responsable :</td>
@@ -159,7 +179,7 @@
         </tr>
       </table>
 
-      <div class="section-h no-break">DESCRIPTIF DE L’INCIDENT</div>
+      <div class="section-h no-break">DESCRIPTIF DE L'INCIDENT</div>
       <div class="section-b no-break">
         <div class="row">
           <input type="checkbox" id="abs_prev"><label for="abs_prev"><strong>Absence prévue le :</strong></label>
@@ -201,7 +221,7 @@
         </div>
       </div>
 
-      <div class="section-h no-break">ORIGINE DE L’INCIDENT</div>
+      <div class="section-h no-break">ORIGINE DE L'INCIDENT</div>
       <div class="section-b no-break">
         <textarea id="origine" placeholder="Décrire l'origine…"></textarea>
       </div>
@@ -224,10 +244,7 @@
             <canvas id="signRespCanvas" class="signature"></canvas>
             <span class="sig-hint">Signez ici</span>
           </div>
-          <div class="sig-actions">
-            <button class="btn-mini" type="button" onclick="openSignPopup('signRespCanvas')">📱 Signer en grand</button>
-            <button class="btn-mini" type="button" onclick="clearCanvas('signRespCanvas'); saveToLocal()">Effacer</button>
-          </div>
+          <div class="sig-actions"><button class="btn-mini" type="button" onclick="clearCanvas('signRespCanvas'); saveToLocal()">Effacer</button></div>
         </div>
         <div class="sig-box">
           <label for="signSalCanvas">Signature Salarié</label>
@@ -235,26 +252,7 @@
             <canvas id="signSalCanvas" class="signature"></canvas>
             <span class="sig-hint">Signez ici</span>
           </div>
-          <div class="sig-actions">
-            <button class="btn-mini" type="button" onclick="openSignPopup('signSalCanvas')">📱 Signer en grand</button>
-            <button class="btn-mini" type="button" onclick="clearCanvas('signSalCanvas'); saveToLocal()">Effacer</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Popup Signature HYBRID Simple (pas de flexbox complexe) -->
-      <div id="signPopup" class="sign-popup" style="display:none;">
-        <div class="sign-popup-box">
-          <div class="sign-popup-header">
-            <h3 id="signPopupTitle">Signature</h3>
-            <button type="button" class="sign-popup-close" onclick="closeSignPopup()">✕</button>
-          </div>
-          <canvas id="signPopupCanvas" class="sign-popup-canvas"></canvas>
-          <div class="sign-popup-footer">
-            <button type="button" class="btn" onclick="clearSignPopupCanvas()">🧹 Effacer</button>
-            <button type="button" class="btn" onclick="confirmSignPopup()">✅ Confirmer</button>
-            <button type="button" class="btn" style="background:#c12222;" onclick="closeSignPopup()">❌ Annuler</button>
-          </div>
+          <div class="sig-actions"><button class="btn-mini" type="button" onclick="clearCanvas('signSalCanvas'); saveToLocal()">Effacer</button></div>
         </div>
       </div>
 
@@ -277,23 +275,8 @@ function showToast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display
 function todayStr(){ const d=new Date(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${d.getFullYear()}-${m}-${day}`; }
 
 /* ===== Textareas autogrow (UX) ===== */
-function autoGrow(el){ 
-  el.classList.add('autogrow'); 
-  el.style.height='auto'; 
-  el.style.height = el.scrollHeight + 'px';
-  // Padding compensation
-  const style = window.getComputedStyle(el);
-  const paddingTop = parseFloat(style.paddingTop);
-  const paddingBottom = parseFloat(style.paddingBottom);
-  el.style.height = (el.scrollHeight + paddingTop + paddingBottom) + 'px';
-}
-function bindAutoGrow(){ 
-  document.querySelectorAll('textarea').forEach(t=>{ 
-    autoGrow(t); 
-    t.addEventListener('input', ()=>autoGrow(t)); 
-    t.addEventListener('change', ()=>autoGrow(t));
-  }); 
-}
+function autoGrow(el){ el.classList.add('autogrow'); el.style.height='auto'; el.style.height = el.scrollHeight + 'px'; }
+function bindAutoGrow(){ document.querySelectorAll('textarea').forEach(t=>{ autoGrow(t); t.addEventListener('input', ()=>autoGrow(t)); }); }
 
 /* ===== Affichage conditionnel ===== */
 ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
@@ -321,190 +304,14 @@ function setupCanvas(id){
   const start=(x,y)=>{ drawing=true; prev={x,y}; if(hint) hint.style.opacity='0'; };
   const move=(x,y)=>{ if(!drawing) return; ctx.beginPath(); ctx.moveTo(prev.x,prev.y); ctx.lineTo(x,y); ctx.stroke(); prev={x,y}; saveToLocalThrottled(); };
   const stop=()=>{ drawing=false; prev=null; };
-  
-  // Mouse - utiliser getBoundingClientRect pour éviter offsetX/offsetY décalés
-  c.addEventListener("mousedown",(e)=>{ 
-    const dpr=window.devicePixelRatio||1;
-    const r=c.getBoundingClientRect(); 
-    start((e.clientX-r.left)*dpr,(e.clientY-r.top)*dpr); 
-  });
-  c.addEventListener("mousemove",(e)=>{ 
-    if(!drawing) return;
-    const dpr=window.devicePixelRatio||1;
-    const r=c.getBoundingClientRect(); 
-    move((e.clientX-r.left)*dpr,(e.clientY-r.top)*dpr); 
-  });
+  c.addEventListener("mousedown",e=>start(e.offsetX,e.offsetY));
+  c.addEventListener("mousemove",e=>move(e.offsetX,e.offsetY));
   ["mouseup","mouseleave"].forEach(ev=>c.addEventListener(ev,stop));
-  
-  // Touch
-  c.addEventListener("touchstart",(e)=>{ 
-    e.preventDefault(); 
-    const dpr=window.devicePixelRatio||1;
-    const r=c.getBoundingClientRect(), t=e.touches[0]; 
-    start((t.clientX-r.left)*dpr,(t.clientY-r.top)*dpr); 
-  },{passive:false});
-  c.addEventListener("touchmove",(e)=>{ 
-    e.preventDefault(); 
-    const dpr=window.devicePixelRatio||1;
-    const r=c.getBoundingClientRect(), t=e.touches[0]; 
-    move((t.clientX-r.left)*dpr,(t.clientY-r.top)*dpr); 
-  },{passive:false});
+  c.addEventListener("touchstart",e=>{ e.preventDefault(); const r=c.getBoundingClientRect(), t=e.touches[0]; start(t.clientX-r.left,t.clientY-r.top); },{passive:false});
+  c.addEventListener("touchmove",e=>{ e.preventDefault(); const r=c.getBoundingClientRect(), t=e.touches[0]; move(t.clientX-r.left,t.clientY-r.top); },{passive:false});
   c.addEventListener("touchend",stop);
 }
 setupCanvas("signRespCanvas"); setupCanvas("signSalCanvas");
-
-/* ===== Modal Signature Plein Écran ===== */
-let currentSignPopupCanvasId = null;
-
-function openSignPopup(canvasId) {
-  currentSignPopupCanvasId = canvasId;
-  const popup = $("#signPopup");
-  const title = $("#signPopupTitle");
-  const canvas = $("#signPopupCanvas");
-  
-  title.textContent = canvasId === "signRespCanvas" ? "Signature Responsable" : "Signature Salarié";
-  popup.style.display = "block";
-  
-  // Setup le canvas immédiatement
-  setTimeout(() => {
-    setupSignPopupCanvas();
-  }, 50);
-}
-
-function closeSignPopup() {
-  const popup = $("#signPopup");
-  popup.style.display = "none";
-  currentSignPopupCanvasId = null;
-}
-
-function clearSignPopupCanvas() {
-  const canvas = $("#signPopupCanvas");
-  if (!canvas) return;
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
-
-function confirmSignPopup() {
-  if (!currentSignPopupCanvasId) return;
-  
-  const popupCanvas = $("#signPopupCanvas");
-  const targetCanvas = $("#" + currentSignPopupCanvasId);
-  
-  if (!popupCanvas || !targetCanvas) {
-    closeSignPopup();
-    return;
-  }
-  
-  try {
-    const targetCtx = targetCanvas.getContext("2d");
-    
-    // Récupérer l'image du popup canvas
-    const dataUrl = popupCanvas.toDataURL("image/png");
-    const img = new Image();
-    
-    img.addEventListener("load", () => {
-      // Nettoyer et copier
-      targetCtx.fillStyle = "#fff";
-      targetCtx.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
-      targetCtx.drawImage(img, 0, 0, targetCanvas.width, targetCanvas.height);
-      
-      // Masquer le hint
-      const hint = targetCanvas.parentElement.querySelector('.sig-hint');
-      if (hint) hint.style.opacity = '0';
-      
-      saveToLocal();
-    }, { once: true });
-    
-    img.src = dataUrl;
-  } catch(e) {
-    console.error("Erreur signature:", e);
-  }
-  
-  closeSignPopup();
-}
-
-function setupSignPopupCanvas() {
-  const canvas = $("#signPopupCanvas");
-  if (!canvas) return;
-  
-  const ctx = canvas.getContext("2d");
-  const dpr = window.devicePixelRatio || 1;
-  
-  // Dimensionner correctement
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = Math.round(rect.width * dpr);
-  canvas.height = Math.round(rect.height * dpr);
-  
-  // Setup contexte
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.scale(dpr, dpr);
-  ctx.fillStyle = "#fff";
-  ctx.fillRect(0, 0, rect.width, rect.height);
-  ctx.lineWidth = 3;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  ctx.strokeStyle = "#000";
-  
-  let isDrawing = false;
-  let lastX = 0;
-  let lastY = 0;
-  
-  function getCoords(e) {
-    const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    
-    let clientX, clientY;
-    if (e.touches) {
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    } else {
-      clientX = e.clientX;
-      clientY = e.clientY;
-    }
-    
-    return {
-      x: (clientX - rect.left) / dpr,
-      y: (clientY - rect.top) / dpr
-    };
-  }
-  
-  function startDraw(e) {
-    e.preventDefault();
-    isDrawing = true;
-    const coords = getCoords(e);
-    lastX = coords.x;
-    lastY = coords.y;
-  }
-  
-  function draw(e) {
-    if (!isDrawing) return;
-    e.preventDefault();
-    
-    const coords = getCoords(e);
-    ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
-    ctx.lineTo(coords.x, coords.y);
-    ctx.stroke();
-    
-    lastX = coords.x;
-    lastY = coords.y;
-  }
-  
-  function stopDraw() {
-    isDrawing = false;
-  }
-  
-  // Événements souris
-  canvas.addEventListener("mousedown", startDraw);
-  canvas.addEventListener("mousemove", draw);
-  document.addEventListener("mouseup", stopDraw);
-  canvas.addEventListener("mouseleave", stopDraw);
-  
-  // Événements tactiles
-  canvas.addEventListener("touchstart", startDraw, { passive: false });
-  canvas.addEventListener("touchmove", draw, { passive: false });
-  canvas.addEventListener("touchend", stopDraw, { passive: false });
-}
 
 function canvasToSmallDataURL(srcCanvas,maxCssW=360,mime='image/jpeg',quality=0.9){
   const rect=srcCanvas.getBoundingClientRect();
@@ -523,235 +330,100 @@ function collectData(includeSigs=true){
   return data;
 }
 function applyData(data){
-  if(!data) return; 
-  document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{ 
-    if(!(el.id in data)) return; 
-    if(el.type==="checkbox") el.checked=!!data[el.id]; 
-    else el.value=data[el.id]||""; 
-    // Trigger autoGrow si c'est un textarea
-    if(el.tagName === 'TEXTAREA') autoGrow(el);
-  });
-  ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{ 
-    const b=$(`#${id}`), s=$(`#${id}_fields`); 
-    if(b&&s) s.style.display=b.checked?"inline-flex":"none"; 
-  });
-  if(data.sign_resp) restoreSignature("signRespCanvas",data.sign_resp); 
-  if(data.sign_sal) restoreSignature("signSalCanvas",data.sign_sal);
+  document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{ if(data[el.id]!==undefined){ el[el.type==="checkbox"?"checked":"value"]=data[el.id]; } });
+  const old_resize_handler=window.onresize; document.querySelectorAll("textarea").forEach(autoGrow); if(old_resize_handler) old_resize_handler();
+  if(data.sign_resp) restoreCanvasFromDataURL($("#signRespCanvas"),data.sign_resp);
+  if(data.sign_sal) restoreCanvasFromDataURL($("#signSalCanvas"),data.sign_sal);
+  ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{ const box=$(`#${id}`); if(box) $(`#${id}_fields`).style.display=box.checked?"inline-flex":"none"; });
 }
-function restoreSignature(id,dataUrl){
-  if(!dataUrl) return; const c=$(`#${id}`), ctx=c.getContext("2d"); const img=new Image();
-  img.onload=()=>{ const r=c.getBoundingClientRect(); ctx.fillStyle="#fff"; ctx.fillRect(0,0,r.width,r.height); ctx.drawImage(img,0,0,r.width,r.height); const h=c.parentElement.querySelector('.sig-hint'); if(h) h.style.opacity='0'; };
-  img.src=dataUrl;
+function restoreCanvasFromDataURL(canvas,dataURL){
+  const ctx=canvas.getContext('2d'); const img=new Image(); img.onload=()=>{ ctx.clearRect(0,0,canvas.width,canvas.height); ctx.drawImage(img,0,0); }; img.src=dataURL;
 }
-function saveToLocal(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData(true))); syncToolbarPadding(); }catch(e){} }
-let _saveTimer=null; function saveToLocalThrottled(){ clearTimeout(_saveTimer); _saveTimer=setTimeout(saveToLocal,300); }
-function loadFromLocal(){ try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw) applyData(JSON.parse(raw)); }catch(e){} }
-function clearCanvas(id){ const c=document.getElementById(id), x=c.getContext("2d"); x.setTransform(1,0,0,1,0,0); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); const h=c.parentElement.querySelector('.sig-hint'); if(h) h.style.opacity='1'; }
-function bindAutoSaveEvents(){ 
-  document.addEventListener("change", saveToLocal);
-  // Pour les textareas, utiliser throttle pour éviter trop de saves
-  document.querySelectorAll('textarea').forEach(t => {
-    t.addEventListener('input', saveToLocalThrottled);
-  });
-  // Pour les autres inputs, save direct
-  document.querySelectorAll('input[type="text"], input[type="date"], input[type="checkbox"]').forEach(i => {
-    i.addEventListener('input', saveToLocal);
-    i.addEventListener('change', saveToLocal);
-  });
-}
-
-/* ===== Pièces jointes : mémoire + croix + clear ===== */
-let attachedFiles = [];
-const attachInput    = document.getElementById('attachment');
-const attachPreviews = document.getElementById('attachPreviews');
-
-if (attachInput) {
-  attachInput.addEventListener('change', () => {
-    const files = Array.from(attachInput.files || []);
-    if (!files.length) return;
-    attachedFiles = attachedFiles.concat(files);
-    attachInput.value = '';
-    renderAttachPreviews();
-    saveToLocal();
-  });
-}
-function renderAttachPreviews(){
-  if (!attachPreviews) return;
-  attachPreviews.innerHTML = '';
-  attachedFiles.forEach((f, idx) => {
-    const holder = document.createElement('div');
-    holder.className = 'thumb';
-    if (f.type.startsWith('image/')) {
-      const url = URL.createObjectURL(f);
-      const img = document.createElement('img'); img.src=url; holder.appendChild(img);
-    } else if (f.type === 'application/pdf') {
-      const span = document.createElement('span'); span.className='pdfbadge'; span.textContent='PDF joint'; holder.appendChild(span);
-    } else {
-      holder.textContent = f.name;
-    }
-    const rm=document.createElement('button'); rm.className='remove'; rm.type='button'; rm.textContent='×';
-    rm.onclick=()=>{ attachedFiles.splice(idx,1); renderAttachPreviews(); saveToLocal(); };
-    holder.appendChild(rm);
-    attachPreviews.appendChild(holder);
-  });
-}
-function clearAllAttachments(){
-  attachedFiles = [];
-  if (attachPreviews) attachPreviews.innerHTML = '';
-  if (attachInput)    attachInput.value = '';
-}
+let saveToLocalTimeout; function saveToLocalThrottled(){ clearTimeout(saveToLocalTimeout); saveToLocalTimeout=setTimeout(saveToLocal,500); }
+function saveToLocal(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData())); }
+function loadFromLocal(){ const data=localStorage.getItem(STORAGE_KEY); if(data) applyData(JSON.parse(data)); }
 
 /* ===== Validation ===== */
 function validateForm(){
-  const missing=[];
-  const responsable=($("#responsable").value||"").trim();
-  const salarie=($("#salarie").value||"").trim();
-  const origine=($("#origine").value||"").trim();
-  const action =($("#action").value||"").trim();
-
-  if(!responsable) missing.push("• Responsable");
-  if(!salarie)     missing.push("• Équipier (Fiche ouverte pour)");
-  if(!origine)     missing.push("• Origine de l'incident");
-  if(!action)      missing.push("• Action curative");
-
-  const anyDesc = ["abs_prev","abs_np","ret_prev","ret_np","autre"].some(id => $(`#${id}`).checked);
-  if(!anyDesc) missing.push("• Au moins un descriptif (cocher Absence/Retard/Autre)");
-
-  if(missing.length){
-    showToast("Champs à compléter :\n" + missing.join("\n"));
-    return false;
-  }
+  if(!$("#date_fiche").value){ showToast("❌ Remplissez la date."); return false; }
+  if(!$("#salarie").value){ showToast("❌ Remplissez le nom de l'équipier."); return false; }
+  if(!$("#responsable").value){ showToast("❌ Remplissez le responsable."); return false; }
+  const desc_ok = ["abs_prev","abs_np","ret_prev","ret_np","autre"].some(id=> $(`#${id}`).checked);
+  if(!desc_ok && !$("#origine").value){ showToast("❌ Cochez un descriptif ou remplissez l'origine."); return false; }
+  if(!$("#origine").value){ showToast("❌ Remplissez l'origine."); return false; }
+  if(!$("#action").value){ showToast("❌ Remplissez l'action curative."); return false; }
+  if(!$("#fait_le").value){ showToast("❌ Remplissez la date 'Fait le'."); return false; }
+  const r=canvasToSmallDataURL($("#signRespCanvas","image/png")); if(r==="data:image/png;base64,") { showToast("❌ Signature Responsable manquante."); return false; }
   return true;
 }
 
-/* ===== PDF: helpers (PDF joints -> images, ignore page 2) ===== */
-async function pdfPagesToDataURLs(file, {scale=1.8}={}){
-  if(!window['pdfjsLib']) return [];
-  const ab = await file.arrayBuffer();
-  const doc = await pdfjsLib.getDocument({data:ab}).promise;
-  const total = doc.numPages;
-  const out = [];
-  for(let p=1; p<=total; p++){
-    if(p===2) continue;
-    const page = await doc.getPage(p);
-    const viewport = page.getViewport({ scale });
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = viewport.width; canvas.height = viewport.height;
-    await page.render({ canvasContext: ctx, viewport }).promise;
-    out.push(canvas.toDataURL('image/jpeg', 0.95));
+/* ===== Pièces jointes ===== */
+let attachedFiles=[];
+$("#attachment").addEventListener("change",async e=>{
+  const files=Array.from(e.target.files||[]); if(!files.length) return;
+  for(const f of files){ if(attachedFiles.some(a=>a.name===f.name)) continue; attachedFiles.push(f); }
+  await renderAttachPreviews();
+  saveToLocal();
+});
+async function renderAttachPreviews(){
+  const cont=$("#attachPreviews"); cont.innerHTML="";
+  for(const f of attachedFiles){
+    const thumb=document.createElement("div"); thumb.className="thumb";
+    if(f.type.startsWith("image/")){ const url=URL.createObjectURL(f); const img=document.createElement("img"); img.src=url; thumb.appendChild(img); }
+    else if(f.type==="application/pdf"){ const badge=document.createElement("div"); badge.className="pdfbadge"; badge.textContent="📄 PDF"; thumb.appendChild(badge); }
+    const rmBtn=document.createElement("button"); rmBtn.className="remove"; rmBtn.textContent="✕"; rmBtn.type="button"; rmBtn.onclick=()=>{ attachedFiles.splice(attachedFiles.indexOf(f),1); renderAttachPreviews(); saveToLocal(); }; thumb.appendChild(rmBtn);
+    cont.appendChild(thumb);
   }
-  return out;
-}
-function fileToDataURL(file){
-  return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
 }
 async function getAttachmentImages(){
-  const images = [];
-  for(const f of attachedFiles){
-    if(f.type.startsWith('image/')) images.push(await fileToDataURL(f));
-    else if(f.type === 'application/pdf'){
-      const pages = await pdfPagesToDataURLs(f);
-      if(pages.length) images.push(...pages);
+  const imgs=[]; for(const f of attachedFiles){
+    if(f.type.startsWith("image/")){ const url=URL.createObjectURL(f); const b64=await new Promise(r=>{ const rd=new FileReader(); rd.onload=()=>r(rd.result); rd.readAsDataURL(f); }); imgs.push(b64); }
+    else if(f.type==="application/pdf"){
+      const buf=await f.arrayBuffer(); const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+      for(let pn=1; pn<=pdf.numPages; pn++){
+        const pg=await pdf.getPage(pn); const vp=pg.getViewport({scale:2}); const cv=document.createElement("canvas"); cv.width=vp.width; cv.height=vp.height;
+        await pg.render({canvasContext:cv.getContext("2d"),viewport:vp}).promise; imgs.push(cv.toDataURL("image/jpeg",0.8));
+      }
     }
   }
-  return images;
+  return imgs;
 }
+function clearAllAttachments(){ attachedFiles=[]; renderAttachPreviews(); }
 
-/* ===== Pré-fix mobile avant capture ===== */
+/* ===== Pré-fix mobile ===== */
 function preCaptureMobileFixes(){
-  try{
-    if (document.activeElement && typeof document.activeElement.blur === 'function') {
-      document.activeElement.blur();
-    }
-    window.scrollTo(0,0);
-  }catch(e){}
+  if(navigator.userAgent.match(/iPhone|iPad|iPod/)){
+    document.querySelectorAll("textarea").forEach(ta=>{ ta.style.height="auto"; ta.style.height=ta.scrollHeight+"px"; });
+  }
 }
 
-/* ===== PDF (A4) : styles + anti-coupures + neutralise mobile ===== */
+/* ===== Préparer clone PDF ===== */
 function prepareCloneForPdf(clone){
-  const style=document.createElement('style');
-  style.textContent=`
-    .pdf-a4{
-      width:210mm!important;
-      min-height:297mm!important;
-      padding:8mm!important;
-      box-shadow:none!important;
-      border-radius:0!important;
-      transform: translateZ(0);
-    }
-    .pdf-a4 .header{ gap:8px; margin-bottom:4px; }
-    .pdf-a4 .header img{ width:38px!important; height:auto!important; }
-    .pdf-a4 .header strong{ font-size:13px!important; }
-    .pdf-a4 .title{ font-size:11.2px; padding:3px 5px; margin-top:0; }
-    .pdf-a4 .grid{ font-size:11px; }
-
-    /* ✅ Neutraliser le responsive mobile dans le PDF */
-    .pdf-a4 .grid tr{ display:table-row !important; }
-    .pdf-a4 .grid td{ display:table-cell !important; width:auto !important; padding:4px 6px !important; }
-    .pdf-a4 .grid tr:first-child{ display:table-row !important; grid-template-columns:none !important; }
-
-    .pdf-a4 input, .pdf-a4 textarea{ padding:5px 7px; font-size:11px; }
-    .pdf-a4 textarea{ min-height:60px!important; }
-    .pdf-a4 .section-h{ padding:5px 7px; font-size:11.5px; }
-    .pdf-a4 .section-b{ padding:7px; font-size:11.5px; }
-    .pdf-a4 .row{ gap:5px; margin-bottom:5px; }
-    .pdf-a4 .sig-wrap{ height:72px!important; }
-    .pdf-a4 .signature, .pdf-a4 img.signature-img{ height:72px!important; width:100%!important; object-fit:contain; background:#fff; }
-
-    /* Renfort anti-coupure */
-    .no-break{ break-inside:avoid; page-break-inside:avoid; break-after:avoid; page-break-after:avoid; }
-    .section-group, .intro-block{ break-inside:avoid; page-break-inside:avoid; }
-
-    /* Boîte simulant un input, qui retourne bien à la ligne */
-    .input-like{
-      border:1.5px solid #c9ced6; border-radius:10px; padding:6px 8px;
-      white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; line-height:1.25; min-height:26px;
-      font-size:11px; background:#fff;
-    }
-  `;
-  clone.prepend(style);
-  clone.classList.add('pdf-a4');
-
-  /* Grouper ENTÊTE + TITRE + TABLE infos (indivisible) */
-  const head = clone.querySelector('.header');
-  const title = clone.querySelector('.title');
-  const grid  = clone.querySelector('.grid');
-  if (head && title && grid){
-    const intro = document.createElement('div');
-    intro.className = 'intro-block no-break';
-    head.before(intro);
-    intro.append(head, title, grid);
-  }
-
-  /* Grouper chaque section: .section-h + .section-b */
-  clone.querySelectorAll('.section-h').forEach(h=>{
-    const b = h.nextElementSibling;
-    if(b && b.classList.contains('section-b')){
-      const wrap = document.createElement('div');
-      wrap.className = 'section-group no-break';
-      h.before(wrap);
-      wrap.append(h, b);
-    }
+  clone.querySelectorAll('textarea').forEach(ta=>{
+    const box=document.createElement('div');
+    box.className='textarea-like';
+    box.textContent=ta.value || ta.getAttribute('placeholder') || '';
+    ta.replaceWith(box);
   });
 
-  /* ✅ Remplacer tous les inputs texte & date par des blocs multi-lignes */
   clone.querySelectorAll('input[type="text"], input[type="date"]').forEach(inp=>{
-    const box = document.createElement('div');
-    box.className = 'input-like';
-    const val = inp.value && String(inp.value).trim() ? inp.value : (inp.getAttribute('placeholder') || '');
-    box.textContent = val;
+    const box=document.createElement('div');
+    box.className='input-like';
+    const val=inp.value && String(inp.value).trim() ? inp.value : (inp.getAttribute('placeholder') || '');
+    box.textContent=val;
     inp.replaceWith(box);
   });
 
-  /* ✅ Remplacer les canvases signatures par images statiques (wrap safe) */
   ["signRespCanvas","signSalCanvas"].forEach(id=>{
     const src=document.getElementById(id);
     if(!src) return;
     const img=document.createElement('img');
     img.src=canvasToSmallDataURL(src,500,"image/jpeg",0.9);
     img.className="signature-img";
-    img.style.width="100%"; img.style.height="72px"; img.style.objectFit="contain"; img.style.background="#fff";
+    img.style.width="100%";
+    img.style.height="72px";
+    img.style.objectFit="contain";
+    img.style.background="#fff";
     const target=clone.querySelector("#"+id);
     if(target) target.replaceWith(img);
   });
@@ -759,17 +431,16 @@ function prepareCloneForPdf(clone){
 
 /* Ajustement pour tenir sur 1 seule page A4 (toujours scale down) */
 function fitCloneToOneA4Page(clone){
-  const A4_H = 297/25.4*96;        // px css @96dpi
-  const M    = 6/25.4*96;          // 6mm marges (réduit de 8)
-  const fudgePx = 2;               // sécurité mobile (arrondis) - augmenté
-  const target = A4_H - 2*M - fudgePx;
-  const h = clone.scrollHeight;
+  const A4_H=297/25.4*96;
+  const M=8/25.4*96;
+  const fudgePx=1;
+  const target=A4_H-2*M-fudgePx;
+  const h=clone.scrollHeight;
   if(h > target){
-    const s = target / h;
-    clone.style.transformOrigin = "top left";
-    clone.style.transform = `scale(${s})`;
-    clone.style.width = `calc(210mm / ${s})`;
-    clone.style.height = `${A4_H}px`;
+    const s=target/h;
+    clone.style.transformOrigin="top left";
+    clone.style.transform=`scale(${s})`;
+    clone.style.width=`calc(210mm / ${s})`;
   }
 }
 function blobToBase64(blob){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(",")[1]||""); r.onerror=rej; r.readAsDataURL(blob); }); }
@@ -789,24 +460,19 @@ async function sendToServer(){
       date_fiche:$("#date_fiche").value||todayStr(),
     };
 
-    // Pré-fix mobile (clavier/scroll)
     preCaptureMobileFixes();
 
-    // Clone + PJ
     const original=$("#pageContent");
-    const clone = original.cloneNode(true);
-    const attachImgs = await getAttachmentImages();
+    const clone=original.cloneNode(true);
+    const attachImgs=await getAttachmentImages();
 
-    // Si pas de PJ -> retirer la section du clone (ne pas l’imprimer)
     if(attachImgs.length === 0){
-      const sec = clone.querySelector('#attachSection');
+      const sec=clone.querySelector('#attachSection');
       if(sec) sec.remove();
     }
 
-    // Styles PDF + regroupements + remplacements pour WRAP
     prepareCloneForPdf(clone);
 
-    // Hors écran sans offset négatif (évite vides)
     const off=document.createElement("div");
     off.style.position="fixed";
     off.style.top="0";
@@ -817,45 +483,42 @@ async function sendToServer(){
     document.body.appendChild(off);
 
     off.appendChild(clone);
-    fitCloneToOneA4Page(clone);   // ✅ force 1 page (scale down si nécessaire)
+    fitCloneToOneA4Page(clone);
 
-    // Options PDF
     const opt={
-      margin:[6,6],  // 6mm au lieu de 8mm pour plus compact
+      margin:[8,8],
       filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
       pagebreak:{ mode:['avoid-all'], avoid:['.no-break','.section-group','.intro-block','.section-b','.signatures','textarea'] },
-      html2canvas:{ scale:2, useCORS:true, backgroundColor:"#ffffff", scrollY:0, scrollX:0, willReadFrequently:true, allowTaint:true },
-      jsPDF:{ unit:"mm", format:"a4", orientation:"portrait", compress:true, floatPrecision:'noneunit' },
+      html2canvas:{ scale:2, useCORS:true, backgroundColor:"#ffffff", scrollY:0, scrollX:0, willReadFrequently:true },
+      jsPDF:{ unit:"mm", format:"a4", orientation:"portrait", compress:true },
     };
     const worker=html2pdf().set(opt).from(clone).toPdf();
-    const pdf=await worker.get('pdf');  // instance jsPDF
+    const pdf=await worker.get('pdf');
 
-    // Ajouter les pièces jointes (pleine page) à partir de la page 2
     if(attachImgs.length){
       const a4w=210, a4h=297, margin=5;
       const innerW=a4w-2*margin, innerH=a4h-2*margin;
 
       for(const durl of attachImgs){
-        const dims = await getImageSize(durl);
+        const dims=await getImageSize(durl);
         let wmm=innerW, hmm=innerH;
-        const ratio = dims.w/dims.h;
-        if(wmm/hmm > ratio){ wmm = hmm*ratio; } else { hmm = wmm/ratio; }
-        const x = (a4w - wmm)/2, y = (a4h - hmm)/2;
+        const ratio=dims.w/dims.h;
+        if(wmm/hmm > ratio){ wmm=hmm*ratio; } else { hmm=wmm/ratio; }
+        const x=(a4w-wmm)/2, y=(a4h-hmm)/2;
         pdf.addPage('a4','p');
-        const fmt = durl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+        const fmt=durl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
         pdf.addImage(durl, fmt, x, y, wmm, hmm);
       }
     }
 
-    const pdfBlob = pdf.output('blob');
+    const pdfBlob=pdf.output('blob');
     off.remove();
 
-    // Envoi au serveur
-    const b64 = await blobToBase64(pdfBlob);
+    const b64=await blobToBase64(pdfBlob);
     const payload={ meta, b64 };
     await fetch(WEBAPP_URL,{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(payload) });
 
-    const extra = attachedFiles.length ? " Les pièces jointes ont été intégrées." : "";
+    const extra=attachedFiles.length ? " Les pièces jointes ont été intégrées." : "";
     showToast(`✅ Merci ${meta.responsable}, la fiche incident tient sur 1 page et a été envoyée.${extra}`);
     saveToLocal();
   }catch(e){
@@ -882,9 +545,11 @@ function clearAll(){
   });
   clearCanvas("signRespCanvas"); clearCanvas("signSalCanvas");
   localStorage.removeItem(STORAGE_KEY);
-  clearAllAttachments();                    // efface aussi les PJ
+  clearAllAttachments();
   syncToolbarPadding();
 }
+
+function clearCanvas(id){ const c=$(`#${id}`); const ctx=c.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height); if(c.parentElement.querySelector('.sig-hint')) c.parentElement.querySelector('.sig-hint').style.opacity='1'; saveToLocal(); }
 
 /* ===== Anti-recouvrement toolbar ===== */
 function syncToolbarPadding(){
@@ -904,6 +569,14 @@ if(window.visualViewport){
   window.addEventListener('resize', syncToolbarPadding);
   window.addEventListener('orientationchange', ()=>setTimeout(syncToolbarPadding,250));
 })();
+
+/* Auto-save sur changement */
+function bindAutoSaveEvents(){
+  document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{
+    el.addEventListener('input', saveToLocalThrottled);
+    el.addEventListener('change', ()=>{ saveToLocal(); });
+  });
+}
 </script>
 </body>
 </html>
