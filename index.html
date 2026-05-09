@@ -45,7 +45,7 @@
   }
   input::placeholder, textarea::placeholder{ color:#9aa3ad; }
   textarea{ min-height:110px; resize:vertical; overflow-wrap:anywhere; word-break:break-word; line-height:1.35; }
-  textarea.autogrow{ overflow:hidden; }
+  textarea.autogrow{ overflow:visible; }
 
   .section-h{ background:var(--theme); color:#fff; font-weight:800; letter-spacing:.3px; padding:8px 10px; border-radius:10px; }
   .section-b{ border:1.5px solid #c9ced6; border-radius:12px; padding:12px; }
@@ -89,14 +89,16 @@
   @media (max-width:768px), (max-device-width:768px){ .btn-print{ display:none!important; } }
 
   /* Modal Signature Plein Écran */
-  .signature-modal{ position:fixed; inset:0; background:rgba(0,0,0,.95); z-index:10002; display:none; align-items:center; justify-content:center; }
-  .signature-modal-content{ width:100%; height:100%; display:flex; flex-direction:column; justify-content:space-between; padding:20px; }
-  .signature-modal-content h2{ color:#fff; margin:0 0 20px 0; text-align:center; font-size:20px; }
-  .signature-modal-canvas-wrap{ flex:1; display:flex; align-items:center; justify-content:center; background:#fff; border-radius:12px; overflow:hidden; margin-bottom:20px; }
-  .signature-modal-canvas{ width:100%; height:100%; display:block; touch-action:none; cursor:crosshair; }
-  .signature-modal-actions{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
-  .signature-modal-actions .btn{ padding:12px 20px; font-size:14px; }
-  .signature-modal-actions .btn.btn-mini{ padding:10px 16px; font-size:13px; }
+  /* Popup Signature HYBRID Simple (pas de flexbox complexe) */
+  .sign-popup{ position:fixed; inset:0; background:rgba(0,0,0,.8); z-index:10002; display:none; }
+  .sign-popup-box{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:90%; max-width:600px; height:70vh; background:#fff; border-radius:12px; display:flex; flex-direction:column; box-shadow:0 10px 40px rgba(0,0,0,.3); }
+  .sign-popup-header{ display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid #ddd; flex-shrink:0; }
+  .sign-popup-header h3{ margin:0; font-size:16px; }
+  .sign-popup-close{ background:none; border:none; font-size:24px; cursor:pointer; padding:0; width:30px; height:30px; display:flex; align-items:center; justify-content:center; }
+  .sign-popup-canvas{ flex:1; display:block; width:100%; height:100%; touch-action:none; cursor:crosshair; border:none; }
+  .sign-popup-footer{ display:flex; gap:8px; padding:12px 16px; border-top:1px solid #ddd; flex-shrink:0; justify-content:center; background:#f9f9f9; }
+  .sign-popup-footer .btn{ padding:10px 16px; font-size:13px; flex:1; max-width:120px; }
+
 
   #loader{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35); z-index:10000; color:#fff; font:600 16px/1.2 Arial, sans-serif; }
   #loader .box{ background:#111; padding:14px 18px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,.4); }
@@ -218,33 +220,40 @@
       <div class="signatures no-break">
         <div class="sig-box">
           <label for="signRespCanvas">Signature Responsable</label>
-          <div class="sig-wrap" onclick="openSignatureModal('signRespCanvas')">
+          <div class="sig-wrap">
             <canvas id="signRespCanvas" class="signature"></canvas>
-            <span class="sig-hint">👆 Cliquer pour signer en grand</span>
+            <span class="sig-hint">Signez ici</span>
           </div>
-          <div class="sig-actions"><button class="btn-mini" type="button" onclick="clearCanvas('signRespCanvas'); saveToLocal()">Effacer</button></div>
+          <div class="sig-actions">
+            <button class="btn-mini" type="button" onclick="openSignPopup('signRespCanvas')">📱 Signer en grand</button>
+            <button class="btn-mini" type="button" onclick="clearCanvas('signRespCanvas'); saveToLocal()">Effacer</button>
+          </div>
         </div>
         <div class="sig-box">
           <label for="signSalCanvas">Signature Salarié</label>
-          <div class="sig-wrap" onclick="openSignatureModal('signSalCanvas')">
+          <div class="sig-wrap">
             <canvas id="signSalCanvas" class="signature"></canvas>
-            <span class="sig-hint">👆 Cliquer pour signer en grand</span>
+            <span class="sig-hint">Signez ici</span>
           </div>
-          <div class="sig-actions"><button class="btn-mini" type="button" onclick="clearCanvas('signSalCanvas'); saveToLocal()">Effacer</button></div>
+          <div class="sig-actions">
+            <button class="btn-mini" type="button" onclick="openSignPopup('signSalCanvas')">📱 Signer en grand</button>
+            <button class="btn-mini" type="button" onclick="clearCanvas('signSalCanvas'); saveToLocal()">Effacer</button>
+          </div>
         </div>
       </div>
 
-      <!-- Modal Signature Plein Écran -->
-      <div id="signatureModal" class="signature-modal" style="display:none;">
-        <div class="signature-modal-content">
-          <h2 id="signatureModalTitle">Signature</h2>
-          <div class="signature-modal-canvas-wrap">
-            <canvas id="signatureModalCanvas" class="signature-modal-canvas"></canvas>
+      <!-- Popup Signature HYBRID Simple (pas de flexbox complexe) -->
+      <div id="signPopup" class="sign-popup" style="display:none;">
+        <div class="sign-popup-box">
+          <div class="sign-popup-header">
+            <h3 id="signPopupTitle">Signature</h3>
+            <button type="button" class="sign-popup-close" onclick="closeSignPopup()">✕</button>
           </div>
-          <div class="signature-modal-actions">
-            <button type="button" class="btn btn-mini" onclick="clearCanvasModal()">🧹 Effacer</button>
-            <button type="button" class="btn" onclick="confirmSignatureModal()">✅ Confirmer & Fermer</button>
-            <button type="button" class="btn btn-mini" style="background:#c12222;" onclick="closeSignatureModal()">❌ Annuler</button>
+          <canvas id="signPopupCanvas" class="sign-popup-canvas"></canvas>
+          <div class="sign-popup-footer">
+            <button type="button" class="btn" onclick="clearSignPopupCanvas()">🧹 Effacer</button>
+            <button type="button" class="btn" onclick="confirmSignPopup()">✅ Confirmer</button>
+            <button type="button" class="btn" style="background:#c12222;" onclick="closeSignPopup()">❌ Annuler</button>
           </div>
         </div>
       </div>
@@ -268,8 +277,23 @@ function showToast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display
 function todayStr(){ const d=new Date(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${d.getFullYear()}-${m}-${day}`; }
 
 /* ===== Textareas autogrow (UX) ===== */
-function autoGrow(el){ el.classList.add('autogrow'); el.style.height='auto'; el.style.height = el.scrollHeight + 'px'; }
-function bindAutoGrow(){ document.querySelectorAll('textarea').forEach(t=>{ autoGrow(t); t.addEventListener('input', ()=>autoGrow(t)); }); }
+function autoGrow(el){ 
+  el.classList.add('autogrow'); 
+  el.style.height='auto'; 
+  el.style.height = el.scrollHeight + 'px';
+  // Padding compensation
+  const style = window.getComputedStyle(el);
+  const paddingTop = parseFloat(style.paddingTop);
+  const paddingBottom = parseFloat(style.paddingBottom);
+  el.style.height = (el.scrollHeight + paddingTop + paddingBottom) + 'px';
+}
+function bindAutoGrow(){ 
+  document.querySelectorAll('textarea').forEach(t=>{ 
+    autoGrow(t); 
+    t.addEventListener('input', ()=>autoGrow(t)); 
+    t.addEventListener('change', ()=>autoGrow(t));
+  }); 
+}
 
 /* ===== Affichage conditionnel ===== */
 ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{
@@ -297,171 +321,189 @@ function setupCanvas(id){
   const start=(x,y)=>{ drawing=true; prev={x,y}; if(hint) hint.style.opacity='0'; };
   const move=(x,y)=>{ if(!drawing) return; ctx.beginPath(); ctx.moveTo(prev.x,prev.y); ctx.lineTo(x,y); ctx.stroke(); prev={x,y}; saveToLocalThrottled(); };
   const stop=()=>{ drawing=false; prev=null; };
-  c.addEventListener("mousedown",e=>start(e.offsetX,e.offsetY));
-  c.addEventListener("mousemove",e=>move(e.offsetX,e.offsetY));
+  
+  // Mouse - utiliser getBoundingClientRect pour éviter offsetX/offsetY décalés
+  c.addEventListener("mousedown",(e)=>{ 
+    const dpr=window.devicePixelRatio||1;
+    const r=c.getBoundingClientRect(); 
+    start((e.clientX-r.left)*dpr,(e.clientY-r.top)*dpr); 
+  });
+  c.addEventListener("mousemove",(e)=>{ 
+    if(!drawing) return;
+    const dpr=window.devicePixelRatio||1;
+    const r=c.getBoundingClientRect(); 
+    move((e.clientX-r.left)*dpr,(e.clientY-r.top)*dpr); 
+  });
   ["mouseup","mouseleave"].forEach(ev=>c.addEventListener(ev,stop));
-  c.addEventListener("touchstart",e=>{ e.preventDefault(); const r=c.getBoundingClientRect(), t=e.touches[0]; start(t.clientX-r.left,t.clientY-r.top); },{passive:false});
-  c.addEventListener("touchmove",e=>{ e.preventDefault(); const r=c.getBoundingClientRect(), t=e.touches[0]; move(t.clientX-r.left,t.clientY-r.top); },{passive:false});
+  
+  // Touch
+  c.addEventListener("touchstart",(e)=>{ 
+    e.preventDefault(); 
+    const dpr=window.devicePixelRatio||1;
+    const r=c.getBoundingClientRect(), t=e.touches[0]; 
+    start((t.clientX-r.left)*dpr,(t.clientY-r.top)*dpr); 
+  },{passive:false});
+  c.addEventListener("touchmove",(e)=>{ 
+    e.preventDefault(); 
+    const dpr=window.devicePixelRatio||1;
+    const r=c.getBoundingClientRect(), t=e.touches[0]; 
+    move((t.clientX-r.left)*dpr,(t.clientY-r.top)*dpr); 
+  },{passive:false});
   c.addEventListener("touchend",stop);
 }
 setupCanvas("signRespCanvas"); setupCanvas("signSalCanvas");
 
 /* ===== Modal Signature Plein Écran ===== */
-let currentSignatureCanvasId = null;
+let currentSignPopupCanvasId = null;
 
-function openSignatureModal(canvasId) {
-  currentSignatureCanvasId = canvasId;
-  const modal = $("#signatureModal");
-  const title = $("#signatureModalTitle");
-  const modalCanvas = $("#signatureModalCanvas");
+function openSignPopup(canvasId) {
+  currentSignPopupCanvasId = canvasId;
+  const popup = $("#signPopup");
+  const title = $("#signPopupTitle");
+  const canvas = $("#signPopupCanvas");
   
   title.textContent = canvasId === "signRespCanvas" ? "Signature Responsable" : "Signature Salarié";
-  modal.style.display = "flex";
+  popup.style.display = "block";
   
-  // Attendre le rendu pour setup le canvas
+  // Setup le canvas immédiatement
   setTimeout(() => {
-    setupCanvasModal();
-  }, 100);
+    setupSignPopupCanvas();
+  }, 50);
 }
 
-function closeSignatureModal() {
-  const modal = $("#signatureModal");
-  modal.style.display = "none";
-  currentSignatureCanvasId = null;
+function closeSignPopup() {
+  const popup = $("#signPopup");
+  popup.style.display = "none";
+  currentSignPopupCanvasId = null;
 }
 
-function clearCanvasModal() {
-  const modalCanvas = $("#signatureModalCanvas");
-  if (!modalCanvas) return;
-  const ctx = modalCanvas.getContext("2d");
-  const rect = modalCanvas.parentElement.getBoundingClientRect();
-  ctx.fillStyle = "#fff";
-  ctx.fillRect(0, 0, modalCanvas.width, modalCanvas.height);
+function clearSignPopupCanvas() {
+  const canvas = $("#signPopupCanvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-function confirmSignatureModal() {
-  if (!currentSignatureCanvasId) return;
+function confirmSignPopup() {
+  if (!currentSignPopupCanvasId) return;
   
-  const modalCanvas = $("#signatureModalCanvas");
-  const targetCanvas = $("#" + currentSignatureCanvasId);
-  const targetCtx = targetCanvas.getContext("2d");
+  const popupCanvas = $("#signPopupCanvas");
+  const targetCanvas = $("#" + currentSignPopupCanvasId);
   
-  // Copier le contenu du canvas modal vers le petit canvas
-  const rect = targetCanvas.getBoundingClientRect();
-  const modalRect = modalCanvas.getBoundingClientRect();
-  
-  // Redessiner sur le petit canvas
-  targetCtx.fillStyle = "#fff";
-  targetCtx.fillRect(0, 0, rect.width * (window.devicePixelRatio || 1), rect.height * (window.devicePixelRatio || 1));
-  
-  // Copier l'image du modal canvas
-  const imageData = modalCanvas.toDataURL("image/png");
-  const img = new Image();
-  img.onload = () => {
-    targetCtx.drawImage(img, 0, 0, rect.width * (window.devicePixelRatio || 1), rect.height * (window.devicePixelRatio || 1));
-    const hint = targetCanvas.parentElement.querySelector('.sig-hint');
-    if (hint) hint.style.opacity = '0';
-    saveToLocal();
-  };
-  img.src = imageData;
-  
-  closeSignatureModal();
-}
-
-function setupCanvasModal() {
-  const modalCanvas = $("#signatureModalCanvas");
-  const ctx = modalCanvas.getContext("2d");
-  
-  function fitModal() {
-    const wrapper = modalCanvas.parentElement;
-    const dpr = window.devicePixelRatio || 1;
-    
-    const rect = wrapper.getBoundingClientRect();
-    modalCanvas.width = Math.max(1, Math.round(rect.width * dpr));
-    modalCanvas.height = Math.max(1, Math.round(rect.height * dpr));
-    
-    modalCanvas.style.width = rect.width + "px";
-    modalCanvas.style.height = rect.height + "px";
-    
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.scale(dpr, dpr);
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0, 0, rect.width, rect.height);
-    ctx.lineWidth = 3;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = "#000";
+  if (!popupCanvas || !targetCanvas) {
+    closeSignPopup();
+    return;
   }
   
-  fitModal();
+  try {
+    const targetCtx = targetCanvas.getContext("2d");
+    
+    // Récupérer l'image du popup canvas
+    const dataUrl = popupCanvas.toDataURL("image/png");
+    const img = new Image();
+    
+    img.addEventListener("load", () => {
+      // Nettoyer et copier
+      targetCtx.fillStyle = "#fff";
+      targetCtx.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
+      targetCtx.drawImage(img, 0, 0, targetCanvas.width, targetCanvas.height);
+      
+      // Masquer le hint
+      const hint = targetCanvas.parentElement.querySelector('.sig-hint');
+      if (hint) hint.style.opacity = '0';
+      
+      saveToLocal();
+    }, { once: true });
+    
+    img.src = dataUrl;
+  } catch(e) {
+    console.error("Erreur signature:", e);
+  }
   
-  let drawing = false, prev = null;
+  closeSignPopup();
+}
+
+function setupSignPopupCanvas() {
+  const canvas = $("#signPopupCanvas");
+  if (!canvas) return;
   
-  const start = (x, y) => {
-    drawing = true;
-    prev = { x, y };
-  };
+  const ctx = canvas.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
   
-  const move = (x, y) => {
-    if (!drawing) return;
-    const rect = modalCanvas.getBoundingClientRect();
+  // Dimensionner correctement
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  
+  // Setup contexte
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, rect.width, rect.height);
+  ctx.lineWidth = 3;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "#000";
+  
+  let isDrawing = false;
+  let lastX = 0;
+  let lastY = 0;
+  
+  function getCoords(e) {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    
+    let clientX, clientY;
+    if (e.touches) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    
+    return {
+      x: (clientX - rect.left) / dpr,
+      y: (clientY - rect.top) / dpr
+    };
+  }
+  
+  function startDraw(e) {
+    e.preventDefault();
+    isDrawing = true;
+    const coords = getCoords(e);
+    lastX = coords.x;
+    lastY = coords.y;
+  }
+  
+  function draw(e) {
+    if (!isDrawing) return;
+    e.preventDefault();
+    
+    const coords = getCoords(e);
     ctx.beginPath();
-    ctx.moveTo(prev.x, prev.y);
-    ctx.lineTo(x - rect.left, y - rect.top);
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(coords.x, coords.y);
     ctx.stroke();
-    prev = { x: x - rect.left, y: y - rect.top };
-  };
+    
+    lastX = coords.x;
+    lastY = coords.y;
+  }
   
-  const stop = () => {
-    drawing = false;
-    prev = null;
-  };
+  function stopDraw() {
+    isDrawing = false;
+  }
   
-  // Nettoyage des anciens listeners si présents
-  const newCanvas = modalCanvas.cloneNode(true);
-  modalCanvas.parentElement.replaceChild(newCanvas, modalCanvas);
-  const freshCanvas = newCanvas;
-  const freshCtx = freshCanvas.getContext("2d");
-  fitModal();
+  // Événements souris
+  canvas.addEventListener("mousedown", startDraw);
+  canvas.addEventListener("mousemove", draw);
+  document.addEventListener("mouseup", stopDraw);
+  canvas.addEventListener("mouseleave", stopDraw);
   
-  freshCanvas.addEventListener("mousedown", (e) => {
-    const rect = freshCanvas.getBoundingClientRect();
-    start(e.clientX - rect.left, e.clientY - rect.top);
-  });
-  
-  freshCanvas.addEventListener("mousemove", (e) => {
-    if (!drawing) return;
-    const rect = freshCanvas.getBoundingClientRect();
-    freshCtx.beginPath();
-    freshCtx.moveTo(prev.x, prev.y);
-    freshCtx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-    freshCtx.stroke();
-    prev = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-  });
-  
-  freshCanvas.addEventListener("mouseup", stop);
-  freshCanvas.addEventListener("mouseleave", stop);
-  
-  freshCanvas.addEventListener("touchstart", (e) => {
-    e.preventDefault();
-    const rect = freshCanvas.getBoundingClientRect();
-    const t = e.touches[0];
-    start(t.clientX - rect.left, t.clientY - rect.top);
-  }, { passive: false });
-  
-  freshCanvas.addEventListener("touchmove", (e) => {
-    if (!drawing) return;
-    e.preventDefault();
-    const rect = freshCanvas.getBoundingClientRect();
-    const t = e.touches[0];
-    freshCtx.beginPath();
-    freshCtx.moveTo(prev.x, prev.y);
-    freshCtx.lineTo(t.clientX - rect.left, t.clientY - rect.top);
-    freshCtx.stroke();
-    prev = { x: t.clientX - rect.left, y: t.clientY - rect.top };
-  }, { passive: false });
-  
-  freshCanvas.addEventListener("touchend", stop);
+  // Événements tactiles
+  canvas.addEventListener("touchstart", startDraw, { passive: false });
+  canvas.addEventListener("touchmove", draw, { passive: false });
+  canvas.addEventListener("touchend", stopDraw, { passive: false });
 }
 
 function canvasToSmallDataURL(srcCanvas,maxCssW=360,mime='image/jpeg',quality=0.9){
@@ -481,9 +523,20 @@ function collectData(includeSigs=true){
   return data;
 }
 function applyData(data){
-  if(!data) return; document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{ if(!(el.id in data)) return; if(el.type==="checkbox") el.checked=!!data[el.id]; else el.value=data[el.id]||""; });
-  ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{ const b=$(`#${id}`), s=$(`#${id}_fields`); if(b&&s) s.style.display=b.checked?"inline-flex":"none"; });
-  if(data.sign_resp) restoreSignature("signRespCanvas",data.sign_resp); if(data.sign_sal) restoreSignature("signSalCanvas",data.sign_sal);
+  if(!data) return; 
+  document.querySelectorAll(ALL_FIELDS_SELECTOR).forEach(el=>{ 
+    if(!(el.id in data)) return; 
+    if(el.type==="checkbox") el.checked=!!data[el.id]; 
+    else el.value=data[el.id]||""; 
+    // Trigger autoGrow si c'est un textarea
+    if(el.tagName === 'TEXTAREA') autoGrow(el);
+  });
+  ["abs_prev","abs_np","ret_prev","ret_np","autre"].forEach(id=>{ 
+    const b=$(`#${id}`), s=$(`#${id}_fields`); 
+    if(b&&s) s.style.display=b.checked?"inline-flex":"none"; 
+  });
+  if(data.sign_resp) restoreSignature("signRespCanvas",data.sign_resp); 
+  if(data.sign_sal) restoreSignature("signSalCanvas",data.sign_sal);
 }
 function restoreSignature(id,dataUrl){
   if(!dataUrl) return; const c=$(`#${id}`), ctx=c.getContext("2d"); const img=new Image();
@@ -494,7 +547,18 @@ function saveToLocal(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(co
 let _saveTimer=null; function saveToLocalThrottled(){ clearTimeout(_saveTimer); _saveTimer=setTimeout(saveToLocal,300); }
 function loadFromLocal(){ try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw) applyData(JSON.parse(raw)); }catch(e){} }
 function clearCanvas(id){ const c=document.getElementById(id), x=c.getContext("2d"); x.setTransform(1,0,0,1,0,0); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); const h=c.parentElement.querySelector('.sig-hint'); if(h) h.style.opacity='1'; }
-function bindAutoSaveEvents(){ document.addEventListener("input", saveToLocal); document.addEventListener("change", saveToLocal); }
+function bindAutoSaveEvents(){ 
+  document.addEventListener("change", saveToLocal);
+  // Pour les textareas, utiliser throttle pour éviter trop de saves
+  document.querySelectorAll('textarea').forEach(t => {
+    t.addEventListener('input', saveToLocalThrottled);
+  });
+  // Pour les autres inputs, save direct
+  document.querySelectorAll('input[type="text"], input[type="date"], input[type="checkbox"]').forEach(i => {
+    i.addEventListener('input', saveToLocal);
+    i.addEventListener('change', saveToLocal);
+  });
+}
 
 /* ===== Pièces jointes : mémoire + croix + clear ===== */
 let attachedFiles = [];
@@ -696,8 +760,8 @@ function prepareCloneForPdf(clone){
 /* Ajustement pour tenir sur 1 seule page A4 (toujours scale down) */
 function fitCloneToOneA4Page(clone){
   const A4_H = 297/25.4*96;        // px css @96dpi
-  const M    = 8/25.4*96;          // 8mm marges
-  const fudgePx = 1;               // sécurité mobile (arrondis)
+  const M    = 6/25.4*96;          // 6mm marges (réduit de 8)
+  const fudgePx = 2;               // sécurité mobile (arrondis) - augmenté
   const target = A4_H - 2*M - fudgePx;
   const h = clone.scrollHeight;
   if(h > target){
@@ -705,6 +769,7 @@ function fitCloneToOneA4Page(clone){
     clone.style.transformOrigin = "top left";
     clone.style.transform = `scale(${s})`;
     clone.style.width = `calc(210mm / ${s})`;
+    clone.style.height = `${A4_H}px`;
   }
 }
 function blobToBase64(blob){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(",")[1]||""); r.onerror=rej; r.readAsDataURL(blob); }); }
@@ -756,11 +821,11 @@ async function sendToServer(){
 
     // Options PDF
     const opt={
-      margin:[8,8],  // 8mm
+      margin:[6,6],  // 6mm au lieu de 8mm pour plus compact
       filename:`Fiche_Incident_${meta.salarie}_${meta.date_fiche}.pdf`,
       pagebreak:{ mode:['avoid-all'], avoid:['.no-break','.section-group','.intro-block','.section-b','.signatures','textarea'] },
-      html2canvas:{ scale:2, useCORS:true, backgroundColor:"#ffffff", scrollY:0, scrollX:0, willReadFrequently:true },
-      jsPDF:{ unit:"mm", format:"a4", orientation:"portrait", compress:true },
+      html2canvas:{ scale:2, useCORS:true, backgroundColor:"#ffffff", scrollY:0, scrollX:0, willReadFrequently:true, allowTaint:true },
+      jsPDF:{ unit:"mm", format:"a4", orientation:"portrait", compress:true, floatPrecision:'noneunit' },
     };
     const worker=html2pdf().set(opt).from(clone).toPdf();
     const pdf=await worker.get('pdf');  // instance jsPDF
